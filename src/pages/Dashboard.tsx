@@ -137,7 +137,7 @@ export default function Dashboard() {
     <div className="space-y-12 pb-10">
       {/* Header Section with Background Highlight */}
       <div 
-        className="p-8 sm:p-10 pb-16 rounded-3xl border border-white/5 shadow-2xl mb-36 relative overflow-hidden"
+        className="p-8 sm:p-10 pb-16 rounded-3xl border border-white/5 shadow-2xl mb-52 relative overflow-hidden"
         style={{ backgroundColor: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)' }}
       >
         {/* Accent Glow */}
