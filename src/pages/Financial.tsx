@@ -255,7 +255,7 @@ export default function Financial() {
     <div className="space-y-12 pb-10">
       {/* Header Section with Dynamic Style */}
       <div 
-        className="p-8 sm:p-10 pb-16 rounded-none border border-white/5 shadow-2xl mb-20 relative overflow-hidden"
+        className="p-8 sm:p-10 pb-16 rounded-2xl border border-white/5 shadow-2xl mb-20 relative overflow-hidden"
         style={{ 
           backgroundColor: 'rgba(255,255,255,0.03)', 
           backdropFilter: 'blur(20px)',
@@ -270,7 +270,7 @@ export default function Financial() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
           <div className="space-y-4">
             <h1 
-              className="font-black tracking-tighter leading-tight inline-block pl-20 pr-8 py-3 rounded-none shadow-lg shadow-purple-500/20" 
+              className="font-black tracking-tighter leading-tight inline-block pl-20 pr-8 py-3 rounded-2xl shadow-lg shadow-purple-500/20" 
               style={{ 
                 backgroundColor: 'var(--accent-color)', 
                 color: '#fff',
@@ -281,7 +281,7 @@ export default function Financial() {
             </h1>
             <br />
             <p 
-              className="font-medium inline-block pl-16 pr-5 py-2 rounded-none border border-white/5" 
+              className="font-medium inline-block pl-16 pr-5 py-2 rounded-2xl border border-white/5" 
               style={{ 
                 backgroundColor: 'rgba(255,255,255,0.05)',
                 color: 'var(--text-secondary)', 
@@ -294,7 +294,7 @@ export default function Financial() {
           <div className="flex gap-3">
             <button
               onClick={() => { resetForm(); setEditEntry(null); setShowModal(true) }}
-              className="flex items-center gap-2 rounded-none px-8 py-4 text-sm font-bold text-white transition-all hover:scale-105 active:scale-95 shadow-xl shadow-purple-500/20"
+              className="flex items-center gap-2 rounded-2xl px-8 py-4 text-sm font-bold text-white transition-all hover:scale-105 active:scale-95 shadow-xl shadow-purple-500/20"
               style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}
             >
               <Plus size={22} />
@@ -305,10 +305,10 @@ export default function Financial() {
       </div>
 
       {/* Tabs */}
-      <div className="flex flex-wrap gap-4 p-1 bg-black/20 rounded-none w-fit">
+      <div className="flex flex-wrap gap-4 p-1 bg-black/20 rounded-2xl w-fit">
         <button
           onClick={() => setActiveTab('flow')}
-          className={`px-6 py-2.5 text-sm font-bold transition-all rounded-none shadow-lg ${activeTab === 'flow' ? 'text-white' : 'text-[var(--text-muted)] hover:text-white hover:bg-white/5'}`}
+          className={`px-6 py-2.5 text-sm font-bold transition-all rounded-2xl shadow-lg ${activeTab === 'flow' ? 'text-white' : 'text-[var(--text-muted)] hover:text-white hover:bg-white/5'}`}
           style={{ 
             background: activeTab === 'flow' ? 'linear-gradient(135deg, #8b5cf6, #7c3aed)' : 'transparent'
           }}

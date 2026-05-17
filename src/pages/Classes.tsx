@@ -107,7 +107,7 @@ export default function Classes() {
     <div className="space-y-12 pb-10">
       {/* Header Section with Dynamic Style */}
       <div 
-        className="p-8 sm:p-10 pb-16 rounded-none border border-white/5 shadow-2xl mb-20 relative overflow-hidden"
+        className="p-8 sm:p-10 pb-16 rounded-2xl border border-white/5 shadow-2xl mb-20 relative overflow-hidden"
         style={{ backgroundColor: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)' }}
       >
         {/* Accent Glow */}
@@ -119,7 +119,7 @@ export default function Classes() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
           <div className="space-y-4">
             <h1 
-              className="font-black tracking-tighter leading-tight inline-block pl-20 pr-8 py-3 rounded-none shadow-lg shadow-purple-500/20" 
+              className="font-black tracking-tighter leading-tight inline-block pl-20 pr-8 py-3 rounded-2xl shadow-lg shadow-purple-500/20" 
               style={{ 
                 backgroundColor: 'var(--accent-color)', 
                 color: '#fff',
@@ -130,7 +130,7 @@ export default function Classes() {
             </h1>
             <br />
             <p 
-              className="font-medium inline-block pl-16 pr-5 py-2 rounded-none border border-white/5" 
+              className="font-medium inline-block pl-16 pr-5 py-2 rounded-2xl border border-white/5" 
               style={{ 
                 backgroundColor: 'rgba(255,255,255,0.05)',
                 color: 'var(--text-secondary)', 
@@ -142,7 +142,7 @@ export default function Classes() {
           </div>
           <button
             onClick={() => { resetForm(); setEditClass(null); setShowModal(true) }}
-            className="flex items-center gap-2 rounded-none px-8 py-4 text-sm font-bold text-white transition-all hover:scale-105 active:scale-95 shadow-xl shadow-purple-500/20"
+            className="flex items-center gap-2 rounded-2xl px-8 py-4 text-sm font-bold text-white transition-all hover:scale-105 active:scale-95 shadow-xl shadow-purple-500/20"
             style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}
           >
             <Music size={22} />
@@ -157,12 +157,12 @@ export default function Classes() {
           return (
             <div
               key={cls.id}
-              className="group rounded-none p-6 transition-all duration-300 hover:scale-[1.05] hover:shadow-2xl border border-white/5"
+              className="group rounded-2xl p-6 transition-all duration-300 hover:scale-[1.05] hover:shadow-2xl border border-white/5"
               style={{ backgroundColor: 'var(--bg-card)' }}
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="rounded-none p-3" style={{ backgroundColor: 'rgba(139, 92, 246, 0.15)' }}>
+                  <div className="rounded-2xl p-3" style={{ backgroundColor: 'rgba(139, 92, 246, 0.15)' }}>
                     <Music size={28} style={{ color: '#8b5cf6' }} />
                   </div>
                   <div>
@@ -194,10 +194,10 @@ export default function Classes() {
               </div>
 
               <div className="mt-6 flex justify-end gap-2" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
-                <button onClick={() => openEdit(cls)} className="p-2.5 rounded-none hover:opacity-70 transition-all hover:bg-blue-500/10" style={{ color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.1)' }}>
+                <button onClick={() => openEdit(cls)} className="p-2.5 rounded-2xl hover:opacity-70 transition-all hover:bg-blue-500/10" style={{ color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.1)' }}>
                   <Edit size={18} />
                 </button>
-                <button onClick={() => handleDelete(cls.id)} className="p-2.5 rounded-none hover:opacity-70 transition-all hover:bg-rose-500/10" style={{ color: '#f43f5e', border: '1px solid rgba(244, 63, 94, 0.1)' }}>
+                <button onClick={() => handleDelete(cls.id)} className="p-2.5 rounded-2xl hover:opacity-70 transition-all hover:bg-rose-500/10" style={{ color: '#f43f5e', border: '1px solid rgba(244, 63, 94, 0.1)' }}>
                   <Trash2 size={18} />
                 </button>
               </div>

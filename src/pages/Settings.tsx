@@ -114,7 +114,7 @@ export default function SettingsPage() {
     <div className="space-y-12 pb-10">
       {/* Header Section with Dynamic Style */}
       <div 
-        className="p-8 sm:p-10 pb-16 rounded-none border border-white/5 shadow-2xl mb-20 relative overflow-hidden"
+        className="p-8 sm:p-10 pb-16 rounded-2xl border border-white/5 shadow-2xl mb-20 relative overflow-hidden"
         style={{ backgroundColor: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)' }}
       >
         {/* Accent Glow */}
@@ -126,7 +126,7 @@ export default function SettingsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
           <div className="space-y-4">
             <h1 
-              className="font-black tracking-tighter leading-tight inline-block pl-20 pr-8 py-3 rounded-none shadow-lg shadow-purple-500/20" 
+              className="font-black tracking-tighter leading-tight inline-block pl-20 pr-8 py-3 rounded-2xl shadow-lg shadow-purple-500/20" 
               style={{ 
                 backgroundColor: 'var(--accent-color)', 
                 color: '#fff',
@@ -137,7 +137,7 @@ export default function SettingsPage() {
             </h1>
             <br />
             <p 
-              className="font-medium inline-block pl-16 pr-5 py-2 rounded-none border border-white/5" 
+              className="font-medium inline-block pl-16 pr-5 py-2 rounded-2xl border border-white/5" 
               style={{ 
                 backgroundColor: 'rgba(255,255,255,0.05)',
                 color: 'var(--text-secondary)', 
@@ -150,7 +150,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <div className="max-w-2xl rounded-none p-6" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+      <div className="max-w-2xl rounded-2xl p-6" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
             <div>
@@ -158,7 +158,7 @@ export default function SettingsPage() {
               <input 
                 value={formData.school_name} 
                 onChange={(e) => setFormData({ ...formData, school_name: e.target.value })} 
-                className="w-full rounded-none px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50" 
+                className="w-full rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50" 
                 style={inputStyle} 
               />
             </div>
@@ -168,11 +168,11 @@ export default function SettingsPage() {
               
               <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center mt-2">
                 {formData.logo_url ? (
-                  <div className="p-4 rounded-none border border-dashed flex justify-center items-center bg-black/20 w-full sm:w-48 h-32" style={{ borderColor: 'var(--border-color)' }}>
+                  <div className="p-4 rounded-2xl border border-dashed flex justify-center items-center bg-black/20 w-full sm:w-48 h-32" style={{ borderColor: 'var(--border-color)' }}>
                     <img src={formData.logo_url} alt="Logo Preview" className="max-h-full max-w-full object-contain" />
                   </div>
                 ) : (
-                  <div className="p-4 rounded-none border border-dashed flex justify-center items-center bg-black/20 w-full sm:w-48 h-32" style={{ borderColor: 'var(--border-color)' }}>
+                  <div className="p-4 rounded-2xl border border-dashed flex justify-center items-center bg-black/20 w-full sm:w-48 h-32" style={{ borderColor: 'var(--border-color)' }}>
                     <span className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>Nenhuma logo</span>
                   </div>
                 )}
@@ -184,7 +184,7 @@ export default function SettingsPage() {
                     onChange={handleImageUpload}
                     className="block w-full text-sm
                       file:mr-4 file:py-2.5 file:px-4
-                      file:rounded-none file:border-0
+                      file:rounded-2xl file:border-0
                       file:text-sm file:font-semibold
                       file:bg-purple-600 file:text-white
                       hover:file:bg-purple-700
@@ -213,19 +213,19 @@ export default function SettingsPage() {
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Fundo</span>
-                    <input type="color" value={formData.bg_color} onChange={(e) => setFormData({ ...formData, bg_color: e.target.value })} className="h-8 w-12 rounded-none cursor-pointer border-0 p-0" />
+                    <input type="color" value={formData.bg_color} onChange={(e) => setFormData({ ...formData, bg_color: e.target.value })} className="h-8 w-12 rounded-2xl cursor-pointer border-0 p-0" />
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Texto</span>
-                    <input type="color" value={formData.text_color} onChange={(e) => setFormData({ ...formData, text_color: e.target.value })} className="h-8 w-12 rounded-none cursor-pointer border-0 p-0" />
+                    <input type="color" value={formData.text_color} onChange={(e) => setFormData({ ...formData, text_color: e.target.value })} className="h-8 w-12 rounded-2xl cursor-pointer border-0 p-0" />
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Cards</span>
-                    <input type="color" value={formData.bg_card} onChange={(e) => setFormData({ ...formData, bg_card: e.target.value })} className="h-8 w-12 rounded-none cursor-pointer border-0 p-0" />
+                    <input type="color" value={formData.bg_card} onChange={(e) => setFormData({ ...formData, bg_card: e.target.value })} className="h-8 w-12 rounded-2xl cursor-pointer border-0 p-0" />
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-bold" style={{ color: 'var(--accent-color)' }}>Destaque</span>
-                    <input type="color" value={formData.accent_color} onChange={(e) => setFormData({ ...formData, accent_color: e.target.value })} className="h-8 w-12 rounded-none cursor-pointer border-0 p-0" />
+                    <input type="color" value={formData.accent_color} onChange={(e) => setFormData({ ...formData, accent_color: e.target.value })} className="h-8 w-12 rounded-2xl cursor-pointer border-0 p-0" />
                   </div>
                 </div>
               </div>
@@ -241,7 +241,7 @@ export default function SettingsPage() {
                     <input 
                       type="range" min="20" max="64" value={formData.title_font_size} 
                       onChange={(e) => setFormData({ ...formData, title_font_size: parseInt(e.target.value) })}
-                      className="w-full h-1.5 bg-black/40 rounded-none appearance-none cursor-pointer accent-purple-500"
+                      className="w-full h-1.5 bg-black/40 rounded-2xl appearance-none cursor-pointer accent-purple-500"
                     />
                   </div>
                   <div>
@@ -252,7 +252,7 @@ export default function SettingsPage() {
                     <input 
                       type="range" min="12" max="32" value={formData.subtitle_font_size} 
                       onChange={(e) => setFormData({ ...formData, subtitle_font_size: parseInt(e.target.value) })}
-                      className="w-full h-1.5 bg-black/40 rounded-none appearance-none cursor-pointer accent-purple-500"
+                      className="w-full h-1.5 bg-black/40 rounded-2xl appearance-none cursor-pointer accent-purple-500"
                     />
                   </div>
                 </div>
@@ -264,7 +264,7 @@ export default function SettingsPage() {
             <button 
               type="submit" 
               disabled={saving}
-              className="flex items-center gap-2 rounded-none px-6 py-3 text-sm font-bold text-white transition-all hover:scale-105 disabled:opacity-50" 
+              className="flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-bold text-white transition-all hover:scale-105 disabled:opacity-50" 
               style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}
             >
               <Save size={18} />

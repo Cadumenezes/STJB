@@ -106,7 +106,7 @@ export default function Team() {
     <div className="space-y-12 pb-10">
       {/* Header Section with Dynamic Style */}
       <div 
-        className="p-8 sm:p-10 pb-16 rounded-none border border-white/5 shadow-2xl mb-20 relative overflow-hidden"
+        className="p-8 sm:p-10 pb-16 rounded-2xl border border-white/5 shadow-2xl mb-20 relative overflow-hidden"
         style={{ backgroundColor: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)' }}
       >
         {/* Accent Glow */}
@@ -118,7 +118,7 @@ export default function Team() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
           <div className="space-y-4">
             <h1 
-              className="font-black tracking-tighter leading-tight inline-block pl-20 pr-8 py-3 rounded-none shadow-lg shadow-purple-500/20" 
+              className="font-black tracking-tighter leading-tight inline-block pl-20 pr-8 py-3 rounded-2xl shadow-lg shadow-purple-500/20" 
               style={{ 
                 backgroundColor: 'var(--accent-color)', 
                 color: '#fff',
@@ -129,7 +129,7 @@ export default function Team() {
             </h1>
             <br />
             <p 
-              className="font-medium inline-block pl-16 pr-5 py-2 rounded-none border border-white/5" 
+              className="font-medium inline-block pl-16 pr-5 py-2 rounded-2xl border border-white/5" 
               style={{ 
                 backgroundColor: 'rgba(255,255,255,0.05)',
                 color: 'var(--text-secondary)', 
@@ -141,7 +141,7 @@ export default function Team() {
           </div>
           <button
             onClick={() => { resetForm(); setEditMember(null); setShowModal(true) }}
-            className="flex items-center gap-2 rounded-none px-8 py-4 text-sm font-bold text-white transition-all hover:scale-105 active:scale-95 shadow-xl shadow-purple-500/20"
+            className="flex items-center gap-2 rounded-2xl px-8 py-4 text-sm font-bold text-white transition-all hover:scale-105 active:scale-95 shadow-xl shadow-purple-500/20"
             style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}
           >
             <Plus size={22} />
@@ -154,17 +154,17 @@ export default function Team() {
         {members.map((m) => (
           <div
             key={m.id}
-            className="group rounded-none p-6 transition-all duration-300 hover:scale-[1.05] hover:shadow-2xl border border-white/5"
+            className="group rounded-2xl p-6 transition-all duration-300 hover:scale-[1.05] hover:shadow-2xl border border-white/5"
             style={{ backgroundColor: 'var(--bg-card)' }}
           >
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
-                <div className="rounded-none p-3" style={{ backgroundColor: roleColors[m.role].bg }}>
+                <div className="rounded-2xl p-3" style={{ backgroundColor: roleColors[m.role].bg }}>
                   <UserCog size={28} style={{ color: roleColors[m.role].text }} />
                 </div>
                 <div>
                   <h3 className="font-bold text-xl" style={{ color: 'var(--text-primary)' }}>{m.name}</h3>
-                  <span className="text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded-none mt-1 inline-block" style={{ backgroundColor: roleColors[m.role].bg, color: roleColors[m.role].text }}>
+                  <span className="text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded-2xl mt-1 inline-block" style={{ backgroundColor: roleColors[m.role].bg, color: roleColors[m.role].text }}>
                     {roleColors[m.role].label}
                   </span>
                 </div>
@@ -191,11 +191,11 @@ export default function Team() {
             </div>
 
             <div className="mt-6 flex justify-end gap-3" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
-              <button onClick={() => openEdit(m)} className="flex items-center gap-2 px-3 py-2 rounded-none text-xs font-bold transition-all hover:bg-blue-500/10" style={{ color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+              <button onClick={() => openEdit(m)} className="flex items-center gap-2 px-3 py-2 rounded-2xl text-xs font-bold transition-all hover:bg-blue-500/10" style={{ color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
                 <Edit size={14} />
                 EDITAR
               </button>
-              <button onClick={() => handleDelete(m.id)} className="flex items-center gap-2 px-3 py-2 rounded-none text-xs font-bold transition-all hover:bg-rose-500/10" style={{ color: '#f43f5e', border: '1px solid rgba(244, 63, 94, 0.2)' }}>
+              <button onClick={() => handleDelete(m.id)} className="flex items-center gap-2 px-3 py-2 rounded-2xl text-xs font-bold transition-all hover:bg-rose-500/10" style={{ color: '#f43f5e', border: '1px solid rgba(244, 63, 94, 0.2)' }}>
                 <Trash2 size={14} />
                 EXCLUIR
               </button>

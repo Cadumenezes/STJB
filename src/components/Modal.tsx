@@ -31,7 +31,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' }:
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
       <div
-        className={`relative w-full ${sizeClasses[size]} rounded-none shadow-2xl animate-in`}
+        className={`relative w-full ${sizeClasses[size]} rounded-3xl shadow-2xl animate-in`}
         style={{
           backgroundColor: 'var(--bg-card)',
           border: '1px solid var(--border-color)',
@@ -41,7 +41,7 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' }:
           <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</h2>
           <button
             onClick={onClose}
-            className="rounded-none p-2 transition-colors hover:opacity-70"
+            className="rounded-xl p-2 transition-colors hover:opacity-70"
             style={{ color: 'var(--text-secondary)' }}
           >
             <X size={20} />

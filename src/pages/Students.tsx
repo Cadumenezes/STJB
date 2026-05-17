@@ -306,7 +306,7 @@ export default function Students() {
               <select
                 value={formData.class_id}
                 onChange={(e) => setFormData({ ...formData, class_id: e.target.value })}
-                className="w-full rounded-none px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 appearance-none"
+                className="w-full rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 appearance-none"
                 style={inputStyle}
               >
                 <option value="">-- Selecione uma turma --</option>
@@ -321,7 +321,7 @@ export default function Students() {
             <label className="text-sm font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>Nome do Aluno *</label>
             <input
               required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full rounded-none px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+              className="w-full rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
               style={inputStyle}
             />
           </div>
@@ -329,7 +329,7 @@ export default function Students() {
             <label className="text-sm font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>Nome do Responsável *</label>
             <input
               required value={formData.guardian_name} onChange={(e) => setFormData({ ...formData, guardian_name: e.target.value })}
-              className="w-full rounded-none px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+              className="w-full rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
               style={inputStyle}
             />
           </div>
@@ -337,7 +337,7 @@ export default function Students() {
             <label className="text-sm font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>Email</label>
             <input
               type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full rounded-none px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+              className="w-full rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
               style={inputStyle}
             />
           </div>
@@ -345,7 +345,7 @@ export default function Students() {
             <label className="text-sm font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>Telefone</label>
             <input
               value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full rounded-none px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+              className="w-full rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
               style={inputStyle}
             />
           </div>
@@ -353,7 +353,7 @@ export default function Students() {
             <label className="text-sm font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>Data de Nascimento</label>
             <input
               type="date" value={formData.birth_date} onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
-              className="w-full rounded-none px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+              className="w-full rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
               style={inputStyle}
             />
           </div>
@@ -361,7 +361,7 @@ export default function Students() {
             <label className="text-sm font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>CPF</label>
             <input
               value={formData.cpf} onChange={(e) => setFormData({ ...formData, cpf: e.target.value })}
-              className="w-full rounded-none px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+              className="w-full rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
               style={inputStyle}
             />
           </div>
@@ -369,17 +369,17 @@ export default function Students() {
             <label className="text-sm font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>Endereço</label>
             <input
               value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              className="w-full rounded-none px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+              className="w-full rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
               style={inputStyle}
             />
           </div>
-          <div className="p-4 rounded-none bg-purple-500/5 border border-purple-500/10 col-span-full grid grid-cols-2 gap-4">
+          <div className="p-4 rounded-2xl bg-purple-500/5 border border-purple-500/10 col-span-full grid grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-bold block mb-1.5 text-purple-400">Valor da Mensalidade (R$)</label>
               <input
                 type="number" step="0.01" value={formData.monthly_fee} onChange={(e) => setFormData({ ...formData, monthly_fee: e.target.value })}
                 placeholder="Ex: 150.00"
-                className="w-full rounded-none px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                className="w-full rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
                 style={inputStyle}
               />
             </div>
@@ -388,7 +388,7 @@ export default function Students() {
               <input
                 type="number" step="0.01" min="0" max="2000" value={formData.enrollment_fee} onChange={(e) => setFormData({ ...formData, enrollment_fee: e.target.value })}
                 placeholder="0.00"
-                className="w-full rounded-none px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                className="w-full rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
                 style={inputStyle}
               />
             </div>
@@ -399,7 +399,7 @@ export default function Students() {
           <textarea
             value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
             rows={3}
-            className="w-full rounded-none px-4 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+            className="w-full rounded-2xl px-4 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50"
             style={inputStyle}
           />
         </div>
@@ -407,14 +407,14 @@ export default function Students() {
           <button
             type="button"
             onClick={() => { setShowAddModal(false); setShowEditModal(false); resetForm() }}
-            className="rounded-none px-5 py-2.5 text-sm font-medium transition-colors"
+            className="rounded-2xl px-5 py-2.5 text-sm font-medium transition-colors"
             style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-secondary)', border: '1px solid var(--border-color)' }}
           >
             Cancelar
           </button>
           <button
             type="submit"
-            className="rounded-none px-5 py-2.5 text-sm font-medium text-white transition-all hover:opacity-90"
+            className="rounded-2xl px-5 py-2.5 text-sm font-medium text-white transition-all hover:opacity-90"
             style={{ background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)' }}
           >
             {submitLabel}
@@ -426,7 +426,7 @@ export default function Students() {
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-none border-2 border-transparent" style={{ borderTopColor: 'var(--accent-color)' }} />
+        <div className="h-8 w-8 animate-spin rounded-2xl border-2 border-transparent" style={{ borderTopColor: 'var(--accent-color)' }} />
       </div>
     )
   }
@@ -528,7 +528,7 @@ export default function Students() {
       )}
       {/* Header Section with Dynamic Style */}
       <div 
-        className="p-8 sm:p-10 pb-16 rounded-none border border-white/5 shadow-2xl mb-20 relative overflow-hidden"
+        className="p-8 sm:p-10 pb-16 rounded-2xl border border-white/5 shadow-2xl mb-20 relative overflow-hidden"
         style={{ 
           backgroundColor: 'rgba(255,255,255,0.03)', 
           backdropFilter: 'blur(20px)',
@@ -536,7 +536,7 @@ export default function Students() {
       >
         {/* Accent Glow */}
         <div 
-          className="absolute -left-20 -top-20 w-64 h-64 rounded-none blur-[100px] opacity-20"
+          className="absolute -left-20 -top-20 w-64 h-64 rounded-2xl blur-[100px] opacity-20"
           style={{ backgroundColor: 'var(--accent-color)' }}
         />
 
@@ -568,7 +568,7 @@ export default function Students() {
           </div>
           <button
             onClick={() => { resetForm(); setShowAddModal(true) }}
-            className="flex items-center gap-2 rounded-none px-8 py-4 text-sm font-bold text-white transition-all hover:scale-105 active:scale-95 shadow-xl shadow-purple-500/20"
+            className="flex items-center gap-2 rounded-2xl px-8 py-4 text-sm font-bold text-white transition-all hover:scale-105 active:scale-95 shadow-xl shadow-purple-500/20"
             style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}
           >
             <UserPlus size={22} />
@@ -582,7 +582,7 @@ export default function Students() {
         {statCards.map((card) => (
           <div
             key={card.label}
-            className="group relative overflow-hidden rounded-none p-4 transition-all duration-300 hover:scale-[1.05] hover:shadow-2xl"
+            className="group relative overflow-hidden rounded-2xl p-4 transition-all duration-300 hover:scale-[1.05] hover:shadow-2xl"
             style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
           >
             <div className="flex flex-col items-center justify-center h-28 text-center gap-2">
@@ -662,7 +662,7 @@ export default function Students() {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div
-                            className="flex h-10 w-10 items-center justify-center rounded-none text-sm font-bold text-white shadow-lg"
+                            className="flex h-10 w-10 items-center justify-center rounded-2xl text-sm font-bold text-white shadow-lg"
                             style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}
                           >
                             {student.name.charAt(0).toUpperCase()}
@@ -682,7 +682,7 @@ export default function Students() {
                             R$ {Number(student.monthly_fee || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </span>
                           <span
-                            className="inline-flex items-center rounded-none px-3 py-1 text-[9px] font-black uppercase tracking-widest"
+                            className="inline-flex items-center rounded-2xl px-3 py-1 text-[9px] font-black uppercase tracking-widest"
                             style={{ backgroundColor: statusInfo.bg, color: statusInfo.text, border: `1px solid ${statusInfo.text}33` }}
                           >
                             {statusInfo.label}
@@ -693,7 +693,7 @@ export default function Students() {
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={() => openPaymentModal(student)}
-                            className="rounded-none p-2 transition-all hover:bg-emerald-500/10 active:scale-90"
+                            className="rounded-2xl p-2 transition-all hover:bg-emerald-500/10 active:scale-90"
                             style={{ color: '#10b981' }}
                             title="Dar baixa na mensalidade"
                           >
@@ -701,7 +701,7 @@ export default function Students() {
                           </button>
                           <button
                             onClick={() => generateAnnualReport(student)}
-                            className="rounded-none p-2 transition-all hover:bg-purple-500/10 active:scale-90"
+                            className="rounded-2xl p-2 transition-all hover:bg-purple-500/10 active:scale-90"
                             style={{ color: 'var(--accent-color)' }}
                             title="Gerar Relatório Anual Oficial"
                           >
@@ -709,7 +709,7 @@ export default function Students() {
                           </button>
                           <button
                             onClick={() => openEditModal(student)}
-                            className="rounded-none p-2 transition-all hover:bg-blue-500/10 active:scale-90"
+                            className="rounded-2xl p-2 transition-all hover:bg-blue-500/10 active:scale-90"
                             style={{ color: '#3b82f6' }}
                             title="Editar"
                           >
@@ -717,7 +717,7 @@ export default function Students() {
                           </button>
                           <button
                             onClick={() => handleDeleteStudent(student.id)}
-                            className="rounded-none p-2 transition-all hover:bg-red-500/10 active:scale-90"
+                            className="rounded-2xl p-2 transition-all hover:bg-red-500/10 active:scale-90"
                             style={{ color: '#f43f5e' }}
                             title="Excluir"
                           >
@@ -756,13 +756,13 @@ export default function Students() {
               if (studentPayments.length === 0) {
                 return (
                   <div className="space-y-6">
-                    <div className="rounded-none p-6 text-center border-2 border-dashed border-white/5" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                    <div className="rounded-2xl p-6 text-center border-2 border-dashed border-white/5" style={{ backgroundColor: 'var(--bg-secondary)' }}>
                       <p className="text-sm italic mb-4" style={{ color: 'var(--text-muted)' }}>
                         Nenhuma mensalidade pendente encontrada para este aluno.
                       </p>
                       <button
                         onClick={() => generatePayment(selectedStudent)}
-                        className="flex items-center gap-2 mx-auto rounded-none px-6 py-3 text-xs font-black uppercase tracking-widest text-white transition-all hover:scale-105 active:scale-95 shadow-lg shadow-purple-500/20"
+                        className="flex items-center gap-2 mx-auto rounded-2xl px-6 py-3 text-xs font-black uppercase tracking-widest text-white transition-all hover:scale-105 active:scale-95 shadow-lg shadow-purple-500/20"
                         style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}
                       >
                         <Calendar size={18} />
@@ -777,7 +777,7 @@ export default function Students() {
                   {studentPayments.map((payment) => (
                     <div
                       key={payment.id}
-                      className="flex items-center justify-between rounded-none p-4 shadow-lg"
+                      className="flex items-center justify-between rounded-2xl p-4 shadow-lg"
                       style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}
                     >
                       <div>
@@ -793,7 +793,7 @@ export default function Students() {
                       </div>
                       <button
                         onClick={() => handlePayment(selectedStudent.id, payment.id)}
-                        className="flex items-center gap-2 rounded-none px-6 py-3 text-xs font-black uppercase tracking-tighter text-white transition-all hover:scale-105 active:scale-95 shadow-lg shadow-emerald-500/20"
+                        className="flex items-center gap-2 rounded-2xl px-6 py-3 text-xs font-black uppercase tracking-tighter text-white transition-all hover:scale-105 active:scale-95 shadow-lg shadow-emerald-500/20"
                         style={{ background: 'linear-gradient(135deg, #10b981, #000)' }}
                       >
                         <CheckCircle size={16} />
@@ -805,7 +805,7 @@ export default function Students() {
                   <div className="pt-4 border-t border-white/5">
                     <button
                       onClick={() => generatePayment(selectedStudent)}
-                      className="w-full rounded-none py-3 text-[10px] font-bold uppercase tracking-widest text-purple-400 hover:bg-purple-500/5 transition-all border border-dashed border-purple-500/20"
+                      className="w-full rounded-2xl py-3 text-[10px] font-bold uppercase tracking-widest text-purple-400 hover:bg-purple-500/5 transition-all border border-dashed border-purple-500/20"
                     >
                       + Gerar cobrança de outro mês
                     </button>

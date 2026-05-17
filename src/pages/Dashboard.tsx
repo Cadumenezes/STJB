@@ -137,7 +137,7 @@ export default function Dashboard() {
     <div className="space-y-12 pb-10">
       {/* Header Section with Background Highlight */}
       <div 
-        className="p-8 sm:p-10 pb-16 rounded-none border border-white/5 shadow-2xl mb-20 relative overflow-hidden"
+        className="p-8 sm:p-10 pb-16 rounded-3xl border border-white/5 shadow-2xl mb-20 relative overflow-hidden"
         style={{ backgroundColor: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)' }}
       >
         {/* Accent Glow */}
@@ -149,7 +149,7 @@ export default function Dashboard() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
           <div className="space-y-4">
             <h1 
-              className="font-black tracking-tighter leading-tight inline-block pl-20 pr-8 py-3 rounded-none shadow-lg shadow-purple-500/20" 
+              className="font-black tracking-tighter leading-tight inline-block pl-20 pr-8 py-3 rounded-2xl shadow-lg shadow-purple-500/20" 
               style={{ 
                 backgroundColor: 'var(--accent-color)', 
                 color: '#fff',
@@ -160,7 +160,7 @@ export default function Dashboard() {
             </h1>
             <br />
             <p 
-              className="font-medium inline-block pl-16 pr-5 py-2 rounded-none border border-white/5" 
+              className="font-medium inline-block pl-16 pr-5 py-2 rounded-xl border border-white/5" 
               style={{ 
                 backgroundColor: 'rgba(255,255,255,0.05)',
                 color: 'var(--text-secondary)', 
@@ -178,7 +178,7 @@ export default function Dashboard() {
         {cards.map((card) => (
           <div
             key={card.title}
-            className="group relative overflow-hidden rounded-none p-4 transition-all duration-300 hover:scale-[1.05] hover:shadow-2xl"
+            className="group relative overflow-hidden rounded-3xl p-4 transition-all duration-300 hover:scale-[1.05] hover:shadow-2xl"
             style={{
               backgroundColor: 'var(--bg-card)',
               border: '1px solid var(--border-color)',
@@ -186,7 +186,7 @@ export default function Dashboard() {
           >
             <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-10" style={{ background: card.gradient }} />
             <div className="relative flex flex-col items-center justify-center h-28 text-center gap-2">
-              <div className="rounded-none p-2" style={{ background: card.iconBg }}>
+              <div className="rounded-xl p-2" style={{ background: card.iconBg }}>
                 <card.icon size={22} style={{ color: card.gradient.includes('#8b5cf6') ? '#8b5cf6' : card.gradient.includes('#f43f5e') ? '#f43f5e' : card.gradient.includes('#10b981') ? '#10b981' : '#f59e0b' }} />
               </div>
               <div className="w-full">

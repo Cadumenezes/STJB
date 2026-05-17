@@ -110,7 +110,7 @@ export default function AttendancePage() {
     <div className="space-y-12 pb-10">
       {/* Header Section with Dynamic Style */}
       <div 
-        className="p-8 sm:p-10 pb-16 rounded-none border border-white/5 shadow-2xl mb-20 relative overflow-hidden"
+        className="p-8 sm:p-10 pb-16 rounded-2xl border border-white/5 shadow-2xl mb-20 relative overflow-hidden"
         style={{ backgroundColor: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)' }}
       >
         {/* Accent Glow */}
@@ -122,7 +122,7 @@ export default function AttendancePage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
           <div className="space-y-4">
             <h1 
-              className="font-black tracking-tighter leading-tight inline-block pl-20 pr-8 py-3 rounded-none shadow-lg shadow-purple-500/20" 
+              className="font-black tracking-tighter leading-tight inline-block pl-20 pr-8 py-3 rounded-2xl shadow-lg shadow-purple-500/20" 
               style={{ 
                 backgroundColor: 'var(--accent-color)', 
                 color: '#fff',
@@ -133,7 +133,7 @@ export default function AttendancePage() {
             </h1>
             <br />
             <p 
-              className="font-medium inline-block pl-16 pr-5 py-2 rounded-none border border-white/5" 
+              className="font-medium inline-block pl-16 pr-5 py-2 rounded-2xl border border-white/5" 
               style={{ 
                 backgroundColor: 'rgba(255,255,255,0.05)',
                 color: 'var(--text-secondary)', 
@@ -152,7 +152,7 @@ export default function AttendancePage() {
           <select 
             value={selectedClassId} 
             onChange={(e) => setSelectedClassId(e.target.value)}
-            className="w-full rounded-none px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+            className="w-full rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
             style={selectStyle}
           >
             <option value="">-- Escolha uma turma --</option>
@@ -165,7 +165,7 @@ export default function AttendancePage() {
             type="date" 
             value={date} 
             onChange={(e) => setDate(e.target.value)}
-            className="w-full rounded-none px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+            className="w-full rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
             style={selectStyle}
           />
         </div>
@@ -174,26 +174,26 @@ export default function AttendancePage() {
       {selectedClassId && (
         <div className="space-y-6">
           {/* Professor */}
-          <div className="rounded-none p-6" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+          <div className="rounded-2xl p-6" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
             <h3 className="font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Professor da Turma</h3>
             <div className="flex items-center gap-4">
               <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Status:</span>
               <div className="flex gap-2">
                 <button 
                   onClick={() => setInstructorPresence('present')}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-none text-sm transition-colors border ${instructorPresence === 'present' ? 'border-emerald-500 bg-emerald-500/20 text-emerald-400' : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'}`}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-2xl text-sm transition-colors border ${instructorPresence === 'present' ? 'border-emerald-500 bg-emerald-500/20 text-emerald-400' : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'}`}
                 >
                   <Check size={16} /> Presente
                 </button>
                 <button 
                   onClick={() => setInstructorPresence('late')}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-none text-sm transition-colors border ${instructorPresence === 'late' ? 'border-amber-500 bg-amber-500/20 text-amber-400' : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'}`}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-2xl text-sm transition-colors border ${instructorPresence === 'late' ? 'border-amber-500 bg-amber-500/20 text-amber-400' : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'}`}
                 >
                   <Clock size={16} /> Atrasado
                 </button>
                 <button 
                   onClick={() => setInstructorPresence('absent')}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-none text-sm transition-colors border ${instructorPresence === 'absent' ? 'border-rose-500 bg-rose-500/20 text-rose-400' : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'}`}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-2xl text-sm transition-colors border ${instructorPresence === 'absent' ? 'border-rose-500 bg-rose-500/20 text-rose-400' : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'}`}
                 >
                   <X size={16} /> Faltou
                 </button>
@@ -202,7 +202,7 @@ export default function AttendancePage() {
           </div>
 
           {/* Alunos */}
-          <div className="rounded-none p-6" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+          <div className="rounded-2xl p-6" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold" style={{ color: 'var(--text-primary)' }}>Alunos Matriculados</h3>
             </div>
@@ -212,24 +212,24 @@ export default function AttendancePage() {
             ) : (
               <div className="space-y-3">
                 {students.map(student => (
-                  <div key={student.id} className="flex items-center justify-between p-3 rounded-none" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                  <div key={student.id} className="flex items-center justify-between p-3 rounded-2xl" style={{ backgroundColor: 'var(--bg-secondary)' }}>
                     <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{student.name}</span>
                     <div className="flex gap-2">
                       <button 
                         onClick={() => setAttendance(prev => ({...prev, [student.id]: 'present'}))}
-                        className={`flex items-center gap-1 px-3 py-1.5 rounded-none text-xs font-medium transition-colors border ${attendance[student.id] === 'present' ? 'border-emerald-500 bg-emerald-500/20 text-emerald-400' : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-card)]'}`}
+                        className={`flex items-center gap-1 px-3 py-1.5 rounded-2xl text-xs font-medium transition-colors border ${attendance[student.id] === 'present' ? 'border-emerald-500 bg-emerald-500/20 text-emerald-400' : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-card)]'}`}
                       >
                         <Check size={14} /> P
                       </button>
                       <button 
                         onClick={() => setAttendance(prev => ({...prev, [student.id]: 'late'}))}
-                        className={`flex items-center gap-1 px-3 py-1.5 rounded-none text-xs font-medium transition-colors border ${attendance[student.id] === 'late' ? 'border-amber-500 bg-amber-500/20 text-amber-400' : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-card)]'}`}
+                        className={`flex items-center gap-1 px-3 py-1.5 rounded-2xl text-xs font-medium transition-colors border ${attendance[student.id] === 'late' ? 'border-amber-500 bg-amber-500/20 text-amber-400' : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-card)]'}`}
                       >
                         <Clock size={14} /> A
                       </button>
                       <button 
                         onClick={() => setAttendance(prev => ({...prev, [student.id]: 'absent'}))}
-                        className={`flex items-center gap-1 px-3 py-1.5 rounded-none text-xs font-medium transition-colors border ${attendance[student.id] === 'absent' ? 'border-rose-500 bg-rose-500/20 text-rose-400' : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-card)]'}`}
+                        className={`flex items-center gap-1 px-3 py-1.5 rounded-2xl text-xs font-medium transition-colors border ${attendance[student.id] === 'absent' ? 'border-rose-500 bg-rose-500/20 text-rose-400' : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-card)]'}`}
                       >
                         <X size={14} /> F
                       </button>
@@ -243,7 +243,7 @@ export default function AttendancePage() {
               <button 
                 onClick={saveAttendance}
                 disabled={saving || (students.length === 0 && !instructorPresence)}
-                className="flex items-center gap-2 rounded-none px-6 py-3 text-sm font-medium text-white transition-all hover:opacity-90 disabled:opacity-50"
+                className="flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-medium text-white transition-all hover:opacity-90 disabled:opacity-50"
                 style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}
               >
                 <ClipboardCheck size={18} />

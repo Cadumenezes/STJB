@@ -139,7 +139,7 @@ export default function Layout() {
               <img src={logoUrl} alt="Logo" className="h-20 w-auto max-w-[200px] object-contain" />
             ) : (
               <div
-                className="flex h-16 w-16 items-center justify-center rounded-none text-white font-bold text-2xl shadow-lg"
+                className="flex h-16 w-16 items-center justify-center rounded-2xl text-white font-bold text-2xl shadow-lg"
                 style={{ background: 'var(--accent-gradient, linear-gradient(135deg, #8b5cf6, #ec4899))' }}
               >
                 {schoolName.charAt(0)}
@@ -159,7 +159,7 @@ export default function Layout() {
                 end={item.path === '/'}
                 onClick={() => setSidebarOpen(false)}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-none px-3 py-2 text-lg font-semibold transition-all duration-200 ${
+                  `flex items-center gap-3 rounded-2xl px-3 py-2 text-lg font-semibold transition-all duration-200 ${
                     isActive ? 'shadow-lg' : 'hover:opacity-80'
                   }`
                 }
@@ -175,7 +175,7 @@ export default function Layout() {
 
             <button
               onClick={() => { setHelpOpen(true); setSidebarOpen(false); }}
-              className="flex w-full items-center gap-3 rounded-none px-3 py-2 text-lg font-semibold text-[var(--text-secondary)] hover:opacity-80 transition-all duration-200"
+              className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-lg font-semibold text-[var(--text-secondary)] hover:opacity-80 transition-all duration-200"
             >
               <HelpCircle size={20} />
               Dicas
@@ -186,13 +186,13 @@ export default function Layout() {
           <div className="p-3 space-y-2" style={{ borderTop: '1px solid var(--border-color)' }}>
             <button
               onClick={() => supabase.auth.signOut()}
-              className="flex w-full items-center gap-3 rounded-none px-3 py-2 text-sm font-semibold text-rose-400 hover:bg-rose-500/10 transition-all duration-200"
+              className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-sm font-semibold text-rose-400 hover:bg-rose-500/10 transition-all duration-200"
             >
               <LogOut size={20} />
               Sair do Sistema
             </button>
 
-            <div className="rounded-none p-4" style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.15), rgba(236,72,153,0.15))' }}>
+            <div className="rounded-2xl p-4" style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.15), rgba(236,72,153,0.15))' }}>
               <p className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
                 DanceFlow v1.0
               </p>
