@@ -137,7 +137,7 @@ export default function Dashboard() {
     <div className="space-y-12 pb-10">
       {/* Header Section with Background Highlight */}
       <div 
-        className="p-8 sm:p-10 pb-16 rounded-3xl border border-white/5 shadow-2xl mb-20 relative overflow-hidden"
+        className="p-8 sm:p-10 pb-16 rounded-3xl border border-white/5 shadow-2xl mb-36 relative overflow-hidden"
         style={{ backgroundColor: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)' }}
       >
         {/* Accent Glow */}
@@ -149,7 +149,7 @@ export default function Dashboard() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
           <div className="space-y-4">
             <h1 
-              className="font-black tracking-tighter leading-tight inline-block px-8 py-4 rounded-2xl shadow-xl shadow-purple-500/20" 
+              className="font-black tracking-tighter leading-tight inline-block px-12 py-5 rounded-2xl shadow-2xl shadow-purple-500/30" 
               style={{ 
                 backgroundColor: 'var(--accent-color)', 
                 color: '#fff',
@@ -199,7 +199,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Cash Flow Detail */}
         <div
-          className="rounded-2xl p-6"
+          className="rounded-2xl p-8 sm:p-10"
           style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
         >
           <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
@@ -239,7 +239,7 @@ export default function Dashboard() {
 
         {/* Birthdays */}
         <div
-          className="rounded-2xl p-6"
+          className="rounded-2xl p-8 sm:p-10"
           style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
         >
           <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>

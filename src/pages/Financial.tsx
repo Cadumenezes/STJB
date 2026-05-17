@@ -255,7 +255,7 @@ export default function Financial() {
     <div className="space-y-12 pb-10">
       {/* Header Section with Dynamic Style */}
       <div 
-        className="p-8 sm:p-10 pb-16 rounded-2xl border border-white/5 shadow-2xl mb-20 relative overflow-hidden"
+        className="p-8 sm:p-10 pb-16 rounded-2xl border border-white/5 shadow-2xl mb-36 relative overflow-hidden"
         style={{ 
           backgroundColor: 'rgba(255,255,255,0.03)', 
           backdropFilter: 'blur(20px)',
@@ -270,7 +270,7 @@ export default function Financial() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
           <div className="space-y-4">
             <h1 
-              className="font-black tracking-tighter leading-tight inline-block px-8 py-4 rounded-2xl shadow-xl shadow-purple-500/20" 
+              className="font-black tracking-tighter leading-tight inline-block px-12 py-5 rounded-2xl shadow-2xl shadow-purple-500/30" 
               style={{ 
                 backgroundColor: 'var(--accent-color)', 
                 color: '#fff',
@@ -281,7 +281,7 @@ export default function Financial() {
             </h1>
             <br />
             <p 
-              className="font-bold inline-block px-6 py-3 rounded-xl border border-white/10 shadow-lg" 
+              className="font-bold inline-block px-10 py-4 rounded-2xl border border-white/10 shadow-2xl" 
                style={{ background: 'var(--accent-gradient, linear-gradient(135deg, #8b5cf6, #ec4899))', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', opacity: 0.95 }}
             >
               Controle de caixa, contas fixas e pagamentos de equipe
@@ -338,7 +338,7 @@ export default function Financial() {
             {summaryCards.map((card) => (
               <div
                 key={card.label}
-                className="group relative overflow-hidden rounded-3xl p-6 sm:p-8 transition-all duration-300 hover:scale-[1.05] hover:shadow-2xl"
+                className="group relative overflow-hidden rounded-3xl p-8 sm:p-10 transition-all duration-300 hover:scale-[1.05] hover:shadow-2xl"
                 style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
               >
                 <div className="flex flex-col items-center justify-center h-28 text-center gap-2 relative z-10">
@@ -589,7 +589,7 @@ export default function Financial() {
                       </div>
                     </div>
 
-                    <div className="w-full lg:w-72 p-6 rounded-3xl bg-black/40 border border-white/10 flex flex-col justify-center items-center text-center">
+                    <div className="w-full lg:w-72 p-8 sm:p-10 rounded-3xl bg-black/40 border border-white/10 flex flex-col justify-center items-center text-center">
                       <p className="text-xs font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Total Acumulado</p>
                       <p className="text-3xl font-black text-white mb-4">R$ {teacher.totalToPay.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                       <button 

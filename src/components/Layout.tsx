@@ -221,7 +221,7 @@ export default function Layout() {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-6 lg:p-8" style={{ backgroundColor: 'var(--bg-primary)' }}>
+        <main className="flex-1 overflow-y-auto p-8 sm:p-12 lg:p-16 xl:p-20" style={{ backgroundColor: 'var(--bg-primary)' }}>
           <Outlet />
         </main>
       </div>

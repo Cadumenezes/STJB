@@ -528,7 +528,7 @@ export default function Students() {
       )}
       {/* Header Section with Dynamic Style */}
       <div 
-        className="p-8 sm:p-10 pb-16 rounded-2xl border border-white/5 shadow-2xl mb-20 relative overflow-hidden"
+        className="p-8 sm:p-10 pb-16 rounded-2xl border border-white/5 shadow-2xl mb-36 relative overflow-hidden"
         style={{ 
           backgroundColor: 'rgba(255,255,255,0.03)', 
           backdropFilter: 'blur(20px)',
@@ -543,7 +543,7 @@ export default function Students() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
           <div className="space-y-4">
             <h1 
-              className="font-black tracking-tighter leading-tight inline-block px-8 py-4 rounded-2xl shadow-xl shadow-purple-500/20" 
+              className="font-black tracking-tighter leading-tight inline-block px-12 py-5 rounded-2xl shadow-2xl shadow-purple-500/30" 
               style={{ 
                 backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--title-size, 32px)'
               }}
@@ -552,7 +552,7 @@ export default function Students() {
             </h1>
             <br />
             <p 
-              className="font-bold inline-block px-6 py-3 rounded-xl border border-white/10 shadow-lg" 
+              className="font-bold inline-block px-10 py-4 rounded-2xl border border-white/10 shadow-2xl" 
                style={{ background: 'var(--accent-gradient, linear-gradient(135deg, #8b5cf6, #ec4899))', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', opacity: 0.95 }}
             >
               Gerencie seus alunos, mensalidades e taxas de matrícula
@@ -574,7 +574,7 @@ export default function Students() {
         {statCards.map((card) => (
           <div
             key={card.label}
-            className="group relative overflow-hidden rounded-3xl p-6 sm:p-8 transition-all duration-300 hover:scale-[1.05] hover:shadow-2xl"
+            className="group relative overflow-hidden rounded-3xl p-8 sm:p-10 transition-all duration-300 hover:scale-[1.05] hover:shadow-2xl"
             style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
           >
             <div className="flex flex-col items-center justify-center text-center gap-4">
@@ -748,7 +748,7 @@ export default function Students() {
               if (studentPayments.length === 0) {
                 return (
                   <div className="space-y-6">
-                    <div className="rounded-2xl p-6 text-center border-2 border-dashed border-white/5" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                    <div className="rounded-2xl p-8 sm:p-10 text-center border-2 border-dashed border-white/5" style={{ backgroundColor: 'var(--bg-secondary)' }}>
                       <p className="text-sm italic mb-4" style={{ color: 'var(--text-muted)' }}>
                         Nenhuma mensalidade pendente encontrada para este aluno.
                       </p>

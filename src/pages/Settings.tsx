@@ -114,7 +114,7 @@ export default function SettingsPage() {
     <div className="space-y-12 pb-10">
       {/* Header Section with Dynamic Style */}
       <div 
-        className="p-8 sm:p-10 pb-16 rounded-2xl border border-white/5 shadow-2xl mb-20 relative overflow-hidden"
+        className="p-8 sm:p-10 pb-16 rounded-2xl border border-white/5 shadow-2xl mb-36 relative overflow-hidden"
         style={{ backgroundColor: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)' }}
       >
         {/* Accent Glow */}
@@ -126,7 +126,7 @@ export default function SettingsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
           <div className="space-y-4">
             <h1 
-              className="font-black tracking-tighter leading-tight inline-block px-8 py-4 rounded-2xl shadow-xl shadow-purple-500/20" 
+              className="font-black tracking-tighter leading-tight inline-block px-12 py-5 rounded-2xl shadow-2xl shadow-purple-500/30" 
               style={{ 
                 backgroundColor: 'var(--accent-color)', 
                 color: '#fff',
@@ -137,7 +137,7 @@ export default function SettingsPage() {
             </h1>
             <br />
             <p 
-              className="font-bold inline-block px-6 py-3 rounded-xl border border-white/10 shadow-lg" 
+              className="font-bold inline-block px-10 py-4 rounded-2xl border border-white/10 shadow-2xl" 
                style={{ background: 'var(--accent-gradient, linear-gradient(135deg, #8b5cf6, #ec4899))', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', opacity: 0.95 }}
             >
               Personalize a aparência do sistema
@@ -146,7 +146,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <div className="max-w-2xl rounded-2xl p-6" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+      <div className="max-w-3xl rounded-3xl p-8 sm:p-10" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
             <div>
