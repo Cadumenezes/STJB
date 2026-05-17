@@ -119,7 +119,7 @@ export default function Classes() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
           <div className="space-y-4">
             <h1 
-              className="font-black tracking-tighter leading-tight inline-block pl-20 pr-8 py-3 rounded-2xl shadow-lg shadow-purple-500/20" 
+              className="font-black tracking-tighter leading-tight inline-block px-8 py-4 rounded-2xl shadow-xl shadow-purple-500/20" 
               style={{ 
                 backgroundColor: 'var(--accent-color)', 
                 color: '#fff',
@@ -130,12 +130,8 @@ export default function Classes() {
             </h1>
             <br />
             <p 
-              className="font-medium inline-block pl-16 pr-5 py-2 rounded-2xl border border-white/5" 
-              style={{ 
-                backgroundColor: 'rgba(255,255,255,0.05)',
-                color: 'var(--text-secondary)', 
-                fontSize: 'var(--subtitle-size, 16px)' 
-              }}
+              className="font-bold inline-block px-6 py-3 rounded-xl border border-white/10 shadow-lg" 
+               style={{ background: 'var(--accent-gradient, linear-gradient(135deg, #8b5cf6, #ec4899))', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', opacity: 0.95 }}
             >
               Gerencie os horários, estilos e os professores de cada turma
             </p>
@@ -145,7 +141,7 @@ export default function Classes() {
             className="flex items-center gap-2 rounded-2xl px-8 py-4 text-sm font-bold text-white transition-all hover:scale-105 active:scale-95 shadow-xl shadow-purple-500/20"
             style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}
           >
-            <Music size={22} />
+            <Music size={26} />
             Nova Turma
           </button>
         </div>
