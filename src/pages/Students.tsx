@@ -432,7 +432,7 @@ export default function Students() {
   }
 
   return (
-    <div className="space-y-12 pb-10">
+    <div className="flex flex-col pb-10">
       {/* Print-only template */}
       <style>{`
         @media print {
@@ -570,7 +570,7 @@ export default function Students() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-12">
         {statCards.map((card) => (
           <div
             key={card.label}
@@ -592,7 +592,7 @@ export default function Students() {
       </div>
 
       {/* Search & Filter */}
-      <div className="flex flex-col gap-4 sm:flex-row">
+      <div className="flex flex-col gap-4 sm:flex-row mb-12">
         <div className="relative flex-1">
           <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
           <input

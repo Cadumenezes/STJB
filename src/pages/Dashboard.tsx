@@ -134,7 +134,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-12 pb-10">
+    <div className="flex flex-col pb-10">
       {/* Header Section with Background Highlight */}
       <div 
         className="p-8 sm:p-10 pb-16 rounded-3xl border border-white/5 shadow-2xl mb-52 relative overflow-hidden"
@@ -170,7 +170,7 @@ export default function Dashboard() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 xl:grid-cols-4 mb-12">
         {cards.map((card) => (
           <div
             key={card.title}

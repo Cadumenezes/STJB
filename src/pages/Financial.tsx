@@ -252,7 +252,7 @@ export default function Financial() {
   }
 
   return (
-    <div className="space-y-12 pb-10">
+    <div className="flex flex-col pb-10">
       {/* Header Section with Dynamic Style */}
       <div 
         className="p-8 sm:p-10 pb-16 rounded-2xl border border-white/5 shadow-2xl mb-52 relative overflow-hidden"
@@ -301,7 +301,7 @@ export default function Financial() {
       </div>
 
       {/* Tabs */}
-      <div className="flex flex-wrap gap-4 p-1 bg-black/20 rounded-2xl w-fit">
+      <div className="flex flex-wrap gap-4 p-1 bg-black/20 rounded-2xl w-fit mb-12">
         <button
           onClick={() => setActiveTab('flow')}
           className={`px-6 py-2.5 text-sm font-bold transition-all rounded-2xl shadow-lg ${activeTab === 'flow' ? 'text-white' : 'text-[var(--text-muted)] hover:text-white hover:bg-white/5'}`}
