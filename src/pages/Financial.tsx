@@ -270,7 +270,7 @@ export default function Financial() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
           <div className="space-y-4">
             <h1 
-              className="font-black tracking-tighter leading-tight inline-block px-12 py-5 rounded-2xl shadow-2xl shadow-purple-500/30" 
+              className="font-black tracking-tighter leading-tight inline-block px-32 py-6 rounded-2xl shadow-2xl shadow-purple-500/30" 
               style={{ 
                 backgroundColor: 'var(--accent-color)', 
                 color: '#fff',
@@ -281,7 +281,7 @@ export default function Financial() {
             </h1>
             <br />
             <p 
-              className="font-bold inline-block px-10 py-4 rounded-2xl border border-white/10 shadow-2xl" 
+              className="font-bold inline-block px-28 py-5 rounded-2xl border border-white/10 shadow-2xl" 
                style={{ background: 'var(--accent-gradient, linear-gradient(135deg, #8b5cf6, #ec4899))', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', opacity: 0.95 }}
             >
               Controle de caixa, contas fixas e pagamentos de equipe
