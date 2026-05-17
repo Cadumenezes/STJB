@@ -1,0 +1,290 @@
+import { useEffect, useState } from 'react'
+import { Users, AlertTriangle, DollarSign, Cake, TrendingUp, TrendingDown } from 'lucide-react'
+import { supabase } from '../lib/supabase'
+
+interface DashboardData {
+  totalStudents: number
+  overduePayments: number
+  cashFlowToday: number
+  todayIncome: number
+  todayExpense: number
+  birthdaysThisWeek: { name: string; birth_date: string }[]
+}
+
+export default function Dashboard() {
+  const [data, setData] = useState<DashboardData>({
+    totalStudents: 0,
+    overduePayments: 0,
+    cashFlowToday: 0,
+    todayIncome: 0,
+    todayExpense: 0,
+    birthdaysThisWeek: [],
+  })
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    loadDashboard()
+  }, [])
+
+  async function loadDashboard() {
+    setLoading(true)
+    try {
+      // Total students
+      const { count: studentCount } = await supabase
+        .from('students')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'active')
+
+      // Overdue payments
+      const today = new Date().toISOString().split('T')[0]
+      const { count: overdueCount } = await supabase
+        .from('monthly_payments')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'overdue')
+
+      // Today's income
+      const { data: incomeData } = await supabase
+        .from('financial_entries')
+        .select('amount')
+        .eq('type', 'income')
+        .eq('date', today)
+
+      const todayIncome = incomeData?.reduce((sum, e) => sum + Number(e.amount), 0) || 0
+
+      // Today's expenses
+      const { data: expenseData } = await supabase
+        .from('financial_entries')
+        .select('amount')
+        .eq('type', 'expense')
+        .eq('date', today)
+
+      const todayExpense = expenseData?.reduce((sum, e) => sum + Number(e.amount), 0) || 0
+
+      // Birthdays this week
+      const now = new Date()
+      const dayOfWeek = now.getDay()
+      const startOfWeek = new Date(now)
+      startOfWeek.setDate(now.getDate() - dayOfWeek)
+      const endOfWeek = new Date(startOfWeek)
+      endOfWeek.setDate(startOfWeek.getDate() + 6)
+
+      const { data: students } = await supabase
+        .from('students')
+        .select('name, birth_date')
+        .eq('status', 'active')
+
+      const birthdaysThisWeek = (students || []).filter((s) => {
+        if (!s.birth_date) return false
+        const birth = new Date(s.birth_date + 'T12:00:00')
+        const thisYearBday = new Date(now.getFullYear(), birth.getMonth(), birth.getDate())
+        return thisYearBday >= startOfWeek && thisYearBday <= endOfWeek
+      })
+
+      setData({
+        totalStudents: studentCount || 0,
+        overduePayments: overdueCount || 0,
+        cashFlowToday: todayIncome - todayExpense,
+        todayIncome,
+        todayExpense,
+        birthdaysThisWeek,
+      })
+    } catch (err) {
+      console.error('Error loading dashboard:', err)
+    }
+    setLoading(false)
+  }
+
+  const cards = [
+    {
+      title: 'Total de Alunos',
+      value: data.totalStudents,
+      icon: Users,
+      gradient: 'linear-gradient(135deg, #8b5cf6, #6d28d9)',
+      iconBg: 'rgba(139, 92, 246, 0.2)',
+    },
+    {
+      title: 'Mensalidades Atrasadas',
+      value: data.overduePayments,
+      icon: AlertTriangle,
+      gradient: 'linear-gradient(135deg, #f43f5e, #be123c)',
+      iconBg: 'rgba(244, 63, 94, 0.2)',
+    },
+    {
+      title: 'Fluxo de Caixa Hoje',
+      value: `R$ ${data.cashFlowToday.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+      icon: DollarSign,
+      gradient: 'linear-gradient(135deg, #10b981, #059669)',
+      iconBg: 'rgba(16, 185, 129, 0.2)',
+    },
+    {
+      title: 'Aniversariantes da Semana',
+      value: data.birthdaysThisWeek.length,
+      icon: Cake,
+      gradient: 'linear-gradient(135deg, #f59e0b, #d97706)',
+      iconBg: 'rgba(245, 158, 11, 0.2)',
+    },
+  ]
+
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-transparent" style={{ borderTopColor: 'var(--accent-color)' }} />
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-12 pb-10">
+      {/* Header Section with Background Highlight */}
+      <div 
+        className="p-8 sm:p-10 pb-16 rounded-none border border-white/5 shadow-2xl mb-20 relative overflow-hidden"
+        style={{ backgroundColor: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)' }}
+      >
+        {/* Accent Glow */}
+        <div 
+          className="absolute -left-20 -top-20 w-64 h-64 rounded-full blur-[100px] opacity-20"
+          style={{ backgroundColor: 'var(--accent-color)' }}
+        />
+
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
+          <div className="space-y-4">
+            <h1 
+              className="font-black tracking-tighter leading-tight inline-block pl-20 pr-8 py-3 rounded-none shadow-lg shadow-purple-500/20" 
+              style={{ 
+                backgroundColor: 'var(--accent-color)', 
+                color: '#fff',
+                fontSize: 'var(--title-size, 32px)' 
+              }}
+            >
+              Dashboard
+            </h1>
+            <br />
+            <p 
+              className="font-medium inline-block pl-16 pr-5 py-2 rounded-none border border-white/5" 
+              style={{ 
+                backgroundColor: 'rgba(255,255,255,0.05)',
+                color: 'var(--text-secondary)', 
+                fontSize: 'var(--subtitle-size, 16px)' 
+              }}
+            >
+              Bem-vindo de volta! Aqui está o resumo da sua escola hoje.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 xl:grid-cols-4">
+        {cards.map((card) => (
+          <div
+            key={card.title}
+            className="group relative overflow-hidden rounded-none p-4 transition-all duration-300 hover:scale-[1.05] hover:shadow-2xl"
+            style={{
+              backgroundColor: 'var(--bg-card)',
+              border: '1px solid var(--border-color)',
+            }}
+          >
+            <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-10" style={{ background: card.gradient }} />
+            <div className="relative flex flex-col items-center justify-center h-28 text-center gap-2">
+              <div className="rounded-none p-2" style={{ background: card.iconBg }}>
+                <card.icon size={22} style={{ color: card.gradient.includes('#8b5cf6') ? '#8b5cf6' : card.gradient.includes('#f43f5e') ? '#f43f5e' : card.gradient.includes('#10b981') ? '#10b981' : '#f59e0b' }} />
+              </div>
+              <div className="w-full">
+                <p className="text-2xl font-bold leading-none" style={{ color: 'var(--text-primary)' }}>{card.value}</p>
+                <p className="mt-1 text-[10px] sm:text-[11px] font-medium uppercase tracking-wider truncate" style={{ color: 'var(--text-secondary)' }}>{card.title}</p>
+              </div>
+            </div>
+            <div className="absolute left-0 top-0 h-full w-1" style={{ background: card.gradient }} />
+          </div>
+        ))}
+      </div>
+
+      {/* Today's Flow Detail + Birthdays */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Cash Flow Detail */}
+        <div
+          className="rounded-2xl p-6"
+          style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
+        >
+          <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+            Fluxo de Caixa - Hoje
+          </h2>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between rounded-xl p-4" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg p-2" style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)' }}>
+                  <TrendingUp size={20} className="text-emerald-400" />
+                </div>
+                <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Entradas</span>
+              </div>
+              <span className="text-lg font-bold text-emerald-400">
+                R$ {data.todayIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+            <div className="flex items-center justify-between rounded-xl p-4" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+              <div className="flex items-center gap-3">
+                <div className="rounded-lg p-2" style={{ backgroundColor: 'rgba(244, 63, 94, 0.15)' }}>
+                  <TrendingDown size={20} className="text-rose-400" />
+                </div>
+                <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Saídas</span>
+              </div>
+              <span className="text-lg font-bold text-rose-400">
+                R$ {data.todayExpense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+            <div className="flex items-center justify-between rounded-xl p-4" style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.1), rgba(236,72,153,0.1))', border: '1px solid var(--border-color)' }}>
+              <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Saldo do Dia</span>
+              <span className={`text-lg font-bold ${data.cashFlowToday >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                R$ {data.cashFlowToday.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Birthdays */}
+        <div
+          className="rounded-2xl p-6"
+          style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
+        >
+          <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+            🎂 Aniversariantes da Semana
+          </h2>
+          {data.birthdaysThisWeek.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <Cake size={48} style={{ color: 'var(--text-muted)' }} className="mb-3" />
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                Nenhum aniversariante esta semana
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {data.birthdaysThisWeek.map((student, i) => {
+                const birth = new Date(student.birth_date + 'T12:00:00')
+                const day = birth.getDate().toString().padStart(2, '0')
+                const month = (birth.getMonth() + 1).toString().padStart(2, '0')
+                return (
+                  <div
+                    key={i}
+                    className="flex items-center gap-4 rounded-xl p-4 transition-colors"
+                    style={{ backgroundColor: 'var(--bg-secondary)' }}
+                  >
+                    <div
+                      className="flex h-10 w-10 items-center justify-center rounded-full text-lg"
+                      style={{ background: 'linear-gradient(135deg, #f59e0b, #f97316)' }}
+                    >
+                      🎉
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{student.name}</p>
+                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{day}/{month}</p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
