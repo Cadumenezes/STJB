@@ -476,8 +476,9 @@ export default function Students() {
               )}
               <div>
                 <h1 className="text-3xl font-black uppercase tracking-tighter">{reportData.school.school_name}</h1>
-                <p 
-              className="font-bold inline-block px-32 py-6 mt-2 rounded-2xl shadow-xl border border-white/10">Relatório Anual de Desempenho e Pagamentos - {new Date().getFullYear()}</p>
+                <p className="text-sm font-bold">Relatório Anual do Aluno</p>
+                {reportData.school.cnpj && <p className="text-[10px] mt-1 text-gray-600">CNPJ: {reportData.school.cnpj}</p>}
+                {reportData.school.address && <p className="text-[10px] text-gray-600">{reportData.school.address}</p>}
               </div>
             </div>
             <div className="text-right text-xs">
@@ -545,8 +546,8 @@ export default function Students() {
 
           <div className="mt-24 pt-12 flex flex-col items-center">
             <div className="w-64 border-t-2 border-black mb-2"></div>
-            <p className="text-sm font-black uppercase">{reportData.school.school_name}</p>
-            <p className="text-xs">Assinatura da Direção</p>
+            <p className="text-sm font-black uppercase">{reportData.school.director || reportData.school.school_name}</p>
+            <p className="text-xs">{reportData.school.director ? 'Direção / Responsável' : 'Assinatura da Direção'}</p>
             <p className="mt-8 text-[10px] text-gray-400">Este documento é uma declaração oficial de frequência e quitação financeira gerada pelo sistema DanceFlow.</p>
           </div>
         </div>
@@ -562,6 +563,8 @@ export default function Students() {
               <div>
                 <h1 className="text-3xl font-black uppercase tracking-tighter">{receiptData.school.school_name}</h1>
                 <p className="text-sm font-bold">Recibo de Pagamento</p>
+                {receiptData.school.cnpj && <p className="text-[10px] mt-1 text-gray-600">CNPJ: {receiptData.school.cnpj}</p>}
+                {receiptData.school.address && <p className="text-[10px] text-gray-600">{receiptData.school.address}</p>}
               </div>
             </div>
             <div className="text-right text-xs">
@@ -578,8 +581,8 @@ export default function Students() {
 
           <div className="mt-32 pt-12 flex flex-col items-center">
             <div className="w-96 border-t-2 border-black mb-2"></div>
-            <p className="text-sm font-black uppercase">{receiptData.school.school_name}</p>
-            <p className="text-xs">Assinatura / Carimbo do Responsável</p>
+            <p className="text-sm font-black uppercase">{receiptData.school.director || receiptData.school.school_name}</p>
+            <p className="text-xs">{receiptData.school.director ? 'Direção / Responsável' : 'Assinatura / Carimbo do Responsável'}</p>
           </div>
         </div>
       )}
