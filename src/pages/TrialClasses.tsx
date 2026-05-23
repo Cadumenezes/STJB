@@ -147,7 +147,7 @@ export default function TrialClasses() {
           return (
             <div 
               key={trial.id} 
-              className="rounded-3xl p-6 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1"
+              className="rounded-3xl p-8 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1"
               style={{ backgroundColor: 'var(--bg-card)', border: `1px solid var(--border-color)` }}
             >
               <div className="flex justify-between items-start mb-4">

@@ -210,15 +210,15 @@ export default function Dashboard() {
         {cards.map((card) => (
           <div
             key={card.title}
-            className="group relative overflow-hidden rounded-3xl p-4 transition-all duration-300 hover:scale-[1.05] hover:shadow-2xl"
+            className="group relative overflow-hidden rounded-3xl p-6 sm:p-8 transition-all duration-300 hover:scale-[1.05] hover:shadow-2xl"
             style={{
               backgroundColor: 'var(--bg-card)',
               border: '1px solid var(--border-color)',
             }}
           >
             <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-10" style={{ background: card.gradient }} />
-            <div className="relative flex flex-col items-center justify-center h-28 text-center gap-2">
-              <div className="rounded-xl p-2" style={{ background: card.iconBg }}>
+            <div className="relative flex flex-col items-center justify-center h-32 text-center gap-3">
+              <div className="rounded-xl p-3" style={{ background: card.iconBg }}>
                 <card.icon size={26} style={{ color: card.gradient.includes('#8b5cf6') ? '#8b5cf6' : card.gradient.includes('#f43f5e') ? '#f43f5e' : card.gradient.includes('#10b981') ? '#10b981' : '#f59e0b' }} />
               </div>
               <div className="w-full">
