@@ -106,3 +106,15 @@ export interface SchoolSettings {
   created_at: string
   updated_at: string
 }
+
+export interface TrialClass {
+  id: string
+  user_id: string
+  student_name: string
+  phone: string | null
+  class_id: string | null
+  trial_date: string
+  status: 'scheduled' | 'attended' | 'no_show' | 'enrolled'
+  notes: string | null
+  created_at: string
+}

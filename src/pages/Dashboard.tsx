@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Users, AlertTriangle, DollarSign, Cake, TrendingUp, TrendingDown } from 'lucide-react'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, AreaChart, Area, Cell } from 'recharts'
 import { supabase } from '../lib/supabase'
 
 interface DashboardData {
@@ -9,6 +10,7 @@ interface DashboardData {
   todayIncome: number
   todayExpense: number
   birthdaysThisWeek: { name: string; birth_date: string }[]
+  monthlyChartData: any[]
 }
 
 export default function Dashboard() {
@@ -19,6 +21,7 @@ export default function Dashboard() {
     todayIncome: 0,
     todayExpense: 0,
     birthdaysThisWeek: [],
+    monthlyChartData: [],
   })
   const [loading, setLoading] = useState(true)
 
@@ -80,6 +83,38 @@ export default function Dashboard() {
         return thisYearBday >= startOfWeek && thisYearBday <= endOfWeek
       })
 
+      // Fetch last 6 months for chart
+      const sixMonthsAgo = new Date();
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+      sixMonthsAgo.setDate(1);
+      const { data: allFinances } = await supabase
+        .from('financial_entries')
+        .select('*')
+        .gte('date', sixMonthsAgo.toISOString().split('T')[0]);
+
+      const monthlyDataMap: Record<string, any> = {};
+      
+      // Initialize last 6 months
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date();
+        d.setMonth(d.getMonth() - i);
+        const monthStr = d.toISOString().slice(0, 7);
+        const monthLabel = d.toLocaleDateString('pt-BR', { month: 'short' }).toUpperCase();
+        monthlyDataMap[monthStr] = { name: monthLabel, Entradas: 0, Saídas: 0, fullMonth: monthStr };
+      }
+
+      if (allFinances) {
+        allFinances.forEach(entry => {
+          const monthStr = entry.date.slice(0, 7);
+          if (monthlyDataMap[monthStr]) {
+            if (entry.type === 'income') monthlyDataMap[monthStr].Entradas += Number(entry.amount);
+            else if (entry.type === 'expense') monthlyDataMap[monthStr].Saídas += Number(entry.amount);
+          }
+        });
+      }
+
+      const monthlyChartData = Object.values(monthlyDataMap).sort((a, b) => a.fullMonth.localeCompare(b.fullMonth));
+
       setData({
         totalStudents: studentCount || 0,
         overduePayments: overdueCount || 0,
@@ -87,6 +122,7 @@ export default function Dashboard() {
         todayIncome,
         todayExpense,
         birthdaysThisWeek,
+        monthlyChartData,
       })
     } catch (err) {
       console.error('Error loading dashboard:', err)
@@ -193,6 +229,53 @@ export default function Dashboard() {
             <div className="absolute left-0 top-0 h-full w-1" style={{ background: card.gradient }} />
           </div>
         ))}
+      </div>
+
+      
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 gap-6 mb-12">
+        <div className="rounded-3xl p-8 sm:p-10" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+          <h2 className="text-lg font-bold mb-6 flex items-center gap-3" style={{ color: 'var(--text-primary)' }}>
+            <div className="p-2 rounded-xl bg-purple-500/20">
+              <TrendingUp size={20} className="text-purple-400" />
+            </div>
+            Faturamento Mensal (Últimos 6 meses)
+          </h2>
+          <div className="h-[350px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data.monthlyChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" vertical={false} />
+                <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} dy={10} />
+                <YAxis stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `R$ ${v}`} />
+                <RechartsTooltip 
+                  cursor={{ fill: 'var(--border-color)', opacity: 0.4 }}
+                  contentStyle={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '16px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.5)' }}
+                  itemStyle={{ fontSize: '14px', fontWeight: 'bold' }}
+                />
+                <Bar dataKey="Entradas" fill="#10b981" radius={[4, 4, 0, 0]}>
+                  {data.monthlyChartData.map((entry: any, index: number) => (
+                    <Cell key={`cell-in-${index}`} fill="url(#colorEntradas)" />
+                  ))}
+                </Bar>
+                <Bar dataKey="Saídas" fill="#f43f5e" radius={[4, 4, 0, 0]}>
+                  {data.monthlyChartData.map((entry: any, index: number) => (
+                    <Cell key={`cell-out-${index}`} fill="url(#colorSaidas)" />
+                  ))}
+                </Bar>
+                <defs>
+                  <linearGradient id="colorEntradas" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#34d399" stopOpacity={0.9}/>
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0.6}/>
+                  </linearGradient>
+                  <linearGradient id="colorSaidas" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#fb7185" stopOpacity={0.9}/>
+                    <stop offset="95%" stopColor="#f43f5e" stopOpacity={0.6}/>
+                  </linearGradient>
+                </defs>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       </div>
 
       {/* Today's Flow Detail + Birthdays */}

@@ -4,6 +4,7 @@ import { supabase } from './lib/supabase'
 import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
 import Students from './pages/Students'
+import TrialClasses from './pages/TrialClasses'
 import Financial from './pages/Financial'
 import Classes from './pages/Classes'
 import AttendancePage from './pages/Attendance'
@@ -47,6 +48,7 @@ export default function App() {
       <Route path="/" element={session ? <Layout /> : <Navigate to="/auth" />}>
         <Route index element={<Dashboard />} />
         <Route path="students" element={<Students />} />
+        <Route path="trials" element={<TrialClasses />} />
         <Route path="financial" element={<Financial />} />
         <Route path="classes" element={<Classes />} />
         <Route path="attendance" element={<AttendancePage />} />

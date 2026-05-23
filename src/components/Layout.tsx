@@ -12,6 +12,7 @@ import {
   X,
   LogOut,
   HelpCircle,
+  Star,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
@@ -20,6 +21,7 @@ import Modal from './Modal'
 const navItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/students', label: 'Alunos', icon: Users },
+  { path: '/trials', label: 'Experimentais', icon: Star },
   { path: '/financial', label: 'Financeiro', icon: DollarSign },
   { path: '/classes', label: 'Turmas', icon: Music },
   { path: '/attendance', label: 'Chamada', icon: ClipboardCheck },
