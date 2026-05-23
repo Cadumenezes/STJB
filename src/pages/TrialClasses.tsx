@@ -13,6 +13,7 @@ export default function TrialClasses() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [showAddModal, setShowAddModal] = useState(false)
+  const [schoolName, setSchoolName] = useState('DanceFlow')
   
   const [formData, setFormData] = useState({
     student_name: '',
@@ -30,7 +31,9 @@ export default function TrialClasses() {
     setLoading(true)
     const { data: trialsData } = await supabase.from('trial_classes').select('*').order('trial_date', { ascending: false })
     const { data: classesData } = await supabase.from('dance_classes').select('*').order('name')
+    const { data: settings } = await supabase.from('school_settings').select('school_name').limit(1).single()
     
+    if (settings?.school_name) setSchoolName(settings.school_name)
     setTrials(trialsData || [])
     setClasses(classesData || [])
     setLoading(false)
@@ -206,7 +209,7 @@ export default function TrialClasses() {
 
               {trial.phone && (
                 <a
-                  href={`https://wa.me/55${trial.phone.replace(/\\D/g, '')}?text=Olá ${trial.student_name.split(' ')[0]}! Tudo bem? Passando para falar sobre sua aula experimental na DanceFlow!`}
+                  href={`https://wa.me/55${trial.phone.replace(/\\D/g, '')}?text=Olá ${trial.student_name.split(' ')[0]}! Tudo bem? Passando para lembrar do seu compromisso hoje. Te espero aqui no ${schoolName}!`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-xs font-bold text-emerald-400 border border-dashed border-emerald-500/30 hover:bg-emerald-500/10 transition-colors"
