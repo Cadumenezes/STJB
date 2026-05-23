@@ -101,8 +101,12 @@ export interface SchoolSettings {
   bg_color: string
   text_color: string
   accent_color: string
+  bg_card: string
   title_font_size: number
   subtitle_font_size: number
+  cnpj: string | null
+  address: string | null
+  director: string | null
   created_at: string
   updated_at: string
 }
