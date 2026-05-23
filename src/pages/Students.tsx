@@ -21,6 +21,7 @@ export default function Students() {
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
   const [reportData, setReportData] = useState<{ payments: any[], attendance: any[], school: any } | null>(null)
+  const [receiptData, setReceiptData] = useState<{ payment: any, school: any } | null>(null)
   const [formData, setFormData] = useState({
     name: '', email: '', phone: '', birth_date: '', cpf: '', address: '', guardian_name: '', notes: '',
     monthly_fee: '', enrollment_fee: '', class_id: '',
@@ -111,6 +112,20 @@ export default function Students() {
     setTimeout(() => {
       window.print()
       setReportData(null)
+    }, 500)
+  }
+
+
+  async function generateReceipt(student: Student, payment: MonthlyPayment) {
+    const { data: school } = await supabase.from('school_settings').select('*').limit(1).single()
+    setReceiptData({
+      payment,
+      school: school || { school_name: 'DanceFlow' }
+    })
+    setSelectedStudent(student)
+    setTimeout(() => {
+      window.print()
+      setReceiptData(null)
     }, 500)
   }
 
@@ -527,6 +542,38 @@ export default function Students() {
           </div>
         </div>
       )}
+
+      {receiptData && selectedStudent && (
+        <div id="printable-report" className="hidden print:block font-sans text-black">
+          <div className="flex items-center justify-between border-b-2 border-black pb-6 mb-8">
+            <div className="flex items-center gap-6">
+              {receiptData.school.logo_url && (
+                <img src={receiptData.school.logo_url} alt="Logo" className="w-24 h-24 object-contain" />
+              )}
+              <div>
+                <h1 className="text-3xl font-black uppercase tracking-tighter">{receiptData.school.school_name}</h1>
+                <p className="text-sm font-bold">Recibo de Pagamento</p>
+              </div>
+            </div>
+            <div className="text-right text-xs">
+              <p>Data: {new Date((receiptData.payment.paid_date || receiptData.payment.due_date) + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
+              <p>Recibo Nº: {receiptData.payment.id.split('-')[0].toUpperCase()}</p>
+            </div>
+          </div>
+
+          <div className="mb-10 p-12 bg-gray-50 border border-black/10 text-center rounded-2xl">
+            <p className="text-xl">Recebemos de <strong className="uppercase">{selectedStudent.name}</strong></p>
+            <p className="text-lg mt-4">A importância de <strong className="text-4xl block mt-2">R$ {Number(receiptData.payment.amount).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong></p>
+            <p className="text-sm mt-6 text-gray-600">Referente à mensalidade do mês: <strong className="uppercase text-black">{new Date(receiptData.payment.reference_month + '-01').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</strong></p>
+          </div>
+
+          <div className="mt-32 pt-12 flex flex-col items-center">
+            <div className="w-96 border-t-2 border-black mb-2"></div>
+            <p className="text-sm font-black uppercase">{receiptData.school.school_name}</p>
+            <p className="text-xs">Assinatura / Carimbo do Responsável</p>
+          </div>
+        </div>
+      )}
       {/* Header Section with Dynamic Style */}
       <div 
         className="p-8 sm:p-10 pb-16 rounded-2xl border border-white/5 shadow-2xl mb-52 relative overflow-hidden"
@@ -745,13 +792,13 @@ export default function Students() {
               Selecione a mensalidade para confirmar o pagamento de <strong style={{ color: 'var(--text-primary)' }}>{selectedStudent.name}</strong>:
             </p>
             {(() => {
-              const studentPayments = payments.filter((p) => p.student_id === selectedStudent.id && p.status !== 'paid')
+              const studentPayments = payments.filter((p) => p.student_id === selectedStudent.id)
               if (studentPayments.length === 0) {
                 return (
                   <div className="space-y-6">
                     <div className="rounded-2xl p-8 sm:p-10 text-center border-2 border-dashed border-white/5" style={{ backgroundColor: 'var(--bg-secondary)' }}>
                       <p className="text-sm italic mb-4" style={{ color: 'var(--text-muted)' }}>
-                        Nenhuma mensalidade pendente encontrada para este aluno.
+                        Nenhuma mensalidade encontrada para este aluno.
                       </p>
                       <button
                         onClick={() => generatePayment(selectedStudent)}
@@ -771,27 +818,42 @@ export default function Students() {
                     <div
                       key={payment.id}
                       className="flex items-center justify-between rounded-2xl p-4 shadow-lg"
-                      style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}
+                      style={{ 
+                        backgroundColor: 'var(--bg-secondary)', 
+                        border: `1px solid ${payment.status === 'paid' ? 'rgba(16,185,129,0.3)' : 'var(--border-color)'}` 
+                      }}
                     >
                       <div>
-                        <p className="text-xs font-bold uppercase tracking-widest text-purple-400">
+                        <p className={`text-xs font-bold uppercase tracking-widest ${payment.status === 'paid' ? 'text-emerald-400' : 'text-purple-400'}`}>
                           Referência: {payment.reference_month}
+                          {payment.status === 'paid' && ' (PAGO)'}
                         </p>
                         <p className="text-[10px] opacity-60" style={{ color: 'var(--text-muted)' }}>
                           Vencimento: {new Date(payment.due_date + 'T12:00:00').toLocaleDateString('pt-BR')}
                         </p>
-                        <p className="text-lg font-black mt-1" style={{ color: '#10b981' }}>
+                        <p className={`text-lg font-black mt-1 ${payment.status === 'paid' ? 'text-emerald-500' : 'text-rose-400'}`}>
                           R$ {Number(payment.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </p>
                       </div>
-                      <button
-                        onClick={() => handlePayment(selectedStudent.id, payment.id)}
-                        className="flex items-center gap-2 rounded-2xl px-6 py-3 text-xs font-black uppercase tracking-tighter text-white transition-all hover:scale-105 active:scale-95 shadow-lg shadow-emerald-500/20"
-                        style={{ background: 'linear-gradient(135deg, #10b981, #000)' }}
-                      >
-                        <CheckCircle size={16} />
-                        Confirmar
-                      </button>
+                      
+                      {payment.status === 'paid' ? (
+                        <button
+                          onClick={() => generateReceipt(selectedStudent, payment)}
+                          className="flex items-center gap-2 rounded-2xl px-6 py-3 text-xs font-black uppercase tracking-tighter text-emerald-400 transition-all hover:bg-emerald-500/10 active:scale-95 border border-dashed border-emerald-500/30"
+                        >
+                          <Printer size={16} />
+                          Recibo
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handlePayment(selectedStudent.id, payment.id)}
+                          className="flex items-center gap-2 rounded-2xl px-6 py-3 text-xs font-black uppercase tracking-tighter text-white transition-all hover:scale-105 active:scale-95 shadow-lg shadow-emerald-500/20"
+                          style={{ background: 'linear-gradient(135deg, #10b981, #000)' }}
+                        >
+                          <CheckCircle size={16} />
+                          Confirmar
+                        </button>
+                      )}
                     </div>
                   ))}
                   
