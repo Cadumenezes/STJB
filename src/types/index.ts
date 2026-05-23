@@ -9,6 +9,7 @@ export interface Student {
   guardian_name: string
   photo_url: string | null
   class_id: string | null
+  class_ids: string[] | null
   status: 'active' | 'inactive'
   monthly_fee: number
   enrollment_fee: number

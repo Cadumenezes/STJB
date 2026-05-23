@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   Users, UserPlus, Search, Filter, CheckCircle, Clock, AlertTriangle,
-  Edit, Trash2, CreditCard, X, ChevronDown, Music, FileText, Calendar
+  Edit, Trash2, CreditCard, X, ChevronDown, Music, FileText, Calendar, MessageCircle, Printer
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { Student, MonthlyPayment, DanceClass } from '../types'
@@ -24,7 +24,7 @@ export default function Students() {
   const [receiptData, setReceiptData] = useState<{ payment: any, school: any } | null>(null)
   const [formData, setFormData] = useState({
     name: '', email: '', phone: '', birth_date: '', cpf: '', address: '', guardian_name: '', notes: '',
-    monthly_fee: '', enrollment_fee: '', class_id: '',
+    monthly_fee: '', enrollment_fee: '', class_ids: [] as string[],
   })
 
   useEffect(() => {
@@ -161,7 +161,7 @@ export default function Students() {
       birth_date: formData.birth_date || null,
       monthly_fee: parseFloat(formData.monthly_fee) || 0,
       enrollment_fee: parseFloat(formData.enrollment_fee) || 0,
-      class_id: formData.class_id || null,
+      class_ids: formData.class_ids || [],
       status: 'active',
     }
     const { error } = await supabase.from('students').insert([payload])
@@ -183,7 +183,7 @@ export default function Students() {
       birth_date: formData.birth_date || null,
       monthly_fee: parseFloat(formData.monthly_fee) || 0,
       enrollment_fee: parseFloat(formData.enrollment_fee) || 0,
-      class_id: formData.class_id || null,
+      class_ids: formData.class_ids || [],
     }
     const { error } = await supabase.from('students').update(payload).eq('id', selectedStudent.id)
     if (!error) {
@@ -277,7 +277,7 @@ export default function Students() {
       notes: student.notes || '',
       monthly_fee: student.monthly_fee?.toString() || '',
       enrollment_fee: student.enrollment_fee?.toString() || '',
-      class_id: student.class_id || '',
+      class_ids: student.class_ids || (student.class_id ? [student.class_id] : []),
     })
     setShowEditModal(true)
   }
@@ -288,7 +288,7 @@ export default function Students() {
   }
 
   function resetForm() {
-    setFormData({ name: '', email: '', phone: '', birth_date: '', cpf: '', address: '', guardian_name: '', notes: '', monthly_fee: '', enrollment_fee: '', class_id: '' })
+    setFormData({ name: '', email: '', phone: '', birth_date: '', cpf: '', address: '', guardian_name: '', notes: '', monthly_fee: '', enrollment_fee: '', class_ids: [] as string[] })
     setSelectedStudent(null)
   }
 
@@ -316,20 +316,29 @@ export default function Students() {
       <form onSubmit={onSubmit} className="space-y-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="col-span-full">
-            <label className="text-sm font-bold block mb-1.5 text-purple-400 uppercase tracking-widest">Turma Vinculada</label>
-            <div className="relative">
-              <select
-                value={formData.class_id}
-                onChange={(e) => setFormData({ ...formData, class_id: e.target.value })}
-                className="w-full rounded-2xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 appearance-none"
-                style={inputStyle}
-              >
-                <option value="">-- Selecione uma turma --</option>
-                {classes.map(c => (
-                  <option key={c.id} value={c.id}>{c.name} ({c.schedule})</option>
-                ))}
-              </select>
-              <Music className="absolute right-4 top-1/2 -translate-y-1/2 text-purple-400 opacity-50" size={18} />
+            <label className="text-sm font-bold block mb-3 text-purple-400 uppercase tracking-widest">Turmas Vinculadas</label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 rounded-2xl" style={{ backgroundColor: 'var(--bg-input)', border: '1px solid var(--border-color)' }}>
+              {classes.map(c => (
+                <label key={c.id} className="flex items-center gap-3 cursor-pointer group">
+                  <div className="relative flex items-center justify-center w-5 h-5 rounded border border-purple-500/30 group-hover:border-purple-500/60 transition-colors" style={{ backgroundColor: formData.class_ids.includes(c.id) ? 'var(--accent-color)' : 'transparent' }}>
+                    {formData.class_ids.includes(c.id) && <CheckCircle size={14} color="#fff" />}
+                  </div>
+                  <input
+                    type="checkbox"
+                    className="hidden"
+                    checked={formData.class_ids.includes(c.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setFormData({ ...formData, class_ids: [...formData.class_ids, c.id] })
+                      } else {
+                        setFormData({ ...formData, class_ids: formData.class_ids.filter(id => id !== c.id) })
+                      }
+                    }}
+                  />
+                  <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>{c.name}</span>
+                </label>
+              ))}
+              {classes.length === 0 && <span className="text-sm opacity-50" style={{ color: 'var(--text-muted)' }}>Nenhuma turma cadastrada</span>}
             </div>
           </div>
           <div>
@@ -482,7 +491,7 @@ export default function Students() {
               <p className="text-xs font-bold uppercase text-gray-500">Dados do Aluno</p>
               <p className="text-lg font-black uppercase">{selectedStudent.name}</p>
               <p className="text-sm"><b>CPF:</b> {selectedStudent.cpf || 'Não informado'}</p>
-              <p className="text-sm"><b>Turma:</b> {classes.find(c => c.id === selectedStudent.class_id)?.name || 'Sem turma'}</p>
+              <p className="text-sm"><b>Turmas:</b> {selectedStudent.class_ids?.length ? selectedStudent.class_ids.map(id => classes.find(c => c.id === id)?.name).filter(Boolean).join(', ') : 'Nenhuma'}</p>
             </div>
             <div className="space-y-2">
               <p className="text-xs font-bold uppercase text-gray-500">Dados do Responsável</p>
