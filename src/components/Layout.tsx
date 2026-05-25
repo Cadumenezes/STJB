@@ -13,6 +13,7 @@ import {
   LogOut,
   HelpCircle,
   Star,
+  Calendar,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
@@ -25,6 +26,7 @@ const navItems = [
   { path: '/financial', label: 'Financeiro', icon: DollarSign },
   { path: '/classes', label: 'Turmas', icon: Music },
   { path: '/attendance', label: 'Chamada', icon: ClipboardCheck },
+  { path: '/events', label: 'Eventos', icon: Calendar },
   { path: '/inventory', label: 'Estoque', icon: Package },
   { path: '/team', label: 'Equipe', icon: UserCog },
   { path: '/settings', label: 'Configurações', icon: Settings },

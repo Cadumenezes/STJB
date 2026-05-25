@@ -130,3 +130,38 @@ export interface FixedBillMonth {
   amount: number
   created_at: string
 }
+
+export interface Event {
+  id: string
+  name: string
+  date: string
+  location: string | null
+  description: string | null
+  ticket_price?: number
+  cost?: number
+  base_choreography_price?: number
+  base_clothes_cost?: number
+  created_at: string
+}
+
+export interface Installment {
+  id: string
+  value: number
+  paid: boolean
+}
+
+export interface EventParticipant {
+  id: string
+  event_id: string
+  student_id: string
+  has_ticket: boolean
+  ticket_quantity: number
+  total_value: number
+  amount_paid: number
+  kit: boolean
+  payment_method: string | null
+  choreography_count: number
+  clothes_cost: number
+  installments: Installment[]
+  created_at: string
+}

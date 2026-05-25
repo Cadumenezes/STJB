@@ -10,6 +10,7 @@ import Classes from './pages/Classes'
 import AttendancePage from './pages/Attendance'
 import Inventory from './pages/Inventory'
 import Team from './pages/Team'
+import Events from './pages/Events'
 import SettingsPage from './pages/Settings'
 import Auth from './pages/Auth'
 
@@ -51,6 +52,7 @@ export default function App() {
         <Route path="trials" element={<TrialClasses />} />
         <Route path="financial" element={<Financial />} />
         <Route path="classes" element={<Classes />} />
+        <Route path="events" element={<Events />} />
         <Route path="attendance" element={<AttendancePage />} />
         <Route path="inventory" element={<Inventory />} />
         <Route path="team" element={<Team />} />

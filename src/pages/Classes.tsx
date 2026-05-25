@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Plus, Edit, Trash2, Users, Music, UserCheck, Clock } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { DanceClass, TeamMember } from '../types'
+import { DanceClass, TeamMember, Student } from '../types'
 import Modal from '../components/Modal'
 
 export default function Classes() {
   const [classes, setClasses] = useState<DanceClass[]>([])
   const [instructors, setInstructors] = useState<TeamMember[]>([])
+  const [students, setStudents] = useState<Student[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editClass, setEditClass] = useState<DanceClass | null>(null)
@@ -31,6 +32,9 @@ export default function Classes() {
 
     const { data: instructorsData } = await supabase.from('team_members').select('*').eq('role', 'instructor').order('name')
     setInstructors(instructorsData || [])
+
+    const { data: studentsData } = await supabase.from('students').select('*').order('name')
+    setStudents(studentsData || [])
     
     setLoading(false)
   }
@@ -186,6 +190,28 @@ export default function Classes() {
                   <span style={{ color: 'var(--text-secondary)' }}>
                     <strong>Vagas:</strong> {cls.max_students}
                   </span>
+                </div>
+              </div>
+
+              {/* Students List */}
+              <div className="mt-4 pt-4" style={{ borderTop: '1px dashed var(--border-color)' }}>
+                <h4 className="text-xs font-bold uppercase tracking-widest text-purple-400 mb-2">Alunos Matriculados</h4>
+                <div className="max-h-32 overflow-y-auto pr-2 space-y-1 custom-scrollbar">
+                  {(() => {
+                    const classStudents = students.filter(s => s.class_id === cls.id || (s.class_ids && s.class_ids.includes(cls.id)))
+                    if (classStudents.length === 0) {
+                      return <p className="text-xs italic" style={{ color: 'var(--text-muted)' }}>Nenhum aluno nesta turma.</p>
+                    }
+                    return classStudents.map(student => {
+                      const names = student.name.split(' ')
+                      const displayName = names.length > 1 ? `${names[0]} ${names[names.length - 1]}` : names[0]
+                      return (
+                        <div key={student.id} className="text-sm py-1 px-2 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.03)' }}>
+                          <span style={{ color: 'var(--text-primary)' }}>{displayName}</span>
+                        </div>
+                      )
+                    })
+                  })()}
                 </div>
               </div>
 
