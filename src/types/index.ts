@@ -10,7 +10,7 @@ export interface Student {
   photo_url: string | null
   class_id: string | null
   class_ids: string[] | null
-  status: 'active' | 'inactive'
+  status: 'active' | 'inactive' | 'scholarship' | 'locked'
   monthly_fee: number
   enrollment_fee: number
   notes: string
@@ -120,5 +120,13 @@ export interface TrialClass {
   trial_date: string
   status: 'scheduled' | 'attended' | 'no_show' | 'enrolled'
   notes: string | null
+  created_at: string
+}
+
+export interface FixedBillMonth {
+  id: string
+  fixed_bill_id: string
+  month: string
+  amount: number
   created_at: string
 }

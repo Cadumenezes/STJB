@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   Users, UserPlus, Search, Filter, CheckCircle, Clock, AlertTriangle,
-  Edit, Trash2, CreditCard, X, ChevronDown, Music, FileText, Calendar, MessageCircle, Printer
+  Edit, Trash2, CreditCard, X, ChevronDown, Music, FileText, Calendar, MessageCircle, Printer, Lock, GraduationCap
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { Student, MonthlyPayment, DanceClass } from '../types'
@@ -24,7 +24,7 @@ export default function Students() {
   const [receiptData, setReceiptData] = useState<{ payment: any, school: any } | null>(null)
   const [formData, setFormData] = useState({
     name: '', email: '', phone: '', birth_date: '', cpf: '', address: '', guardian_name: '', notes: '',
-    monthly_fee: '', enrollment_fee: '', class_ids: [] as string[],
+    monthly_fee: '', enrollment_fee: '', class_ids: [] as string[], status: 'active' as Student['status'],
   })
 
   useEffect(() => {
@@ -41,7 +41,7 @@ export default function Students() {
     const dueDate = new Date(now.getFullYear(), now.getMonth(), 10).toISOString().split('T')[0]
 
     // Get all active students
-    const { data: activeStudents } = await supabase.from('students').select('*').eq('status', 'active')
+    const { data: activeStudents } = await supabase.from('students').select('*').in('status', ['active', 'scholarship'])
     if (!activeStudents) return
 
     // Get existing payments for this month
@@ -56,9 +56,9 @@ export default function Students() {
       .filter(s => !studentsWithPayment.has(s.id))
       .map(s => ({
         student_id: s.id,
-        amount: s.monthly_fee || 0,
+        amount: s.status === 'scholarship' ? 0 : (s.monthly_fee || 0),
         due_date: dueDate,
-        status: 'pending',
+        status: s.status === 'scholarship' ? 'paid' : 'pending',
         reference_month: currentMonth,
       }))
 
@@ -152,6 +152,8 @@ export default function Students() {
       return status === 'pending' || status === 'none'
     }).length,
     overdue: payments.filter((p) => p.status === 'overdue').length,
+    scholarship: students.filter(s => s.status === 'scholarship').length,
+    locked: students.filter(s => s.status === 'locked').length,
   }
 
   async function handleAddStudent(e: React.FormEvent) {
@@ -162,7 +164,7 @@ export default function Students() {
       monthly_fee: parseFloat(formData.monthly_fee) || 0,
       enrollment_fee: parseFloat(formData.enrollment_fee) || 0,
       class_ids: formData.class_ids || [],
-      status: 'active',
+      status: formData.status || 'active',
     }
     const { error } = await supabase.from('students').insert([payload])
     if (!error) {
@@ -184,6 +186,7 @@ export default function Students() {
       monthly_fee: parseFloat(formData.monthly_fee) || 0,
       enrollment_fee: parseFloat(formData.enrollment_fee) || 0,
       class_ids: formData.class_ids || [],
+      status: formData.status,
     }
     const { error } = await supabase.from('students').update(payload).eq('id', selectedStudent.id)
     if (!error) {
@@ -278,6 +281,7 @@ export default function Students() {
       monthly_fee: student.monthly_fee?.toString() || '',
       enrollment_fee: student.enrollment_fee?.toString() || '',
       class_ids: student.class_ids || (student.class_id ? [student.class_id] : []),
+      status: student.status || 'active',
     })
     setShowEditModal(true)
   }
@@ -288,7 +292,7 @@ export default function Students() {
   }
 
   function resetForm() {
-    setFormData({ name: '', email: '', phone: '', birth_date: '', cpf: '', address: '', guardian_name: '', notes: '', monthly_fee: '', enrollment_fee: '', class_ids: [] as string[] })
+    setFormData({ name: '', email: '', phone: '', birth_date: '', cpf: '', address: '', guardian_name: '', notes: '', monthly_fee: '', enrollment_fee: '', class_ids: [] as string[], status: 'active' as Student['status'] })
     setSelectedStudent(null)
   }
 
@@ -304,6 +308,8 @@ export default function Students() {
     { label: 'Pagos este Mês', value: stats.paid, icon: CheckCircle, color: '#10b981', bg: 'rgba(16,185,129,0.15)' },
     { label: 'Pendentes', value: stats.pending, icon: Clock, color: '#f59e0b', bg: 'rgba(245,158,11,0.15)' },
     { label: 'Atrasados', value: stats.overdue, icon: AlertTriangle, color: '#f43f5e', bg: 'rgba(244,63,94,0.15)' },
+    { label: 'Bolsistas', value: stats.scholarship, icon: GraduationCap, color: '#3b82f6', bg: 'rgba(59,130,246,0.15)' },
+    { label: 'Trancados', value: stats.locked, icon: Lock, color: '#6b7280', bg: 'rgba(107,114,128,0.15)' },
   ]
 
   const inputStyle: React.CSSProperties = {
@@ -415,6 +421,30 @@ export default function Students() {
                 className="w-full rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
                 style={inputStyle}
               />
+            </div>
+          </div>
+          <div className="col-span-full">
+            <label className="text-sm font-bold block mb-3 text-purple-400 uppercase tracking-widest">Status do Aluno</label>
+            <div className="flex gap-3">
+              {[
+                { value: 'active', label: 'Ativo', color: '#10b981', bg: 'rgba(16,185,129,0.15)' },
+                { value: 'scholarship', label: 'Bolsista', color: '#3b82f6', bg: 'rgba(59,130,246,0.15)' },
+                { value: 'locked', label: 'Trancado', color: '#6b7280', bg: 'rgba(107,114,128,0.15)' },
+              ].map(opt => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, status: opt.value as any })}
+                  className="flex-1 rounded-2xl px-4 py-3 text-sm font-bold transition-all"
+                  style={{
+                    backgroundColor: formData.status === opt.value ? opt.bg : 'var(--bg-input)',
+                    color: formData.status === opt.value ? opt.color : 'var(--text-muted)',
+                    border: `2px solid ${formData.status === opt.value ? opt.color : 'var(--border-color)'}`,
+                  }}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
           </div>
         </div>
@@ -630,7 +660,7 @@ export default function Students() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 mb-12">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6 mb-12">
         {statCards.map((card) => (
           <div
             key={card.label}
@@ -722,6 +752,15 @@ export default function Students() {
                           <div>
                             <p className="text-sm font-black uppercase tracking-tight" style={{ color: 'var(--text-primary)' }}>{student.name}</p>
                             <p className="text-[10px] opacity-50" style={{ color: 'var(--text-muted)' }}>{student.email}</p>
+                            <span
+                              className="inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider mt-1"
+                              style={{
+                                backgroundColor: student.status === 'active' ? 'rgba(16,185,129,0.15)' : student.status === 'scholarship' ? 'rgba(59,130,246,0.15)' : 'rgba(107,114,128,0.15)',
+                                color: student.status === 'active' ? '#10b981' : student.status === 'scholarship' ? '#3b82f6' : '#6b7280',
+                              }}
+                            >
+                              {student.status === 'active' ? 'Ativo' : student.status === 'scholarship' ? 'Bolsista' : student.status === 'locked' ? 'Trancado' : 'Inativo'}
+                            </span>
                           </div>
                         </div>
                       </td>

@@ -26,6 +26,8 @@ export default function Financial() {
   const [showFixedModal, setShowFixedModal] = useState(false)
   const [editEntry, setEditEntry] = useState<FinancialEntry | null>(null)
   const [editFixed, setEditFixed] = useState<FixedBill | null>(null)
+  const [fixedBillMonths, setFixedBillMonths] = useState<{id: string, fixed_bill_id: string, month: string, amount: number}[]>([])
+  const [editingMonthBill, setEditingMonthBill] = useState<{billId: string, month: string, amount: string} | null>(null)
   const [filter, setFilter] = useState<'all' | 'income' | 'expense'>('all')
   
   const [formData, setFormData] = useState({
@@ -81,6 +83,9 @@ export default function Financial() {
 
         const { data: fixedData } = await supabase.from('fixed_bills').select('*').order('due_day')
         setFixedBills(fixedData || [])
+
+        const { data: monthsData } = await supabase.from('fixed_bill_months').select('*').order('month')
+        setFixedBillMonths(monthsData || [])
       }
     } catch (error) {
       console.error('Erro ao carregar dados:', error)
@@ -150,11 +155,12 @@ export default function Financial() {
         await supabase.from('financial_entries').delete().eq('id', entryToDelete.id)
       }
     } else {
+      const monthAmount = getFixedBillAmountForMonth(bill.id, currentMonthStr, bill.amount)
       const payload = {
         type: 'expense',
         category: bill.category,
         description: `[FIXA] ${bill.description}`,
-        amount: bill.amount,
+        amount: monthAmount,
         date: new Date().toISOString().split('T')[0],
         is_fixed: true,
         fixed_bill_id: bill.id
@@ -163,7 +169,6 @@ export default function Financial() {
     }
     loadData()
   }
-
   async function handleDelete(id: string) {
     if (!confirm('Excluir esta entrada?')) return
     const { error } = await supabase.from('financial_entries').delete().eq('id', id)
@@ -175,6 +180,22 @@ export default function Financial() {
     if (!confirm('Excluir esta conta fixa?')) return
     const { error } = await supabase.from('fixed_bills').delete().eq('id', id)
     if (error) alert('Erro ao excluir')
+    loadData()
+  }
+
+  function getFixedBillAmountForMonth(billId: string, month: string, defaultAmount: number): number {
+    const override = fixedBillMonths.find(m => m.fixed_bill_id === billId && m.month === month)
+    return override ? Number(override.amount) : defaultAmount
+  }
+
+  async function saveMonthAmount(billId: string, month: string, amount: number) {
+    const existing = fixedBillMonths.find(m => m.fixed_bill_id === billId && m.month === month)
+    if (existing) {
+      await supabase.from('fixed_bill_months').update({ amount }).eq('id', existing.id)
+    } else {
+      await supabase.from('fixed_bill_months').insert([{ fixed_bill_id: billId, month, amount }])
+    }
+    setEditingMonthBill(null)
     loadData()
   }
 
@@ -210,6 +231,30 @@ export default function Financial() {
       gradient: currentBalance >= 0 ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #f43f5e, #be123c)',
     },
     {
+      label: 'Entradas (Mês)',
+      value: monthIncome,
+      icon: ArrowUpCircle,
+      color: '#10b981',
+      bg: 'rgba(16,185,129,0.15)',
+      gradient: 'linear-gradient(135deg, #10b981, #059669)',
+    },
+    {
+      label: 'Saídas (Mês)',
+      value: monthExpense,
+      icon: ArrowDownCircle,
+      color: '#f43f5e',
+      bg: 'rgba(244,63,94,0.15)',
+      gradient: 'linear-gradient(135deg, #f43f5e, #be123c)',
+    },
+    {
+      label: 'Saldo do Mês',
+      value: monthIncome - monthExpense,
+      icon: DollarSign,
+      color: (monthIncome - monthExpense) >= 0 ? '#10b981' : '#f43f5e',
+      bg: (monthIncome - monthExpense) >= 0 ? 'rgba(16,185,129,0.15)' : 'rgba(244,63,94,0.15)',
+      gradient: (monthIncome - monthExpense) >= 0 ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #f43f5e, #be123c)',
+    },
+    {
       label: 'Ganhos Hoje',
       value: todayIncome,
       icon: TrendingUp,
@@ -232,14 +277,6 @@ export default function Financial() {
       color: '#a78bfa',
       bg: 'rgba(167,139,250,0.1)',
       gradient: 'linear-gradient(135deg, #a78bfa, #7c3aed)',
-    },
-    {
-      label: 'Entradas (Mês)',
-      value: monthIncome,
-      icon: ArrowUpCircle,
-      color: '#10b981',
-      bg: 'rgba(16,185,129,0.15)',
-      gradient: 'linear-gradient(135deg, #10b981, #059669)',
     },
   ]
 
@@ -334,7 +371,7 @@ export default function Financial() {
       {activeTab === 'flow' && (
         <>
           {/* Summary Cards */}
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
             {summaryCards.map((card) => (
               <div
                 key={card.label}
@@ -355,6 +392,58 @@ export default function Financial() {
                 <div className="absolute left-0 top-0 h-full w-1" style={{ background: card.gradient }} />
               </div>
             ))}
+          </div>
+
+          {/* Monthly Report */}
+          <div className="rounded-3xl p-8 shadow-xl mt-8 mb-8" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+            <h3 className="text-lg font-black uppercase tracking-tighter mb-6" style={{ color: 'var(--text-primary)' }}>
+              📊 Relatório de {new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+            </h3>
+            <div className="space-y-6">
+              {/* Income bar */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-bold text-emerald-400">Entradas</span>
+                  <span className="text-sm font-black text-emerald-400">
+                    R$ {monthIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <div className="w-full h-4 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(16,185,129,0.1)' }}>
+                  <div
+                    className="h-full rounded-full transition-all duration-1000"
+                    style={{
+                      width: `${Math.max(monthIncome, monthExpense) > 0 ? (monthIncome / Math.max(monthIncome, monthExpense)) * 100 : 0}%`,
+                      background: 'linear-gradient(90deg, #10b981, #34d399)',
+                    }}
+                  />
+                </div>
+              </div>
+              {/* Expense bar */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-bold text-rose-400">Saídas</span>
+                  <span className="text-sm font-black text-rose-400">
+                    R$ {monthExpense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <div className="w-full h-4 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(244,63,94,0.1)' }}>
+                  <div
+                    className="h-full rounded-full transition-all duration-1000"
+                    style={{
+                      width: `${Math.max(monthIncome, monthExpense) > 0 ? (monthExpense / Math.max(monthIncome, monthExpense)) * 100 : 0}%`,
+                      background: 'linear-gradient(90deg, #f43f5e, #fb7185)',
+                    }}
+                  />
+                </div>
+              </div>
+              {/* Net result */}
+              <div className="pt-4 border-t border-white/5 flex justify-between items-center">
+                <span className="text-sm font-bold" style={{ color: 'var(--text-secondary)' }}>Resultado do Mês</span>
+                <span className={`text-xl font-black ${(monthIncome - monthExpense) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {(monthIncome - monthExpense) >= 0 ? '+' : ''} R$ {(monthIncome - monthExpense).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </span>
+              </div>
+            </div>
           </div>
 
           {/* Filter */}
@@ -458,7 +547,7 @@ export default function Financial() {
       )}
 
       {activeTab === 'fixed' && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-bold text-white">Minhas Contas Fixas</h2>
             <button
@@ -470,25 +559,36 @@ export default function Financial() {
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-6">
             {fixedBills.length === 0 ? (
-              <div className="col-span-full py-12 text-center bg-black/20 rounded-2xl border border-dashed border-white/10">
+              <div className="py-12 text-center bg-black/20 rounded-2xl border border-dashed border-white/10">
                 <p className="text-[var(--text-muted)]">Nenhuma conta fixa configurada.</p>
               </div>
             ) : (
               fixedBills.map(bill => {
                 const isPaid = entries.some(e => e.fixed_bill_id === bill.id && e.date.startsWith(currentMonthStr))
+                const currentAmount = getFixedBillAmountForMonth(bill.id, currentMonthStr, bill.amount)
+                
+                // Generate 6 months: 3 past + current + 2 future
+                const months: string[] = []
+                const now = new Date()
+                for (let i = -2; i <= 3; i++) {
+                  const d = new Date(now.getFullYear(), now.getMonth() + i, 1)
+                  months.push(d.toISOString().slice(0, 7))
+                }
+
                 return (
                   <div 
                     key={bill.id} 
-                    className="p-5 rounded-2xl border transition-all" 
+                    className="rounded-3xl border overflow-hidden transition-all" 
                     style={{ 
                       backgroundColor: 'var(--bg-card)', 
                       borderColor: isPaid ? 'rgba(16,185,129,0.3)' : 'var(--border-color)',
                       opacity: bill.active ? 1 : 0.6
                     }}
                   >
-                    <div className="flex justify-between items-start mb-4">
+                    {/* Header */}
+                    <div className="p-6 flex justify-between items-start">
                       <div className="flex items-center gap-3">
                         <button 
                           onClick={() => toggleFixedPaid(bill, isPaid)}
@@ -498,41 +598,101 @@ export default function Financial() {
                         </button>
                         <div>
                           <h3 className="font-bold text-lg text-white leading-tight">{bill.description}</h3>
-                          <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider">Vence todo dia {bill.due_day}</p>
+                          <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider">Vence todo dia {bill.due_day} • Valor base: R$ {Number(bill.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className={`text-lg font-black ${isPaid ? 'text-emerald-400' : 'text-white'}`}>
-                          R$ {Number(bill.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                        </p>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isPaid ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
-                          {isPaid ? 'PAGO' : 'PENDENTE'}
-                        </span>
+                      <div className="flex items-center gap-2">
+                        <div className="text-right mr-4">
+                          <p className={`text-lg font-black ${isPaid ? 'text-emerald-400' : 'text-white'}`}>
+                            R$ {currentAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </p>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isPaid ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                            {isPaid ? 'PAGO' : 'PENDENTE'}
+                          </span>
+                        </div>
+                        <button 
+                          onClick={() => {
+                            setEditFixed(bill)
+                            setFixedFormData({
+                              description: bill.description,
+                              amount: bill.amount.toString(),
+                              category: bill.category || '',
+                              due_day: bill.due_day.toString()
+                            })
+                            setShowFixedModal(true)
+                          }}
+                          className="p-2 text-[var(--text-muted)] hover:text-blue-400 transition-colors"
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteFixed(bill.id)}
+                          className="p-2 text-[var(--text-muted)] hover:text-rose-400 transition-colors"
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </div>
                     </div>
-                    
-                    <div className="flex justify-end gap-2 pt-3 border-t border-white/5">
-                      <button 
-                        onClick={() => {
-                          setEditFixed(bill)
-                          setFixedFormData({
-                            description: bill.description,
-                            amount: bill.amount.toString(),
-                            category: bill.category || '',
-                            due_day: bill.due_day.toString()
-                          })
-                          setShowFixedModal(true)
-                        }}
-                        className="p-2 text-[var(--text-muted)] hover:text-blue-400 transition-colors"
-                      >
-                        <Edit size={16} />
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteFixed(bill.id)}
-                        className="p-2 text-[var(--text-muted)] hover:text-rose-400 transition-colors"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+
+                    {/* Month cards */}
+                    <div className="px-6 pb-6">
+                      <p className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--text-muted)' }}>Valores por Mês</p>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+                        {months.map(month => {
+                          const mAmount = getFixedBillAmountForMonth(bill.id, month, bill.amount)
+                          const isCurrent = month === currentMonthStr
+                          const isEditing = editingMonthBill?.billId === bill.id && editingMonthBill?.month === month
+                          const monthLabel = new Date(month + '-15').toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
+                          const monthPaid = entries.some(e => e.fixed_bill_id === bill.id && e.date.startsWith(month))
+
+                          return (
+                            <div
+                              key={month}
+                              className={`rounded-2xl p-3 text-center transition-all cursor-pointer hover:scale-105 ${isCurrent ? 'ring-2 ring-purple-500' : ''}`}
+                              style={{
+                                backgroundColor: monthPaid ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.03)',
+                                border: `1px solid ${monthPaid ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.05)'}`,
+                              }}
+                              onClick={() => {
+                                if (!isEditing) {
+                                  setEditingMonthBill({ billId: bill.id, month, amount: mAmount.toString() })
+                                }
+                              }}
+                            >
+                              <p className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${isCurrent ? 'text-purple-400' : ''}`} style={{ color: isCurrent ? undefined : 'var(--text-muted)' }}>
+                                {monthLabel}
+                              </p>
+                              {isEditing ? (
+                                <div className="flex flex-col gap-1" onClick={e => e.stopPropagation()}>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    value={editingMonthBill.amount}
+                                    onChange={e => setEditingMonthBill({ ...editingMonthBill, amount: e.target.value })}
+                                    className="w-full rounded-lg px-2 py-1 text-xs text-center font-bold focus:outline-none focus:ring-1 focus:ring-purple-500"
+                                    style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}
+                                    autoFocus
+                                    onKeyDown={e => {
+                                      if (e.key === 'Enter') saveMonthAmount(bill.id, month, parseFloat(editingMonthBill.amount) || 0)
+                                      if (e.key === 'Escape') setEditingMonthBill(null)
+                                    }}
+                                  />
+                                  <button
+                                    onClick={() => saveMonthAmount(bill.id, month, parseFloat(editingMonthBill.amount) || 0)}
+                                    className="text-[9px] font-bold text-emerald-400 hover:text-emerald-300 transition-colors"
+                                  >
+                                    ✓ Salvar
+                                  </button>
+                                </div>
+                              ) : (
+                                <p className={`text-sm font-black ${monthPaid ? 'text-emerald-400' : 'text-white'}`}>
+                                  R$ {mAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </p>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
                     </div>
                   </div>
                 )
