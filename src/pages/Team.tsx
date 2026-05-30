@@ -118,6 +118,28 @@ export default function Team() {
     }
   }
 
+  function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      alert('Por favor, selecione um arquivo de imagem válido.')
+      return
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert('A imagem é muito grande. O tamanho máximo é 2MB.')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string
+      setFormData({ ...formData, photo_url: base64 })
+    }
+    reader.readAsDataURL(file)
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const payload = {
@@ -517,8 +539,47 @@ export default function Team() {
             </div>
 
             <div className="sm:col-span-2">
-              <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>URL da Foto do Professor</label>
-              <input value={formData.photo_url} onChange={(e) => setFormData({ ...formData, photo_url: e.target.value })} placeholder="Link público da imagem (ex: https://...)" className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all" style={inputStyle} />
+              <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Foto do Membro da Equipe</label>
+              
+              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center mt-2">
+                {formData.photo_url ? (
+                  <div className="p-1 rounded-2xl border border-dashed flex justify-center items-center bg-black/20 w-24 h-24 shrink-0 overflow-hidden" style={{ borderColor: 'var(--border-color)' }}>
+                    <img src={formData.photo_url} alt="Foto Preview" className="h-full w-full object-cover rounded-xl" />
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-2xl border border-dashed flex justify-center items-center bg-black/20 w-24 h-24 shrink-0" style={{ borderColor: 'var(--border-color)' }}>
+                    <span className="text-[10px] text-center" style={{ color: 'var(--text-muted)' }}>Sem foto</span>
+                  </div>
+                )}
+                
+                <div className="flex-1 space-y-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="block w-full text-xs
+                      file:mr-4 file:py-2 file:px-4
+                      file:rounded-xl file:border-0
+                      file:text-xs file:font-semibold
+                      file:bg-purple-600 file:text-white
+                      hover:file:bg-purple-700
+                      cursor-pointer transition-colors"
+                    style={{ color: 'var(--text-secondary)' }}
+                  />
+                  <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                    Tamanho máximo recomendado: 2MB.
+                  </p>
+                  {formData.photo_url && (
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, photo_url: '' })}
+                      className="text-xs text-rose-400 hover:text-rose-300 font-medium transition-colors cursor-pointer"
+                    >
+                      Remover foto
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
             
             {/* Seção Financeira com Destaque */}
