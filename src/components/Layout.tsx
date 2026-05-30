@@ -1051,22 +1051,24 @@ export default function Layout() {
         </div>
       )}
       {/* Floating Diagnostics HUD button */}
-      <div className="fixed bottom-6 right-6 z-[100] no-print">
-        <button
-          onClick={() => setShowSimulator(true)}
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-tr from-purple-600 to-pink-600 text-white shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 relative group"
-          title="Varredura de Diagnóstico IA"
-        >
-          <Sparkles size={24} className="animate-pulse" />
-          <span className="absolute -top-1 -right-1 flex h-4 w-4">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 text-[8px] font-black text-white items-center justify-center font-sans">IA</span>
-          </span>
-        </button>
-      </div>
+      {profile?.email === 'alzirocarloseduardo@gmail.com' && (
+        <div className="fixed bottom-6 right-6 z-[100] no-print">
+          <button
+            onClick={() => setShowSimulator(true)}
+            className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-tr from-purple-600 to-pink-600 text-white shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 relative group"
+            title="Varredura de Diagnóstico IA"
+          >
+            <Sparkles size={24} className="animate-pulse" />
+            <span className="absolute -top-1 -right-1 flex h-4 w-4">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500 text-[8px] font-black text-white items-center justify-center font-sans">IA</span>
+            </span>
+          </button>
+        </div>
+      )}
 
       {/* Simulator Modal / Panel HUD */}
-      {showSimulator && (
+      {showSimulator && profile?.email === 'alzirocarloseduardo@gmail.com' && (
         <div className="fixed inset-0 z-[150] flex items-center justify-end p-4 md:p-6 no-print">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isSimulating && setShowSimulator(false)} />
           
