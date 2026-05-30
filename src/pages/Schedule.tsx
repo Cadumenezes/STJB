@@ -311,7 +311,7 @@ export default function Schedule() {
     }
 
     return (
-      <div className="grid grid-cols-7 rounded-2xl overflow-hidden shadow-xl" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+      <div className="grid grid-cols-7 rounded-none overflow-hidden shadow-xl" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
         {/* Day name headers */}
         {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(d => (
           <div key={d} className="p-3 text-center text-xs font-bold text-gray-500 uppercase tracking-widest bg-black/40 border border-white/5">
@@ -340,7 +340,7 @@ export default function Schedule() {
       }).sort((a, b) => a.date.localeCompare(b.date))
 
       semestralMonths.push(
-        <div key={`sem-${i}`} className="p-6 rounded-2xl shadow-xl space-y-4" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+        <div key={`sem-${i}`} className="p-6 rounded-none shadow-xl space-y-4" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
           <div className="flex justify-between items-center pb-2 border-b border-white/5">
             <h3 className="text-sm font-black uppercase tracking-wider text-purple-400">
               {curMonthName} <span className="text-gray-500 text-xs">({curYear})</span>
@@ -527,7 +527,7 @@ export default function Schedule() {
       </div>
 
       {/* View Toggles Toolbar */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-between items-center p-3 rounded-2xl shadow-xl border" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-center p-3 rounded-none shadow-xl border" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
         {/* Navigation for Monthly View */}
         {viewMode === 'monthly' ? (
           <div className="flex items-center gap-3">
@@ -604,7 +604,7 @@ export default function Schedule() {
         {/* Right Side Sidebar: Selected Day Details (Only visible in Monthly Mode) */}
         {viewMode === 'monthly' && (
           <div className="w-full lg:w-80 shrink-0 space-y-6">
-            <div className="p-6 rounded-2xl shadow-xl space-y-5" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+            <div className="p-6 rounded-none shadow-xl space-y-5" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
               <div className="pb-3 border-b border-white/5 space-y-1">
                 <span className="text-[9px] font-black uppercase tracking-widest text-purple-400">Compromissos do Dia</span>
                 <h3 className="text-base font-black text-white leading-none">

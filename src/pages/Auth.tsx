@@ -45,8 +45,8 @@ export default function Auth() {
   return (
     <div className="min-h-screen w-full flex bg-[#06060c] text-white selection:bg-purple-500/30 font-sans overflow-hidden">
       
-      {/* Left Column: Compact Login Form (35% on large screens, full screen on mobile) */}
-      <div className="w-full md:w-[40%] lg:w-[35%] flex flex-col justify-between p-8 sm:p-10 lg:p-12 relative z-10 bg-[#0a0a0f] border-r border-white/5 shrink-0">
+      {/* Left Column: Compact Login Form (30% on large screens, full screen on mobile) */}
+      <div className="w-full md:w-[35%] lg:w-[30%] xl:w-[26%] flex flex-col justify-between p-6 sm:p-8 relative z-10 bg-[#0a0a0f] border-r border-white/5 shrink-0 overflow-y-auto">
         {/* Subtle Background Accent */}
         <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-purple-600/5 blur-[100px] pointer-events-none -z-10" />
 
@@ -58,13 +58,29 @@ export default function Auth() {
           <span className="text-base font-black tracking-tight text-white">Dance<span className="text-purple-500">Flow</span></span>
         </div>
 
+        {/* Brand Quote (Completely separate, on top of where login is made!) */}
+        <div className="w-full p-4 rounded-xl bg-black/40 border border-white/5 backdrop-blur-md shadow-2xl space-y-2 mt-6">
+          <div className="flex items-center gap-2">
+            <div className="h-5 w-5 rounded-lg flex items-center justify-center bg-purple-500/20 text-purple-400">
+              <Sparkles size={11} />
+            </div>
+            <span className="text-[9px] text-purple-400 uppercase tracking-widest font-black">Tecnologia & Arte em Movimento</span>
+          </div>
+          <blockquote className="text-[10px] italic leading-relaxed text-gray-300">
+            "A dança é a linguagem secreta da alma. Nosso propósito é fazer a gestão da sua escola fluir tão suavemente quanto cada passo de dança."
+          </blockquote>
+          <div>
+            <h4 className="font-bold text-[9px] text-white">DanceFlow Management</h4>
+          </div>
+        </div>
+
         {/* Form Container */}
-        <div className="my-auto py-8">
+        <div className="my-auto py-6">
           <div className="mb-6">
-            <h2 className="text-xl font-bold tracking-tight text-white">
+            <h2 className="text-lg font-bold tracking-tight text-white">
               {isLogin ? 'Bem-vindo de volta' : 'Crie sua conta comercial'}
             </h2>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-[11px] text-gray-400 mt-1">
               {isLogin 
                 ? 'Insira suas credenciais abaixo para gerenciar sua escola.' 
                 : 'Preencha os campos para iniciar sua experiência no DanceFlow.'}
@@ -96,40 +112,43 @@ export default function Auth() {
 
             <div className="space-y-3">
               <div className="relative group">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-500 transition-colors" size={15} />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-500 transition-colors z-10" size={15} />
                 <input
                   type="email"
                   required
                   placeholder="Seu e-mail"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-black/30 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
+                  className="w-full bg-black/30 border border-white/10 rounded-xl pr-4 py-2.5 text-xs text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
+                  style={{ paddingLeft: '44px' }}
                 />
               </div>
 
               {!isLogin && (
                 <div className="relative group">
-                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-500 transition-colors" size={15} />
+                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-500 transition-colors z-10" size={15} />
                   <input
                     type="tel"
                     required
                     placeholder="Telefone / WhatsApp"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full bg-black/30 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
+                    className="w-full bg-black/30 border border-white/10 rounded-xl pr-4 py-2.5 text-xs text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
+                    style={{ paddingLeft: '44px' }}
                   />
                 </div>
               )}
 
               <div className="relative group">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-500 transition-colors" size={15} />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-500 transition-colors z-10" size={15} />
                 <input
                   type="password"
                   required
                   placeholder="Sua senha"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-black/30 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
+                  className="w-full bg-black/30 border border-white/10 rounded-xl pr-4 py-2.5 text-xs text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
+                  style={{ paddingLeft: '44px' }}
                 />
               </div>
             </div>
@@ -168,26 +187,10 @@ export default function Auth() {
       </div>
 
       {/* Right Column: Visual Humanized Panel (SaaS Split-Screen Grid) */}
-      <div className="hidden md:flex md:w-[60%] lg:w-[65%] flex-col justify-between p-8 lg:p-12 bg-[#06060c] overflow-y-auto relative border-l border-white/5 shrink-0">
+      <div className="hidden md:flex md:w-[65%] lg:w-[70%] xl:w-[74%] flex-col justify-between p-8 bg-[#06060c] overflow-y-auto relative border-l border-white/5 shrink-0">
         
         {/* Subtle Radial Glow */}
         <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-purple-600/10 blur-[130px] pointer-events-none -z-10" />
-
-        {/* Brand Quote (Completely separate, not overlaying any photo!) */}
-        <div className="w-full p-6 rounded-2xl bg-black/40 border border-white/5 backdrop-blur-md shadow-2xl space-y-3.5 mb-8 shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="h-6 w-6 rounded-lg flex items-center justify-center bg-purple-500/20 text-purple-400">
-              <Sparkles size={14} />
-            </div>
-            <span className="text-[10px] text-purple-400 uppercase tracking-widest font-black">Tecnologia & Arte em Movimento</span>
-          </div>
-          <blockquote className="text-xs italic leading-relaxed text-gray-300">
-            "A dança é a linguagem secreta da alma. Nosso propósito é fazer a gestão da sua escola fluir tão suavemente quanto cada passo de dança."
-          </blockquote>
-          <div>
-            <h4 className="font-bold text-[11px] text-white">DanceFlow Management</h4>
-          </div>
-        </div>
 
         {/* Gallery of multiple images (Fully visible, completely uncovered!) */}
         <div className="flex-1 w-full grid grid-cols-1 lg:grid-cols-4 gap-4 min-h-[300px]">

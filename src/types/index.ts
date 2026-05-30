@@ -141,6 +141,7 @@ export interface Event {
   cost?: number
   base_choreography_price?: number
   base_clothes_cost?: number
+  photo_urls?: string[] | null
   created_at: string
 }
 

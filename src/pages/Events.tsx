@@ -32,7 +32,8 @@ export default function Events() {
     ticket_price: 0,
     cost: 0,
     base_choreography_price: 0,
-    base_clothes_cost: 0
+    base_clothes_cost: 0,
+    photos: ''
   })
 
   useEffect(() => {
@@ -66,12 +67,28 @@ export default function Events() {
   async function handleEventSubmit(e: React.FormEvent) {
     e.preventDefault()
     
+    const photoUrlsArray = eventFormData.photos
+      ? eventFormData.photos.split(',').map(url => url.trim()).filter(Boolean)
+      : []
+
+    const payload = {
+      name: eventFormData.name,
+      date: eventFormData.date,
+      location: eventFormData.location,
+      description: eventFormData.description,
+      ticket_price: eventFormData.ticket_price,
+      cost: eventFormData.cost,
+      base_choreography_price: eventFormData.base_choreography_price,
+      base_clothes_cost: eventFormData.base_clothes_cost,
+      photo_urls: photoUrlsArray
+    }
+
     let error = null
     if (editEvent) {
-      const res = await supabase.from('events').update(eventFormData).eq('id', editEvent.id)
+      const res = await supabase.from('events').update(payload).eq('id', editEvent.id)
       error = res.error
     } else {
-      const res = await supabase.from('events').insert([eventFormData]).select()
+      const res = await supabase.from('events').insert([payload]).select()
       error = res.error
       if (!error && res.data && res.data.length > 0) {
         setActiveEventId(res.data[0].id)
@@ -83,6 +100,17 @@ export default function Events() {
     } else {
       setShowEventModal(false)
       setEditEvent(null)
+      setEventFormData({
+        name: '',
+        date: new Date().toISOString().split('T')[0],
+        location: '',
+        description: '',
+        ticket_price: 0,
+        cost: 0,
+        base_choreography_price: 0,
+        base_clothes_cost: 0,
+        photos: ''
+      })
       loadData()
     }
   }
@@ -104,7 +132,8 @@ export default function Events() {
       ticket_price: ev.ticket_price || 0,
       cost: ev.cost || 0,
       base_choreography_price: ev.base_choreography_price || 0,
-      base_clothes_cost: ev.base_clothes_cost || 0
+      base_clothes_cost: ev.base_clothes_cost || 0,
+      photos: ev.photo_urls ? ev.photo_urls.join(', ') : ''
     })
     setShowEventModal(true)
   }
@@ -391,7 +420,7 @@ export default function Events() {
             <button
               onClick={() => {
                 setEditEvent(null)
-                setEventFormData({ name: '', date: new Date().toISOString().split('T')[0], location: '', description: '', ticket_price: 0, cost: 0, base_choreography_price: 0, base_clothes_cost: 0 })
+                setEventFormData({ name: '', date: new Date().toISOString().split('T')[0], location: '', description: '', ticket_price: 0, cost: 0, base_choreography_price: 0, base_clothes_cost: 0, photos: '' })
                 setShowEventModal(true)
               }}
               className="flex items-center gap-2 rounded-2xl px-8 py-4 text-sm font-bold text-white transition-all hover:scale-105 shadow-xl"
@@ -433,7 +462,7 @@ export default function Events() {
             <div className="space-y-8">
               {/* Highlighted Event Title/Subtitle Header */}
               <div 
-                className="p-8 sm:p-10 pb-16 rounded-3xl border border-white/5 shadow-2xl mb-8 relative overflow-hidden"
+                className="p-8 sm:p-10 pb-16 rounded-none border border-white/5 shadow-2xl mb-8 relative overflow-hidden"
                 style={{ backgroundColor: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)' }}
               >
                 {/* Accent Glow */}
@@ -445,7 +474,7 @@ export default function Events() {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
                   <div className="space-y-4">
                     <h2 
-                      className="font-black tracking-tighter leading-tight inline-block py-8 rounded-2xl shadow-2xl shadow-purple-500/30" 
+                      className="font-black tracking-tighter leading-tight inline-block py-8 rounded-none shadow-2xl shadow-purple-500/30" 
                       style={{ 
                         backgroundColor: 'var(--accent-color)', 
                         color: '#fff',
@@ -458,7 +487,7 @@ export default function Events() {
                     </h2>
                     <br />
                     <p 
-                      className="font-bold inline-block py-6 mt-2 rounded-2xl shadow-xl border border-white/10" 
+                      className="font-bold inline-block py-6 mt-2 rounded-none shadow-xl border border-white/10" 
                        style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', paddingLeft: '32px', paddingRight: '32px' }}
                     >
                       {activeEvent.description || 'Sem descrição'} {activeEvent.location ? `• Local: ${activeEvent.location}` : ''}
@@ -469,42 +498,42 @@ export default function Events() {
 
               {/* Event Summary Cards */}
               <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-                <div className="p-6 rounded-3xl border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
+                <div className="p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
                   <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">Participantes</p>
                   <p className={`font-black text-white ${getDynamicFontSize(currentParticipants.length)}`}>{currentParticipants.length}</p>
                 </div>
-                <div className="p-6 rounded-3xl border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
+                <div className="p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
                   <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">Custo do Evento</p>
                   <p className={`font-black text-rose-400 ${getDynamicFontSize(`R$ ${Number(eventCost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`)}`}>
                     R$ {Number(eventCost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="p-6 rounded-3xl border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
+                <div className="p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
                   <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">A Receber Total</p>
                   <p className={`font-black text-blue-400 ${getDynamicFontSize(`R$ ${Number(expectedRevenue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`)}`}>
                     R$ {Number(expectedRevenue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="p-6 rounded-3xl border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
+                <div className="p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
                   <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">Já Recebido</p>
                   <p className={`font-black text-emerald-400 ${getDynamicFontSize(`R$ ${Number(totalReceived).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`)}`}>
                     R$ {Number(totalReceived).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="p-6 rounded-3xl border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
+                <div className="p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
                   <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">Falta Receber</p>
                   <p className={`font-black text-amber-400 ${getDynamicFontSize(`R$ ${Number(expectedRevenue - totalReceived).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`)}`}>
                     R$ {Number(expectedRevenue - totalReceived).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>
                 </div>
-                <div className="p-6 rounded-3xl border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
+                <div className="p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
                   <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">Convites Vendidos</p>
                   <p className={`font-black text-purple-400 ${getDynamicFontSize(totalTickets)}`}>{totalTickets}</p>
                 </div>
               </div>
 
               {/* Relatório Financeiro Detalhado */}
-              <div className="p-6 rounded-3xl border mt-4" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+              <div className="p-6 rounded-none border mt-4" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
                 <h3 className="text-lg font-black text-white mb-4 uppercase tracking-widest flex items-center gap-2">
                   <DollarSign size={20} className="text-emerald-400" />
                   Relatório Detalhado
@@ -872,6 +901,18 @@ export default function Events() {
               <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Custo Base Roupa (R$)</label>
               <input type="number" step="0.01" value={eventFormData.base_clothes_cost} onChange={e => setEventFormData({...eventFormData, base_clothes_cost: parseFloat(e.target.value) || 0})} className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none" style={inputStyle} />
             </div>
+          </div>
+          <div>
+            <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Fotos do Evento (URLs separadas por vírgula)</label>
+            <textarea 
+              value={eventFormData.photos} 
+              onChange={e => setEventFormData({...eventFormData, photos: e.target.value})} 
+              placeholder="https://exemplo.com/foto1.jpg, https://exemplo.com/foto2.jpg" 
+              rows={2} 
+              className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none resize-none" 
+              style={inputStyle} 
+            />
+            <p className="text-[10px] text-gray-500 mt-1">Insira os links das imagens do evento. Essas fotos serão exibidas em um carrossel animado no Dashboard!</p>
           </div>
           <div className="flex justify-end gap-3 pt-6">
             <button type="button" onClick={() => setShowEventModal(false)} className="px-6 py-3 rounded-2xl text-sm font-bold text-white/50 hover:text-white transition-all">Cancelar</button>

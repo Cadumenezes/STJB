@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Users, AlertTriangle, DollarSign, Cake, TrendingUp, TrendingDown } from 'lucide-react'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, AreaChart, Area, Cell } from 'recharts'
+import { Users, AlertTriangle, DollarSign, Cake, TrendingUp, TrendingDown, Calendar, Image as ImageIcon } from 'lucide-react'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from 'recharts'
 import { supabase } from '../lib/supabase'
 
 interface DashboardData {
@@ -25,10 +25,32 @@ export default function Dashboard() {
   })
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<any>(null)
+  const [eventsWithPhotos, setEventsWithPhotos] = useState<any[]>([])
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0)
 
   useEffect(() => {
     loadDashboard()
   }, [])
+
+  // Auto-play slideshow for events photos
+  useEffect(() => {
+    if (eventsWithPhotos.length === 0) return
+    const allPhotos = eventsWithPhotos.flatMap(e => 
+      (e.photo_urls || []).map((url: string) => ({
+        url,
+        name: e.name,
+        date: e.date,
+        location: e.location,
+        description: e.description
+      }))
+    )
+    if (allPhotos.length === 0) return
+
+    const interval = setInterval(() => {
+      setCurrentSlideIndex(prev => (prev + 1) % allPhotos.length)
+    }, 5000) // Cycle every 5 seconds
+    return () => clearInterval(interval)
+  }, [eventsWithPhotos])
 
   async function loadDashboard() {
     setLoading(true)
@@ -38,6 +60,7 @@ export default function Dashboard() {
         const { data: profileData } = await supabase.from('profiles').select('*').eq('id', user.id).single()
         setProfile(profileData)
       }
+      
       // Total students
       const { count: studentCount } = await supabase
         .from('students')
@@ -121,6 +144,11 @@ export default function Dashboard() {
 
       const monthlyChartData = Object.values(monthlyDataMap).sort((a, b) => a.fullMonth.localeCompare(b.fullMonth));
 
+      // Fetch events with photos
+      const { data: eventsData } = await supabase.from('events').select('*').order('date', { ascending: true })
+      const filteredEvents = (eventsData || []).filter(e => e.photo_urls && e.photo_urls.length > 0)
+      setEventsWithPhotos(filteredEvents)
+
       setData({
         totalStudents: studentCount || 0,
         overduePayments: overdueCount || 0,
@@ -167,6 +195,22 @@ export default function Dashboard() {
     },
   ]
 
+  // Extract all photos list for the slideshow animation
+  const allPhotosList = eventsWithPhotos.flatMap(e => 
+    (e.photo_urls || []).map((url: string) => ({
+      url,
+      eventName: e.name,
+      eventDate: e.date,
+      eventLocation: e.location,
+      eventDescription: e.description
+    }))
+  )
+
+  const activePhotoObj = allPhotosList[currentSlideIndex]
+
+  const nextSlide = () => setCurrentSlideIndex(prev => (prev + 1) % allPhotosList.length)
+  const prevSlide = () => setCurrentSlideIndex(prev => (prev - 1 + allPhotosList.length) % allPhotosList.length)
+
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
@@ -178,9 +222,9 @@ export default function Dashboard() {
   if (profile?.role === 'secretary') {
     return (
       <div className="flex flex-col pb-10">
-        {/* Header Section with Background Highlight */}
+        {/* Header Section with Background Highlight - SQUARE */}
         <div 
-          className="p-8 sm:p-10 pb-16 rounded-3xl border border-white/5 shadow-2xl mb-16 relative overflow-hidden"
+          className="p-8 sm:p-10 pb-16 rounded-none border border-white/5 shadow-2xl mb-16 relative overflow-hidden"
           style={{ backgroundColor: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)' }}
         >
           {/* Accent Glow */}
@@ -192,7 +236,7 @@ export default function Dashboard() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
             <div className="space-y-4">
               <h1 
-                className="font-black tracking-tighter leading-tight inline-block py-8 rounded-2xl shadow-2xl shadow-purple-500/30" 
+                className="font-black tracking-tighter leading-tight inline-block py-8 rounded-none shadow-2xl shadow-purple-500/30" 
                 style={{ 
                   backgroundColor: 'var(--accent-color)', 
                   color: '#fff',
@@ -205,18 +249,18 @@ export default function Dashboard() {
               </h1>
               <br />
               <p 
-                className="font-bold inline-block py-6 mt-2 rounded-2xl shadow-xl border border-white/10" 
+                className="font-bold inline-block py-6 mt-2 rounded-none shadow-xl border border-white/10" 
                  style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', paddingLeft: '32px', paddingRight: '32px' }}
               >
-                Bem-vindo de volta! Aqui está a lista de aniversariantes da semana.
+                Bem-vindo de volta! Aqui está o resumo da sua escola hoje.
               </p>
             </div>
           </div>
         </div>
 
-        {/* Birthdays */}
+        {/* Birthdays - SQUARE */}
         <div
-          className="rounded-3xl p-8 sm:p-12 border max-w-2xl mx-auto w-full mt-8"
+          className="rounded-none p-8 sm:p-12 border max-w-2xl mx-auto w-full mt-8 animate-fade-in"
           style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
         >
           <h2 className="text-xl font-black mb-6 uppercase tracking-wider flex items-center gap-3 text-white">
@@ -239,11 +283,11 @@ export default function Dashboard() {
                 return (
                   <div
                     key={i}
-                    className="flex items-center gap-4 rounded-2xl p-4 transition-colors border border-white/5"
+                    className="flex items-center gap-4 rounded-none p-4 transition-colors border border-white/5"
                     style={{ backgroundColor: 'var(--bg-secondary)' }}
                   >
                     <div
-                      className="flex h-12 w-12 items-center justify-center rounded-2xl text-xl shrink-0"
+                      className="flex h-12 w-12 items-center justify-center rounded-none text-xl shrink-0"
                       style={{ background: 'linear-gradient(135deg, #f59e0b, #f97316)' }}
                     >
                       🎉
@@ -264,9 +308,9 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col pb-10">
-      {/* Header Section with Background Highlight */}
+      {/* Header Section with Background Highlight - SQUARE */}
       <div 
-        className="p-8 sm:p-10 pb-16 rounded-3xl border border-white/5 shadow-2xl mb-52 relative overflow-hidden"
+        className="p-8 sm:p-10 pb-16 rounded-none border border-white/5 shadow-2xl mb-12 relative overflow-hidden"
         style={{ backgroundColor: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)' }}
       >
         {/* Accent Glow */}
@@ -278,7 +322,7 @@ export default function Dashboard() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
           <div className="space-y-4">
             <h1 
-              className="font-black tracking-tighter leading-tight inline-block py-8 rounded-2xl shadow-2xl shadow-purple-500/30" 
+              className="font-black tracking-tighter leading-tight inline-block py-8 rounded-none shadow-2xl shadow-purple-500/30" 
               style={{ 
                 backgroundColor: 'var(--accent-color)', 
                 color: '#fff',
@@ -291,7 +335,7 @@ export default function Dashboard() {
             </h1>
             <br />
             <p 
-              className="font-bold inline-block py-6 mt-2 rounded-2xl shadow-xl border border-white/10" 
+              className="font-bold inline-block py-6 mt-2 rounded-none shadow-xl border border-white/10" 
                style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', paddingLeft: '32px', paddingRight: '32px' }}
             >
               Bem-vindo de volta! Aqui está o resumo da sua escola hoje.
@@ -300,12 +344,87 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Summary Cards */}
+      {/* 🎪 Event Photos Carousel Animation - SQUARE */}
+      {allPhotosList.length > 0 && activePhotoObj && (
+        <div className="rounded-none border border-white/5 shadow-2xl p-6 sm:p-8 relative overflow-hidden mb-12" style={{ backgroundColor: 'var(--bg-card)' }}>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="h-6 w-2 rounded-full bg-purple-500" />
+            <h3 className="text-sm font-black uppercase tracking-widest text-white flex items-center gap-2">
+              <ImageIcon size={16} className="text-purple-400" />
+              Galeria de Eventos & Espetáculos
+            </h3>
+          </div>
+
+          <div className="relative h-80 sm:h-[400px] w-full overflow-hidden rounded-none border border-white/5 shadow-2xl">
+            {/* Background Blur Image for premium depth */}
+            <div className="absolute inset-0 z-0">
+              <img 
+                src={activePhotoObj.url} 
+                alt="Blur Background" 
+                className="w-full h-full object-cover filter blur-2xl opacity-20 scale-105 transition-all duration-1000"
+              />
+              <div className="absolute inset-0 bg-black/40" />
+            </div>
+
+            {/* Front Image Slider Container */}
+            <div className="absolute inset-0 z-10 flex items-center justify-center p-4">
+              <div className="relative w-full h-full max-w-3xl rounded-none overflow-hidden border border-white/10 shadow-2xl group/slide">
+                <img 
+                  src={activePhotoObj.url} 
+                  alt={activePhotoObj.eventName} 
+                  className="w-full h-full object-contain transition-all duration-1000 transform scale-100 hover:scale-[1.01]"
+                />
+                
+                {/* Text Overlay Details */}
+                <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-6 text-left flex flex-col justify-end">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-purple-400">
+                    Evento: {activePhotoObj.eventName}
+                  </span>
+                  <h4 className="text-lg sm:text-xl font-black text-white leading-tight mt-1">
+                    {activePhotoObj.eventDescription || 'Um espetáculo inesquecível da nossa escola'}
+                  </h4>
+                  <p className="text-[10px] text-gray-300 mt-2 font-bold flex items-center gap-2">
+                    📅 {new Date(activePhotoObj.eventDate + 'T12:00:00').toLocaleDateString('pt-BR')} 
+                    {activePhotoObj.eventLocation && ` 📍 ${activePhotoObj.eventLocation}`}
+                  </p>
+                </div>
+
+                {/* Left/Right controls */}
+                <button 
+                  onClick={prevSlide}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/60 border border-white/10 flex items-center justify-center hover:bg-purple-650 hover:border-purple-500 text-white transition-all cursor-pointer shadow-lg z-20"
+                >
+                  ◀
+                </button>
+                <button 
+                  onClick={nextSlide}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/60 border border-white/10 flex items-center justify-center hover:bg-purple-650 hover:border-purple-500 text-white transition-all cursor-pointer shadow-lg z-20"
+                >
+                  ▶
+                </button>
+              </div>
+            </div>
+
+            {/* Carousel Indicator Dots */}
+            <div className="absolute bottom-3 inset-x-0 z-20 flex justify-center gap-2">
+              {allPhotosList.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentSlideIndex(idx)}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentSlideIndex ? 'w-5 bg-purple-500' : 'w-1.5 bg-white/30'}`}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Summary Cards - SQUARE */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 xl:grid-cols-4 mb-12">
         {cards.map((card) => (
           <div
             key={card.title}
-            className="group relative overflow-hidden rounded-3xl p-6 sm:p-8 transition-all duration-300 hover:scale-[1.05] hover:shadow-2xl"
+            className="group relative overflow-hidden rounded-none p-6 sm:p-8 transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl"
             style={{
               backgroundColor: 'var(--bg-card)',
               border: '1px solid var(--border-color)',
@@ -313,7 +432,7 @@ export default function Dashboard() {
           >
             <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-10" style={{ background: card.gradient }} />
             <div className="relative flex flex-col items-center justify-center h-32 text-center gap-3">
-              <div className="rounded-xl p-3" style={{ background: card.iconBg }}>
+              <div className="rounded-none p-3 animate-pulse-slow" style={{ background: card.iconBg }}>
                 <card.icon size={26} style={{ color: card.gradient.includes('#8b5cf6') ? '#8b5cf6' : card.gradient.includes('#f43f5e') ? '#f43f5e' : card.gradient.includes('#10b981') ? '#10b981' : '#f59e0b' }} />
               </div>
               <div className="w-full">
@@ -326,12 +445,11 @@ export default function Dashboard() {
         ))}
       </div>
 
-      
-      {/* Charts Section */}
+      {/* Charts Section - SQUARE */}
       <div className="grid grid-cols-1 gap-6 mb-12">
-        <div className="rounded-3xl p-8 sm:p-10" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+        <div className="rounded-none p-8 sm:p-10 shadow-2xl" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
           <h2 className="text-lg font-bold mb-6 flex items-center gap-3" style={{ color: 'var(--text-primary)' }}>
-            <div className="p-2 rounded-xl bg-purple-500/20">
+            <div className="p-2 rounded-none bg-purple-500/20">
               <TrendingUp size={20} className="text-purple-400" />
             </div>
             Faturamento Mensal (Últimos 6 meses)
@@ -344,15 +462,15 @@ export default function Dashboard() {
                 <YAxis stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `R$ ${v}`} />
                 <RechartsTooltip 
                   cursor={{ fill: 'var(--border-color)', opacity: 0.4 }}
-                  contentStyle={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '16px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.5)' }}
+                  contentStyle={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '0px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.5)' }}
                   itemStyle={{ fontSize: '14px', fontWeight: 'bold' }}
                 />
-                <Bar dataKey="Entradas" fill="#10b981" radius={[4, 4, 0, 0]}>
+                <Bar dataKey="Entradas" fill="#10b981" radius={[0, 0, 0, 0]}>
                   {data.monthlyChartData.map((entry: any, index: number) => (
                     <Cell key={`cell-in-${index}`} fill="url(#colorEntradas)" />
                   ))}
                 </Bar>
-                <Bar dataKey="Saídas" fill="#f43f5e" radius={[4, 4, 0, 0]}>
+                <Bar dataKey="Saídas" fill="#f43f5e" radius={[0, 0, 0, 0]}>
                   {data.monthlyChartData.map((entry: any, index: number) => (
                     <Cell key={`cell-out-${index}`} fill="url(#colorSaidas)" />
                   ))}
@@ -373,20 +491,20 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Today's Flow Detail + Birthdays */}
+      {/* Today's Flow Detail + Birthdays - SQUARE */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Cash Flow Detail */}
+        {/* Cash Flow Detail - SQUARE */}
         <div
-          className="rounded-2xl p-8 sm:p-10"
-          style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
+          className="rounded-none p-8 sm:p-10 border shadow-2xl"
+          style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
         >
           <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
             Fluxo de Caixa - Hoje
           </h2>
           <div className="space-y-4">
-            <div className="flex items-center justify-between rounded-xl p-4" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+            <div className="flex items-center justify-between rounded-none p-4" style={{ backgroundColor: 'var(--bg-secondary)' }}>
               <div className="flex items-center gap-3">
-                <div className="rounded-xl p-3" style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)' }}>
+                <div className="rounded-none p-3" style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)' }}>
                   <TrendingUp size={20} className="text-emerald-400" />
                 </div>
                 <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Entradas</span>
@@ -395,9 +513,9 @@ export default function Dashboard() {
                 R$ {data.todayIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </span>
             </div>
-            <div className="flex items-center justify-between rounded-xl p-4" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+            <div className="flex items-center justify-between rounded-none p-4" style={{ backgroundColor: 'var(--bg-secondary)' }}>
               <div className="flex items-center gap-3">
-                <div className="rounded-xl p-3" style={{ backgroundColor: 'rgba(244, 63, 94, 0.15)' }}>
+                <div className="rounded-none p-3" style={{ backgroundColor: 'rgba(244, 63, 94, 0.15)' }}>
                   <TrendingDown size={20} className="text-rose-400" />
                 </div>
                 <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Saídas</span>
@@ -406,7 +524,7 @@ export default function Dashboard() {
                 R$ {data.todayExpense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </span>
             </div>
-            <div className="flex items-center justify-between rounded-xl p-4" style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.1), rgba(236,72,153,0.1))', border: '1px solid var(--border-color)' }}>
+            <div className="flex items-center justify-between rounded-none p-4 border border-white/5" style={{ backgroundColor: 'var(--bg-secondary)' }}>
               <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Saldo do Dia</span>
               <span className={`text-lg font-bold ${data.cashFlowToday >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                 R$ {data.cashFlowToday.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
@@ -415,10 +533,10 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Birthdays */}
+        {/* Birthdays - SQUARE */}
         <div
-          className="rounded-2xl p-8 sm:p-10"
-          style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
+          className="rounded-none p-8 sm:p-10 border shadow-2xl"
+          style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
         >
           <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
             🎂 Aniversariantes da Semana
@@ -439,11 +557,11 @@ export default function Dashboard() {
                 return (
                   <div
                     key={i}
-                    className="flex items-center gap-4 rounded-xl p-4 transition-colors"
+                    className="flex items-center gap-4 rounded-none p-4 transition-colors border border-white/5"
                     style={{ backgroundColor: 'var(--bg-secondary)' }}
                   >
                     <div
-                      className="flex h-10 w-10 items-center justify-center rounded-full text-lg"
+                      className="flex h-10 w-10 items-center justify-center rounded-none text-lg"
                       style={{ background: 'linear-gradient(135deg, #f59e0b, #f97316)' }}
                     >
                       🎉

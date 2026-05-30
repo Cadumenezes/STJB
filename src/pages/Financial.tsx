@@ -356,7 +356,7 @@ export default function Financial() {
           </div>
         </div>
 
-        <div className="max-w-2xl mx-auto w-full rounded-3xl p-8 sm:p-12 text-center border border-white/5 relative overflow-hidden mt-8" style={{ backgroundColor: 'var(--bg-card)' }}>
+        <div className="max-w-2xl mx-auto w-full rounded-none p-8 sm:p-12 text-center border border-white/5 relative overflow-hidden mt-8" style={{ backgroundColor: 'var(--bg-card)' }}>
           <div className="h-20 w-20 rounded-3xl mx-auto flex items-center justify-center mb-6 bg-purple-500/10 border border-purple-500/20">
             <DollarSign size={40} className="text-purple-400 animate-pulse" />
           </div>
@@ -578,7 +578,7 @@ export default function Financial() {
             {summaryCards.map((card) => (
               <div
                 key={card.label}
-                className="group relative overflow-hidden rounded-3xl p-8 sm:p-10 transition-all duration-300 hover:scale-[1.05] hover:shadow-2xl"
+                className="group relative overflow-hidden rounded-none p-8 sm:p-10 transition-all duration-300 hover:scale-[1.05] hover:shadow-2xl"
                 style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
               >
                 <div className="flex flex-col items-center justify-center h-28 text-center gap-2 relative z-10">
@@ -598,7 +598,7 @@ export default function Financial() {
           </div>
 
           {/* Monthly Report */}
-          <div className="rounded-3xl p-8 shadow-xl mt-8 mb-8" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+          <div className="rounded-none p-8 shadow-xl mt-8 mb-8" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
             <h3 className="text-lg font-black uppercase tracking-tighter mb-6" style={{ color: 'var(--text-primary)' }}>
               📊 Relatório de {new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
             </h3>
@@ -920,7 +920,7 @@ export default function Financial() {
               payrollData.map(teacher => (
                 <div 
                   key={teacher.id} 
-                  className="p-8 rounded-3xl border border-white/5 shadow-2xl relative overflow-hidden group transition-all hover:scale-[1.01]"
+                  className="p-8 rounded-none border border-white/5 shadow-2xl relative overflow-hidden group transition-all hover:scale-[1.01]"
                   style={{ backgroundColor: 'var(--bg-card)' }}
                 >
                   <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
@@ -952,7 +952,7 @@ export default function Financial() {
                       </div>
                     </div>
 
-                    <div className="w-full lg:w-72 p-8 sm:p-10 rounded-3xl bg-black/40 border border-white/10 flex flex-col justify-center items-center text-center">
+                    <div className="w-full lg:w-72 p-8 sm:p-10 rounded-none bg-black/40 border border-white/10 flex flex-col justify-center items-center text-center">
                       <p className="text-xs font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Total Acumulado</p>
                       <p className="text-3xl font-black text-white mb-4">R$ {teacher.totalToPay.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                       <button 

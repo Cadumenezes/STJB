@@ -176,7 +176,7 @@ export default function AttendancePage() {
       </div>
 
       {/* Selection Toolbar with Cards Theme */}
-      <div className="p-6 rounded-2xl shadow-xl flex flex-col sm:flex-row gap-4" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+      <div className="p-6 rounded-none shadow-xl flex flex-col sm:flex-row gap-4" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
         <div className="flex-1">
           <label className="text-xs font-semibold uppercase tracking-wider text-gray-400 block mb-2">Turma / Aula</label>
           <select 
@@ -209,41 +209,41 @@ export default function AttendancePage() {
         <>
           {/* Real-time Stats Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="p-5 rounded-2xl bg-[#12121a] border border-white/5 flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-purple-500/20 transition-all">
+            <div className="p-5 rounded-none bg-[#12121a] border border-white/5 flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-purple-500/20 transition-all">
               <div>
                 <span className="text-xs font-medium text-gray-400 uppercase">Frequência Geral</span>
                 <h4 className="text-2xl font-black text-white mt-1">{attendanceRate}%</h4>
               </div>
-              <div className="h-10 w-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400">
+              <div className="h-10 w-10 rounded-none bg-purple-500/10 flex items-center justify-center text-purple-400">
                 <ClipboardCheck size={20} />
               </div>
             </div>
-            <div className="p-5 rounded-2xl bg-[#12121a] border border-white/5 flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-emerald-500/20 transition-all">
+            <div className="p-5 rounded-none bg-[#12121a] border border-white/5 flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-emerald-500/20 transition-all">
               <div>
                 <span className="text-xs font-medium text-gray-400 uppercase">Presentes</span>
                 <h4 className="text-2xl font-black text-emerald-400 mt-1">
                   {presentCount} <span className="text-xs font-normal text-gray-500">/ {totalStudents}</span>
                 </h4>
               </div>
-              <div className="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+              <div className="h-10 w-10 rounded-none bg-emerald-500/10 flex items-center justify-center text-emerald-400">
                 <Check size={20} />
               </div>
             </div>
-            <div className="p-5 rounded-2xl bg-[#12121a] border border-white/5 flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-amber-500/20 transition-all">
+            <div className="p-5 rounded-none bg-[#12121a] border border-white/5 flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-amber-500/20 transition-all">
               <div>
                 <span className="text-xs font-medium text-gray-400 uppercase">Atrasados</span>
                 <h4 className="text-2xl font-black text-amber-400 mt-1">{lateCount}</h4>
               </div>
-              <div className="h-10 w-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400">
+              <div className="h-10 w-10 rounded-none bg-amber-500/10 flex items-center justify-center text-amber-400">
                 <Clock size={20} />
               </div>
             </div>
-            <div className="p-5 rounded-2xl bg-[#12121a] border border-white/5 flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-rose-500/20 transition-all">
+            <div className="p-5 rounded-none bg-[#12121a] border border-white/5 flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-rose-500/20 transition-all">
               <div>
                 <span className="text-xs font-medium text-gray-400 uppercase">Faltas</span>
                 <h4 className="text-2xl font-black text-rose-400 mt-1">{absentCount}</h4>
               </div>
-              <div className="h-10 w-10 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-400">
+              <div className="h-10 w-10 rounded-none bg-rose-500/10 flex items-center justify-center text-rose-400">
                 <X size={20} />
               </div>
             </div>
@@ -253,7 +253,7 @@ export default function AttendancePage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left/Main Column: Students List */}
             <div className="lg:col-span-2 space-y-6">
-              <div className="rounded-2xl bg-[#12121a]/40 border border-white/5 p-6 shadow-xl relative overflow-hidden">
+              <div className="rounded-none bg-[#12121a]/40 border border-white/5 p-6 shadow-xl relative overflow-hidden">
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h3 className="text-lg font-bold text-white">Alunos Matriculados</h3>
@@ -334,7 +334,7 @@ export default function AttendancePage() {
             {/* Right Column: Instructor Status & Sinking Action */}
             <div className="space-y-6">
               {/* Instructor Team Card */}
-              <div className="rounded-2xl bg-[#12121a]/40 border border-white/5 p-6 shadow-xl relative overflow-hidden">
+              <div className="rounded-none bg-[#12121a]/40 border border-white/5 p-6 shadow-xl relative overflow-hidden">
                 <h3 className="text-lg font-bold text-white mb-4">Professor da Turma</h3>
                 
                 {(() => {
@@ -396,7 +396,7 @@ export default function AttendancePage() {
               </div>
 
               {/* Sync Action Card */}
-              <div className="rounded-2xl bg-[#12121a]/40 border border-white/5 p-6 shadow-xl space-y-4">
+              <div className="rounded-none bg-[#12121a]/40 border border-white/5 p-6 shadow-xl space-y-4">
                 <h4 className="text-sm font-bold text-white">Finalizar Chamada</h4>
                 <p className="text-xs text-gray-400 leading-relaxed">
                   Ao salvar, o registro será sincronizado com o banco de dados da escola para fins de acompanhamento pedagógico e financeiro.

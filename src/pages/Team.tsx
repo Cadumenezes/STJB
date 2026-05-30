@@ -28,6 +28,7 @@ export default function Team() {
     salary: '',
     hourly_rate: '',
     daily_transport: '',
+    photo_url: '',
   })
 
   useEffect(() => {
@@ -164,6 +165,7 @@ export default function Team() {
       salary: m.salary ? m.salary.toString() : '',
       hourly_rate: m.hourly_rate ? m.hourly_rate.toString() : '',
       daily_transport: m.daily_transport ? m.daily_transport.toString() : '',
+      photo_url: m.photo_url || '',
     })
     setShowModal(true)
   }
@@ -171,7 +173,8 @@ export default function Team() {
   function resetForm() {
     setFormData({ 
       name: '', email: '', phone: '', role: 'Professor', specialty: '', 
-      salary: '', hourly_rate: '', daily_transport: '' 
+      salary: '', hourly_rate: '', daily_transport: '',
+      photo_url: '',
     })
   }
 
@@ -290,9 +293,17 @@ export default function Team() {
                 <div>
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="rounded-2xl p-3" style={{ backgroundColor: roleConf.bg }}>
-                        <UserCog size={28} style={{ color: roleConf.text }} />
-                      </div>
+                      {m.photo_url ? (
+                        <img 
+                          src={m.photo_url} 
+                          alt={m.name} 
+                          className="h-14 w-14 rounded-xl object-cover border border-purple-500/20 shadow-lg shadow-purple-500/10 shrink-0" 
+                        />
+                      ) : (
+                        <div className="rounded-2xl p-3 shrink-0" style={{ backgroundColor: roleConf.bg }}>
+                          <UserCog size={28} style={{ color: roleConf.text }} />
+                        </div>
+                      )}
                       <div>
                         <h3 className="font-bold text-xl" style={{ color: 'var(--text-primary)' }}>{m.name}</h3>
                         <span className="text-xs font-bold uppercase tracking-widest px-3 py-0.5 rounded-2xl mt-1 inline-block" style={{ backgroundColor: roleConf.bg, color: roleConf.text }}>
@@ -503,6 +514,11 @@ export default function Team() {
             <div>
               <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Telefone / WhatsApp</label>
               <input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all" style={inputStyle} />
+            </div>
+
+            <div className="sm:col-span-2">
+              <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>URL da Foto do Professor</label>
+              <input value={formData.photo_url} onChange={(e) => setFormData({ ...formData, photo_url: e.target.value })} placeholder="Link público da imagem (ex: https://...)" className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all" style={inputStyle} />
             </div>
             
             {/* Seção Financeira com Destaque */}
