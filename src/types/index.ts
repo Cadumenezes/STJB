@@ -83,7 +83,7 @@ export interface TeamMember {
   name: string
   email: string
   phone: string
-  role: 'instructor' | 'staff' | 'admin'
+  role: 'Secretário' | 'Diretor' | 'Professor' | 'Zelador' | 'Porteiro' | 'Coordenador' | 'instructor' | 'staff' | 'admin'
   specialty: string
   photo_url: string | null
   salary: number
@@ -163,5 +163,16 @@ export interface EventParticipant {
   choreography_count: number
   clothes_cost: number
   installments: Installment[]
+  created_at: string
+}
+
+export interface Profile {
+  id: string
+  email: string
+  phone: string | null
+  role: 'admin' | 'user' | 'teacher' | 'secretary'
+  status: 'pending' | 'active' | 'suspended'
+  plan: 'gratis' | 'prata' | 'ouro' | 'diamante'
+  expires_at: string | null
   created_at: string
 }

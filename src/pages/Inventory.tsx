@@ -103,19 +103,21 @@ export default function Inventory() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
           <div className="space-y-4">
             <h1 
-              className="font-black tracking-tighter leading-tight inline-block px-16 py-8 rounded-2xl shadow-2xl shadow-purple-500/30" 
+              className="font-black tracking-tighter leading-tight inline-block py-8 rounded-2xl shadow-2xl shadow-purple-500/30" 
               style={{ 
                 backgroundColor: 'var(--accent-color)', 
                 color: '#fff',
-                fontSize: 'var(--title-size, 32px)' 
+                fontSize: 'var(--title-size, 32px)',
+                paddingLeft: '40px',
+                paddingRight: '40px'
               }}
             >
               Estoque
             </h1>
             <br />
             <p 
-              className="font-bold inline-block px-12 py-6 mt-2 rounded-2xl shadow-xl border border-white/10" 
-               style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)' }}
+              className="font-bold inline-block py-6 mt-2 rounded-2xl shadow-xl border border-white/10" 
+               style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', paddingLeft: '32px', paddingRight: '32px' }}
             >
               Controle de produtos e uniformes
             </p>
@@ -131,7 +133,7 @@ export default function Inventory() {
         </div>
       </div>
 
-      <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+      <div className="rounded-none overflow-hidden" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>

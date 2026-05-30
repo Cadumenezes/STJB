@@ -104,15 +104,15 @@ export default function TrialClasses() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
           <div className="space-y-4">
             <h1 
-              className="font-black tracking-tighter leading-tight inline-block px-12 py-6 rounded-2xl shadow-2xl shadow-purple-500/30" 
-              style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--title-size, 32px)' }}
+              className="font-black tracking-tighter leading-tight inline-block py-6 rounded-2xl shadow-2xl shadow-purple-500/30" 
+              style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--title-size, 32px)', paddingLeft: '40px', paddingRight: '40px' }}
             >
               Aulas Experimentais
             </h1>
             <br />
             <p 
-              className="font-bold inline-block px-8 py-4 mt-2 rounded-2xl shadow-xl border border-white/10" 
-              style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)' }}
+              className="font-bold inline-block py-4 mt-2 rounded-2xl shadow-xl border border-white/10" 
+              style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', paddingLeft: '32px', paddingRight: '32px' }}
             >
               Gerencie interessados, agendamentos e converta leads em alunos!
             </p>
@@ -128,14 +128,14 @@ export default function TrialClasses() {
         </div>
       </div>
 
-      <div className="relative mb-12">
-        <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
+      <div className="flex items-center gap-3 rounded-xl px-4 py-3.5 border mb-12 shadow-lg" style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border-color)' }}>
+        <Search size={18} className="shrink-0" style={{ color: 'var(--text-muted)' }} />
         <input
           placeholder="Buscar interessado por nome ou telefone..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full rounded-xl py-3.5 pl-11 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 shadow-lg"
-          style={inputStyle}
+          className="w-full bg-transparent text-sm text-white focus:outline-none placeholder:text-gray-500"
+          style={{ color: 'var(--text-primary)' }}
         />
       </div>
 

@@ -40,6 +40,11 @@
   box-sizing: border-box;
 }
 
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 body {
   font-family: var(--font-sans, 'Inter', sans-serif);
   background-color: var(--bg-primary);

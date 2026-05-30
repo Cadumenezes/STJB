@@ -1,20 +1,29 @@
 import { useEffect, useState } from 'react'
-import { Plus, Edit, Trash2, UserCog } from 'lucide-react'
+import { Plus, Edit, Trash2, UserCog, Calendar, Check, X, Clock, Users } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { TeamMember } from '../types'
 import Modal from '../components/Modal'
 
 export default function Team() {
+  // Tabs: 'members' or 'attendance'
+  const [activeTab, setActiveTab] = useState<'members' | 'attendance'>('members')
+  
   const [members, setMembers] = useState<TeamMember[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editMember, setEditMember] = useState<TeamMember | null>(null)
   
+  // Daily Attendance States
+  const [attendanceDate, setAttendanceDate] = useState<string>(new Date().toISOString().split('T')[0])
+  const [teamAttendance, setTeamAttendance] = useState<Record<string, 'present' | 'absent' | 'late'>>({})
+  const [savingAttendance, setSavingAttendance] = useState<string | null>(null)
+  const [schoolOwnerId, setSchoolOwnerId] = useState<string | null>(null)
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
-    role: 'instructor' as 'instructor' | 'staff' | 'admin',
+    role: 'Professor' as any,
     specialty: '',
     salary: '',
     hourly_rate: '',
@@ -22,14 +31,90 @@ export default function Team() {
   })
 
   useEffect(() => {
-    loadMembers()
+    loadInitialData()
   }, [])
+
+  useEffect(() => {
+    if (activeTab === 'attendance') {
+      loadTeamAttendance()
+    }
+  }, [activeTab, attendanceDate])
+
+  async function loadInitialData() {
+    setLoading(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+      if (profile?.role === 'secretary') {
+        const { data: tm } = await supabase
+          .from('team_members')
+          .select('user_id')
+          .eq('email', profile.email)
+          .eq('status', 'active')
+          .maybeSingle()
+        if (tm) {
+          setSchoolOwnerId(tm.user_id)
+        }
+      } else {
+        setSchoolOwnerId(user.id)
+      }
+    }
+    await loadMembers()
+  }
 
   async function loadMembers() {
     setLoading(true)
     const { data } = await supabase.from('team_members').select('*').order('name')
     setMembers(data || [])
     setLoading(false)
+  }
+
+  async function loadTeamAttendance() {
+    if (!schoolOwnerId) return
+    const { data } = await supabase
+      .from('team_attendance')
+      .select('*')
+      .eq('date', attendanceDate)
+    
+    const attMap: Record<string, 'present' | 'absent' | 'late'> = {}
+    if (data) {
+      data.forEach(item => {
+        attMap[item.member_id] = item.status
+      })
+    }
+    setTeamAttendance(attMap)
+  }
+
+  async function handleMarkAttendance(memberId: string, status: 'present' | 'absent' | 'late') {
+    setSavingAttendance(memberId)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+
+      // If already marked, click toggles/updates it
+      const payload = {
+        user_id: schoolOwnerId || user.id,
+        member_id: memberId,
+        date: attendanceDate,
+        status: status
+      }
+
+      const { error } = await supabase
+        .from('team_attendance')
+        .upsert(payload, { onConflict: 'member_id,date' })
+
+      if (error) throw error
+
+      setTeamAttendance(prev => ({
+        ...prev,
+        [memberId]: status
+      }))
+    } catch (err: any) {
+      console.error(err)
+      alert('Erro ao marcar presença: ' + err.message)
+    } finally {
+      setSavingAttendance(null)
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -85,7 +170,7 @@ export default function Team() {
 
   function resetForm() {
     setFormData({ 
-      name: '', email: '', phone: '', role: 'instructor', specialty: '', 
+      name: '', email: '', phone: '', role: 'Professor', specialty: '', 
       salary: '', hourly_rate: '', daily_transport: '' 
     })
   }
@@ -96,17 +181,25 @@ export default function Team() {
     color: 'var(--text-primary)',
   }
 
-  const roleColors = {
+  const roleColors: Record<string, { bg: string; text: string; label: string }> = {
     instructor: { bg: 'rgba(139,92,246,0.15)', text: '#8b5cf6', label: 'Professor' },
     staff: { bg: 'rgba(16,185,129,0.15)', text: '#10b981', label: 'Staff' },
     admin: { bg: 'rgba(244,63,94,0.15)', text: '#f43f5e', label: 'Admin' },
+    
+    // Portuguese unisex roles mapping
+    'Secretário': { bg: 'rgba(59,130,246,0.15)', text: '#3b82f6', label: 'Secretário' },
+    'Diretor': { bg: 'rgba(244,63,94,0.15)', text: '#f43f5e', label: 'Diretor' },
+    'Professor': { bg: 'rgba(139,92,246,0.15)', text: '#8b5cf6', label: 'Professor' },
+    'Zelador': { bg: 'rgba(16,185,129,0.15)', text: '#10b981', label: 'Zelador' },
+    'Porteiro': { bg: 'rgba(245,158,11,0.15)', text: '#f59e0b', label: 'Porteiro' },
+    'Coordenador': { bg: 'rgba(236,72,153,0.15)', text: '#ec4899', label: 'Coordenador' },
   }
 
   return (
     <div className="flex flex-col pb-10">
       {/* Header Section with Dynamic Style */}
       <div 
-        className="p-8 sm:p-10 pb-16 rounded-2xl border border-white/5 shadow-2xl mb-52 relative overflow-hidden"
+        className="p-8 sm:p-10 pb-16 rounded-2xl border border-white/5 shadow-2xl mb-16 relative overflow-hidden"
         style={{ backgroundColor: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)' }}
       >
         {/* Accent Glow */}
@@ -118,88 +211,259 @@ export default function Team() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
           <div className="space-y-4">
             <h1 
-              className="font-black tracking-tighter leading-tight inline-block px-16 py-8 rounded-2xl shadow-2xl shadow-purple-500/30" 
+              className="font-black tracking-tighter leading-tight inline-block py-8 rounded-2xl shadow-2xl shadow-purple-500/30" 
               style={{ 
                 backgroundColor: 'var(--accent-color)', 
                 color: '#fff',
-                fontSize: 'var(--title-size, 32px)' 
+                fontSize: 'var(--title-size, 32px)',
+                paddingLeft: '40px',
+                paddingRight: '40px'
               }}
             >
               Equipe
             </h1>
             <br />
             <p 
-              className="font-bold inline-block px-12 py-6 mt-2 rounded-2xl shadow-xl border border-white/10" 
-               style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)' }}
+              className="font-bold inline-block py-6 mt-2 rounded-2xl shadow-xl border border-white/10" 
+               style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', paddingLeft: '32px', paddingRight: '32px' }}
             >
-              Gerencie seus professores, funcionários e informações de pagamento
+              Gerencie seus professores, colaboradores, cargos individuais e ponto diário
             </p>
           </div>
+          
+          {activeTab === 'members' && (
+            <button
+              onClick={() => { resetForm(); setEditMember(null); setShowModal(true) }}
+              className="flex items-center gap-2 rounded-2xl px-8 py-4 text-sm font-bold text-white transition-all hover:scale-105 active:scale-95 shadow-xl shadow-purple-500/20"
+              style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}
+            >
+              <Plus size={26} />
+              Novo Membro
+            </button>
+          )}
+        </div>
+
+        {/* Tab Selector */}
+        <div className="flex flex-wrap gap-4 p-1 bg-black/20 rounded-2xl w-fit mt-12 relative z-10">
           <button
-            onClick={() => { resetForm(); setEditMember(null); setShowModal(true) }}
-            className="flex items-center gap-2 rounded-2xl px-8 py-4 text-sm font-bold text-white transition-all hover:scale-105 active:scale-95 shadow-xl shadow-purple-500/20"
-            style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}
+            onClick={() => setActiveTab('members')}
+            className={`px-12 py-4 text-sm font-bold transition-all rounded-2xl shadow-lg border ${
+              activeTab === 'members' ? 'text-white' : 'text-[var(--text-muted)] hover:text-white hover:bg-white/5'
+            }`}
+            style={{ 
+              backgroundColor: activeTab === 'members' ? 'var(--bg-card)' : 'transparent',
+              borderColor: activeTab === 'members' ? 'var(--border-color)' : 'transparent'
+            }}
           >
-            <Plus size={26} />
-            Novo Membro
+            Membros da Equipe
+          </button>
+          <button
+            onClick={() => setActiveTab('attendance')}
+            className={`px-12 py-4 text-sm font-bold transition-all rounded-2xl shadow-lg border ${
+              activeTab === 'attendance' ? 'text-white' : 'text-[var(--text-muted)] hover:text-white hover:bg-white/5'
+            }`}
+            style={{ 
+              backgroundColor: activeTab === 'attendance' ? 'var(--bg-card)' : 'transparent',
+              borderColor: activeTab === 'attendance' ? 'var(--border-color)' : 'transparent'
+            }}
+          >
+            Chamada Diária (Ponto)
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-        {members.map((m) => (
-          <div
-            key={m.id}
-            className="group rounded-2xl p-8 sm:p-10 transition-all duration-300 hover:scale-[1.05] hover:shadow-2xl border border-white/5"
-            style={{ backgroundColor: 'var(--bg-card)' }}
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-3">
-                <div className="rounded-2xl p-3" style={{ backgroundColor: roleColors[m.role].bg }}>
-                  <UserCog size={28} style={{ color: roleColors[m.role].text }} />
-                </div>
+      {loading ? (
+        <div className="flex items-center justify-center p-20">
+          <div className="h-12 w-12 border-4 border-purple-600/20 border-t-purple-600 rounded-full animate-spin" />
+        </div>
+      ) : activeTab === 'members' ? (
+        /* Team Members List View */
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          {members.map((m) => {
+            const roleConf = roleColors[m.role] || { bg: 'rgba(156,163,175,0.15)', text: '#9ca3af', label: m.role }
+            return (
+              <div
+                key={m.id}
+                className="group rounded-2xl p-8 sm:p-10 transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl border border-white/5 flex flex-col justify-between"
+                style={{ backgroundColor: 'var(--bg-card)' }}
+              >
                 <div>
-                  <h3 className="font-bold text-xl" style={{ color: 'var(--text-primary)' }}>{m.name}</h3>
-                  <span className="text-xs font-bold uppercase tracking-widest px-2 py-0.5 rounded-2xl mt-1 inline-block" style={{ backgroundColor: roleColors[m.role].bg, color: roleColors[m.role].text }}>
-                    {roleColors[m.role].label}
-                  </span>
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-2xl p-3" style={{ backgroundColor: roleConf.bg }}>
+                        <UserCog size={28} style={{ color: roleConf.text }} />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-xl" style={{ color: 'var(--text-primary)' }}>{m.name}</h3>
+                        <span className="text-xs font-bold uppercase tracking-widest px-3 py-0.5 rounded-2xl mt-1 inline-block" style={{ backgroundColor: roleConf.bg, color: roleConf.text }}>
+                          {roleConf.label}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-6 space-y-3">
+                    {m.email && (
+                      <div className="flex justify-between text-xs">
+                        <span style={{ color: 'var(--text-muted)' }}>Email:</span>
+                        <span style={{ color: 'var(--text-secondary)' }}>{m.email}</span>
+                      </div>
+                    )}
+                    {m.phone && (
+                      <div className="flex justify-between text-xs">
+                        <span style={{ color: 'var(--text-muted)' }}>Telefone:</span>
+                        <span style={{ color: 'var(--text-secondary)' }}>{m.phone}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-xs">
+                      <span style={{ color: 'var(--text-muted)' }}>Especialidade:</span>
+                      <span style={{ color: 'var(--text-secondary)' }}>{m.specialty || '-'}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span style={{ color: 'var(--text-muted)' }}>Hora Aula:</span>
+                      <span className="font-bold text-emerald-400">R$ {m.hourly_rate?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span style={{ color: 'var(--text-muted)' }}>Passagem/Dia:</span>
+                      <span className="font-bold text-blue-400">R$ {m.daily_transport?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span style={{ color: 'var(--text-muted)' }}>Salário Base:</span>
+                      <span style={{ color: 'var(--text-secondary)' }}>R$ {m.salary?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 flex justify-end gap-3" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
+                  <button onClick={() => openEdit(m)} className="flex items-center gap-2 px-3 py-2 rounded-2xl text-xs font-bold transition-all hover:bg-blue-500/10" style={{ color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                    <Edit size={14} />
+                    EDITAR
+                  </button>
+                  <button onClick={() => handleDelete(m.id)} className="flex items-center gap-2 px-3 py-2 rounded-2xl text-xs font-bold transition-all hover:bg-rose-500/10" style={{ color: '#f43f5e', border: '1px solid rgba(244, 63, 94, 0.2)' }}>
+                    <Trash2 size={14} />
+                    EXCLUIR
+                  </button>
                 </div>
               </div>
+            )
+          })}
+        </div>
+      ) : (
+        /* Team Attendance Point Logging View */
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 rounded-2xl border border-white/5" style={{ backgroundColor: 'var(--bg-card)' }}>
+            <div className="flex items-center gap-3">
+              <Calendar size={20} className="text-purple-400" />
+              <span className="text-sm font-bold" style={{ color: 'var(--text-secondary)' }}>Data da Chamada da Equipe:</span>
             </div>
-            
-            <div className="mt-6 space-y-3">
-              <div className="flex justify-between text-sm">
-                <span style={{ color: 'var(--text-muted)' }}>Especialidade:</span>
-                <span style={{ color: 'var(--text-secondary)' }}>{m.specialty || '-'}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span style={{ color: 'var(--text-muted)' }}>Hora Aula:</span>
-                <span className="font-bold text-emerald-400">R$ {m.hourly_rate?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span style={{ color: 'var(--text-muted)' }}>Passagem/Dia:</span>
-                <span className="font-bold text-blue-400">R$ {m.daily_transport?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span style={{ color: 'var(--text-muted)' }}>Salário Base:</span>
-                <span style={{ color: 'var(--text-secondary)' }}>R$ {m.salary?.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
-              </div>
-            </div>
-
-            <div className="mt-6 flex justify-end gap-3" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
-              <button onClick={() => openEdit(m)} className="flex items-center gap-2 px-3 py-2 rounded-2xl text-xs font-bold transition-all hover:bg-blue-500/10" style={{ color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-                <Edit size={14} />
-                EDITAR
-              </button>
-              <button onClick={() => handleDelete(m.id)} className="flex items-center gap-2 px-3 py-2 rounded-2xl text-xs font-bold transition-all hover:bg-rose-500/10" style={{ color: '#f43f5e', border: '1px solid rgba(244, 63, 94, 0.2)' }}>
-                <Trash2 size={14} />
-                EXCLUIR
-              </button>
-            </div>
+            <input
+              type="date"
+              value={attendanceDate}
+              onChange={(e) => setAttendanceDate(e.target.value)}
+              className="rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+              style={inputStyle}
+            />
           </div>
-        ))}
-      </div>
 
+          <div className="rounded-2xl border border-white/5 overflow-hidden" style={{ backgroundColor: 'var(--bg-card)' }}>
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="border-b" style={{ borderColor: 'var(--border-color)', backgroundColor: 'rgba(255,255,255,0.01)' }}>
+                  <th className="p-6 text-xs font-black uppercase tracking-widest text-white/50">Membro da Equipe</th>
+                  <th className="p-6 text-xs font-black uppercase tracking-widest text-white/50">Função</th>
+                  <th className="p-6 text-xs font-black uppercase tracking-widest text-white/50 text-center">Registrar Ponto (Diário)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {members.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="p-10 text-center opacity-50 text-sm">
+                      Nenhum funcionário cadastrado.
+                    </td>
+                  </tr>
+                ) : (
+                  members.map((m) => {
+                    const currentStatus = teamAttendance[m.id]
+                    const isSaving = savingAttendance === m.id
+                    const roleConf = roleColors[m.role] || { bg: 'rgba(156,163,175,0.15)', text: '#9ca3af', label: m.role }
+
+                    return (
+                      <tr key={m.id} className="border-b" style={{ borderColor: 'var(--border-color)' }}>
+                        <td className="p-6">
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
+                              <span className="text-white font-bold">{m.name.charAt(0)}</span>
+                            </div>
+                            <div>
+                              <p className="font-bold text-white text-sm">{m.name}</p>
+                              <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{m.specialty || 'Geral'}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-6">
+                          <span className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full" style={{ backgroundColor: roleConf.bg, color: roleConf.text }}>
+                            {roleConf.label}
+                          </span>
+                        </td>
+                        <td className="p-6">
+                          <div className="flex justify-center items-center gap-3">
+                            {isSaving ? (
+                              <div className="h-6 w-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                            ) : (
+                              <>
+                                {/* Present */}
+                                <button
+                                  onClick={() => handleMarkAttendance(m.id, 'present')}
+                                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
+                                    currentStatus === 'present'
+                                      ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500'
+                                      : 'border-white/5 text-white/50 hover:bg-emerald-500/5 hover:text-emerald-400'
+                                  }`}
+                                >
+                                  <Check size={14} />
+                                  PRESENTE
+                                </button>
+
+                                {/* Late */}
+                                <button
+                                  onClick={() => handleMarkAttendance(m.id, 'late')}
+                                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
+                                    currentStatus === 'late'
+                                      ? 'bg-amber-500/20 text-amber-400 border-amber-500'
+                                      : 'border-white/5 text-white/50 hover:bg-amber-500/5 hover:text-amber-400'
+                                  }`}
+                                >
+                                  <Clock size={14} />
+                                  ATRASADO
+                                </button>
+
+                                {/* Absent */}
+                                <button
+                                  onClick={() => handleMarkAttendance(m.id, 'absent')}
+                                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
+                                    currentStatus === 'absent'
+                                      ? 'bg-rose-500/20 text-rose-400 border-rose-500'
+                                      : 'border-white/5 text-white/50 hover:bg-rose-500/5 hover:text-rose-400'
+                                  }`}
+                                >
+                                  <X size={14} />
+                                  FALTOU
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Team Member Creation/Editing Modal */}
       <Modal 
         isOpen={showModal} 
         onClose={() => { setShowModal(false); resetForm(); }} 
@@ -218,9 +482,12 @@ export default function Team() {
               <div>
                 <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Cargo / Função</label>
                 <select value={formData.role} onChange={(e) => setFormData({ ...formData, role: e.target.value as any })} className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all appearance-none" style={inputStyle}>
-                  <option value="instructor">Professor</option>
-                  <option value="staff">Staff (Recepção/Limpeza)</option>
-                  <option value="admin">Administrador</option>
+                  <option value="Secretário">Secretário</option>
+                  <option value="Diretor">Diretor</option>
+                  <option value="Professor">Professor</option>
+                  <option value="Zelador">Zelador</option>
+                  <option value="Porteiro">Porteiro</option>
+                  <option value="Coordenador">Coordenador</option>
                 </select>
               </div>
               <div>

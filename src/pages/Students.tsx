@@ -633,17 +633,21 @@ export default function Students() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
           <div className="space-y-4">
             <h1 
-              className="font-black tracking-tighter leading-tight inline-block px-16 py-8 rounded-2xl shadow-2xl shadow-purple-500/30" 
+              className="font-black tracking-tighter leading-tight inline-block py-8 rounded-2xl shadow-2xl shadow-purple-500/30" 
               style={{ 
-                backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--title-size, 32px)'
+                backgroundColor: 'var(--accent-color)', 
+                color: '#fff',
+                fontSize: 'var(--title-size, 32px)',
+                paddingLeft: '40px',
+                paddingRight: '40px'
               }}
             >
               Alunos
             </h1>
             <br />
             <p 
-              className="font-bold inline-block px-12 py-6 mt-2 rounded-2xl shadow-xl border border-white/10" 
-               style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)' }}
+              className="font-bold inline-block py-6 mt-2 rounded-2xl shadow-xl border border-white/10" 
+               style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', paddingLeft: '32px', paddingRight: '32px' }}
             >
               Gerencie seus alunos, mensalidades e taxas de matrícula
             </p>
@@ -683,35 +687,35 @@ export default function Students() {
 
       {/* Search & Filter */}
       <div className="flex flex-col gap-4 sm:flex-row mb-12">
-        <div className="relative flex-1">
-          <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
+        <div className="flex flex-1 items-center gap-3 rounded-xl px-4 py-2.5 border" style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border-color)' }}>
+          <Search size={18} className="shrink-0" style={{ color: 'var(--text-muted)' }} />
           <input
             placeholder="Buscar aluno por nome ou email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full rounded-xl py-2.5 pl-11 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
-            style={inputStyle}
+            className="w-full bg-transparent text-sm text-white focus:outline-none placeholder:text-gray-500"
+            style={{ color: 'var(--text-primary)' }}
           />
         </div>
-        <div className="relative">
-          <Filter size={18} className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
+        <div className="flex items-center gap-3 rounded-xl px-4 py-2.5 border" style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border-color)' }}>
+          <Filter size={18} className="shrink-0" style={{ color: 'var(--text-muted)' }} />
           <select
             value={paymentFilter}
             onChange={(e) => setPaymentFilter(e.target.value as PaymentFilter)}
-            className="appearance-none rounded-xl py-2.5 pl-11 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
-            style={inputStyle}
+            className="bg-transparent text-sm text-white focus:outline-none pr-8 appearance-none cursor-pointer"
+            style={{ color: 'var(--text-primary)' }}
           >
-            <option value="all">Todos</option>
-            <option value="paid">Pagos</option>
-            <option value="pending">Pendentes</option>
-            <option value="overdue">Atrasados</option>
+            <option value="all" className="bg-[#12121a]">Todos</option>
+            <option value="paid" className="bg-[#12121a]">Pagos</option>
+            <option value="pending" className="bg-[#12121a]">Pendentes</option>
+            <option value="overdue" className="bg-[#12121a]">Atrasados</option>
           </select>
-          <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--text-muted)' }} />
+          <ChevronDown size={16} className="shrink-0 ml-1" style={{ color: 'var(--text-muted)' }} />
         </div>
       </div>
 
       {/* Student List */}
-      <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+      <div className="rounded-none overflow-hidden" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>

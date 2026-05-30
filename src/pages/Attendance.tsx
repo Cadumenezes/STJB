@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ClipboardCheck, Search, Check, X, Clock } from 'lucide-react'
+import { ClipboardCheck, Check, X, Clock, Users } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { DanceClass, Student } from '../types'
 
@@ -12,8 +12,31 @@ export default function AttendancePage() {
   const [instructorPresence, setInstructorPresence] = useState<'present' | 'absent' | 'late' | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [schoolOwnerId, setSchoolOwnerId] = useState<string | null>(null)
 
   useEffect(() => {
+    async function loadUserProfile() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+        if (profile?.role === 'teacher') {
+          const { data: teamMember } = await supabase
+            .from('team_members')
+            .select('user_id')
+            .eq('email', profile.email)
+            .eq('role', 'instructor')
+            .eq('status', 'active')
+            .maybeSingle()
+
+          if (teamMember?.user_id) {
+            setSchoolOwnerId(teamMember.user_id)
+          }
+        } else {
+          setSchoolOwnerId(user.id)
+        }
+      }
+    }
+    loadUserProfile()
     loadClasses()
   }, [])
 
@@ -64,6 +87,11 @@ export default function AttendancePage() {
   }
 
   async function saveAttendance() {
+    if (!schoolOwnerId) {
+      alert('Erro: ID do proprietário da escola não encontrado. Verifique o cadastro do seu e-mail como professor.')
+      return
+    }
+
     setSaving(true)
     
     // delete previous records for this class & date
@@ -78,7 +106,8 @@ export default function AttendancePage() {
         instructor_id: selectedClass?.instructor_id,
         date,
         status: instructorPresence,
-        type: 'instructor'
+        type: 'instructor',
+        user_id: schoolOwnerId
       })
     }
 
@@ -88,7 +117,8 @@ export default function AttendancePage() {
         student_id: studentId,
         date,
         status,
-        type: 'student'
+        type: 'student',
+        user_id: schoolOwnerId
       })
     })
 
@@ -100,17 +130,18 @@ export default function AttendancePage() {
     setSaving(false)
   }
 
-  const selectStyle: React.CSSProperties = {
-    backgroundColor: 'var(--bg-input)',
-    border: '1px solid var(--border-color)',
-    color: 'var(--text-primary)',
-  }
+  // Calculate Real-time Statistics
+  const totalStudents = students.length
+  const presentCount = Object.values(attendance).filter(status => status === 'present').length
+  const lateCount = Object.values(attendance).filter(status => status === 'late').length
+  const absentCount = Object.values(attendance).filter(status => status === 'absent').length
+  const attendanceRate = totalStudents > 0 ? Math.round(((presentCount + lateCount) / totalStudents) * 100) : 0
 
   return (
-    <div className="flex flex-col pb-10">
-      {/* Header Section with Dynamic Style */}
+    <div className="flex flex-col pb-10 space-y-6">
+      {/* Header Section with Background Highlight */}
       <div 
-        className="p-8 sm:p-10 pb-16 rounded-2xl border border-white/5 shadow-2xl mb-52 relative overflow-hidden"
+        className="p-8 sm:p-10 pb-16 rounded-2xl border border-white/5 shadow-2xl relative overflow-hidden"
         style={{ backgroundColor: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)' }}
       >
         {/* Accent Glow */}
@@ -122,132 +153,267 @@ export default function AttendancePage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
           <div className="space-y-4">
             <h1 
-              className="font-black tracking-tighter leading-tight inline-block px-16 py-8 rounded-2xl shadow-2xl shadow-purple-500/30" 
+              className="font-black tracking-tighter leading-tight inline-block py-8 rounded-2xl shadow-2xl shadow-purple-500/30" 
               style={{ 
                 backgroundColor: 'var(--accent-color)', 
                 color: '#fff',
-                fontSize: 'var(--title-size, 32px)' 
+                fontSize: 'var(--title-size, 32px)',
+                paddingLeft: '40px',
+                paddingRight: '40px'
               }}
             >
-              Chamada
+              Chamada Diária
             </h1>
             <br />
             <p 
-              className="font-bold inline-block px-12 py-6 mt-2 rounded-2xl shadow-xl border border-white/10" 
-               style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)' }}
+              className="font-bold inline-block py-6 mt-2 rounded-2xl shadow-xl border border-white/10" 
+               style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', paddingLeft: '32px', paddingRight: '32px' }}
             >
-              Marque a presença de alunos e professor
+              Controle de presença e pontualidade dos alunos e professores em tempo real
             </p>
           </div>
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4">
+      {/* Selection Toolbar with Cards Theme */}
+      <div className="p-6 rounded-2xl shadow-xl flex flex-col sm:flex-row gap-4" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
         <div className="flex-1">
-          <label className="text-sm font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>Selecione a Turma</label>
+          <label className="text-xs font-semibold uppercase tracking-wider text-gray-400 block mb-2">Turma / Aula</label>
           <select 
             value={selectedClassId} 
             onChange={(e) => setSelectedClassId(e.target.value)}
-            className="w-full rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
-            style={selectStyle}
+            className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-white transition-all hover:border-purple-500/30"
+            style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
           >
-            <option value="">-- Escolha uma turma --</option>
-            {classes.map(c => <option key={c.id} value={c.id}>{c.name} ({c.schedule})</option>)}
+            <option value="" style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)' }}>-- Escolha uma turma --</option>
+            {classes.map(c => (
+              <option key={c.id} value={c.id} style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)' }}>
+                {c.name} ({c.schedule})
+              </option>
+            ))}
           </select>
         </div>
-        <div className="sm:w-48">
-          <label className="text-sm font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>Data</label>
+        <div className="sm:w-60">
+          <label className="text-xs font-semibold uppercase tracking-wider text-gray-400 block mb-2">Data da Aula</label>
           <input 
             type="date" 
             value={date} 
             onChange={(e) => setDate(e.target.value)}
-            className="w-full rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
-            style={selectStyle}
+            className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-white transition-all hover:border-purple-500/30"
+            style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
           />
         </div>
       </div>
 
       {selectedClassId && (
-        <div className="space-y-6">
-          {/* Professor */}
-          <div className="rounded-2xl p-8 sm:p-10" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
-            <h3 className="font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Professor da Turma</h3>
-            <div className="flex items-center gap-4">
-              <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Status:</span>
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => setInstructorPresence('present')}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-2xl text-sm transition-colors border ${instructorPresence === 'present' ? 'border-emerald-500 bg-emerald-500/20 text-emerald-400' : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'}`}
-                >
-                  <Check size={16} /> Presente
-                </button>
-                <button 
-                  onClick={() => setInstructorPresence('late')}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-2xl text-sm transition-colors border ${instructorPresence === 'late' ? 'border-amber-500 bg-amber-500/20 text-amber-400' : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'}`}
-                >
-                  <Clock size={16} /> Atrasado
-                </button>
-                <button 
-                  onClick={() => setInstructorPresence('absent')}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-2xl text-sm transition-colors border ${instructorPresence === 'absent' ? 'border-rose-500 bg-rose-500/20 text-rose-400' : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]'}`}
-                >
-                  <X size={16} /> Faltou
-                </button>
+        <>
+          {/* Real-time Stats Grid */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="p-5 rounded-2xl bg-[#12121a] border border-white/5 flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-purple-500/20 transition-all">
+              <div>
+                <span className="text-xs font-medium text-gray-400 uppercase">Frequência Geral</span>
+                <h4 className="text-2xl font-black text-white mt-1">{attendanceRate}%</h4>
+              </div>
+              <div className="h-10 w-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400">
+                <ClipboardCheck size={20} />
+              </div>
+            </div>
+            <div className="p-5 rounded-2xl bg-[#12121a] border border-white/5 flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-emerald-500/20 transition-all">
+              <div>
+                <span className="text-xs font-medium text-gray-400 uppercase">Presentes</span>
+                <h4 className="text-2xl font-black text-emerald-400 mt-1">
+                  {presentCount} <span className="text-xs font-normal text-gray-500">/ {totalStudents}</span>
+                </h4>
+              </div>
+              <div className="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+                <Check size={20} />
+              </div>
+            </div>
+            <div className="p-5 rounded-2xl bg-[#12121a] border border-white/5 flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-amber-500/20 transition-all">
+              <div>
+                <span className="text-xs font-medium text-gray-400 uppercase">Atrasados</span>
+                <h4 className="text-2xl font-black text-amber-400 mt-1">{lateCount}</h4>
+              </div>
+              <div className="h-10 w-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-400">
+                <Clock size={20} />
+              </div>
+            </div>
+            <div className="p-5 rounded-2xl bg-[#12121a] border border-white/5 flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-rose-500/20 transition-all">
+              <div>
+                <span className="text-xs font-medium text-gray-400 uppercase">Faltas</span>
+                <h4 className="text-2xl font-black text-rose-400 mt-1">{absentCount}</h4>
+              </div>
+              <div className="h-10 w-10 rounded-xl bg-rose-500/10 flex items-center justify-center text-rose-400">
+                <X size={20} />
               </div>
             </div>
           </div>
 
-          {/* Alunos */}
-          <div className="rounded-2xl p-8 sm:p-10" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold" style={{ color: 'var(--text-primary)' }}>Alunos Matriculados</h3>
-            </div>
-            
-            {students.length === 0 ? (
-              <p className="text-sm py-4 text-center" style={{ color: 'var(--text-muted)' }}>Nenhum aluno matriculado nesta turma.</p>
-            ) : (
-              <div className="space-y-3">
-                {students.map(student => (
-                  <div key={student.id} className="flex items-center justify-between p-3 rounded-2xl" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                    <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{student.name}</span>
-                    <div className="flex gap-2">
-                      <button 
-                        onClick={() => setAttendance(prev => ({...prev, [student.id]: 'present'}))}
-                        className={`flex items-center gap-1 px-3 py-1.5 rounded-2xl text-xs font-medium transition-colors border ${attendance[student.id] === 'present' ? 'border-emerald-500 bg-emerald-500/20 text-emerald-400' : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-card)]'}`}
-                      >
-                        <Check size={14} /> P
-                      </button>
-                      <button 
-                        onClick={() => setAttendance(prev => ({...prev, [student.id]: 'late'}))}
-                        className={`flex items-center gap-1 px-3 py-1.5 rounded-2xl text-xs font-medium transition-colors border ${attendance[student.id] === 'late' ? 'border-amber-500 bg-amber-500/20 text-amber-400' : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-card)]'}`}
-                      >
-                        <Clock size={14} /> A
-                      </button>
-                      <button 
-                        onClick={() => setAttendance(prev => ({...prev, [student.id]: 'absent'}))}
-                        className={`flex items-center gap-1 px-3 py-1.5 rounded-2xl text-xs font-medium transition-colors border ${attendance[student.id] === 'absent' ? 'border-rose-500 bg-rose-500/20 text-rose-400' : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-card)]'}`}
-                      >
-                        <X size={14} /> F
-                      </button>
-                    </div>
+          {/* Main Layout Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left/Main Column: Students List */}
+            <div className="lg:col-span-2 space-y-6">
+              <div className="rounded-2xl bg-[#12121a]/40 border border-white/5 p-6 shadow-xl relative overflow-hidden">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h3 className="text-lg font-bold text-white">Alunos Matriculados</h3>
+                    <p className="text-xs text-gray-400 mt-0.5">Marque a presença de cada aluno individualmente.</p>
                   </div>
-                ))}
+                  <span className="px-3 py-1 text-xs font-semibold rounded-full bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                    {totalStudents} alunos
+                  </span>
+                </div>
+
+                {loading ? (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <div className="h-8 w-8 border-2 border-purple-500/20 border-t-purple-500 rounded-full animate-spin mb-3" />
+                    <span className="text-xs text-gray-400">Buscando alunos...</span>
+                  </div>
+                ) : students.length === 0 ? (
+                  <div className="text-center py-12 border border-dashed border-white/5 rounded-xl bg-black/10">
+                    <Users className="mx-auto text-gray-600 mb-2" size={32} />
+                    <p className="text-sm text-gray-400">Nenhum aluno matriculado nesta turma.</p>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-white/5">
+                    {students.map(student => {
+                      const status = attendance[student.id]
+                      return (
+                        <div key={student.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between py-4 first:pt-0 last:pb-0 gap-4 transition-all hover:bg-white/[0.01] rounded-lg px-2 -mx-2">
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/30 flex items-center justify-center text-sm font-bold text-purple-300">
+                              {student.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()}
+                            </div>
+                            <div>
+                              <h4 className="text-sm font-semibold text-white">{student.name}</h4>
+                              <p className="text-xs text-gray-400 mt-0.5">Aluno ativo na turma</p>
+                            </div>
+                          </div>
+                          
+                          {/* Presence Action Pills */}
+                          <div className="flex gap-2 justify-end sm:justify-start">
+                            <button 
+                              onClick={() => setAttendance(prev => ({...prev, [student.id]: 'present'}))}
+                              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all border duration-200 cursor-pointer ${
+                                status === 'present' 
+                                  ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.15)] scale-105' 
+                                  : 'border-white/5 bg-black/10 text-gray-400 hover:border-white/10 hover:text-white'
+                              }`}
+                            >
+                              <Check size={14} /> Presente
+                            </button>
+                            <button 
+                              onClick={() => setAttendance(prev => ({...prev, [student.id]: 'late'}))}
+                              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all border duration-200 cursor-pointer ${
+                                status === 'late' 
+                                  ? 'border-amber-500/50 bg-amber-500/15 text-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.15)] scale-105' 
+                                  : 'border-white/5 bg-black/10 text-gray-400 hover:border-white/10 hover:text-white'
+                              }`}
+                            >
+                              <Clock size={14} /> Atrasado
+                            </button>
+                            <button 
+                              onClick={() => setAttendance(prev => ({...prev, [student.id]: 'absent'}))}
+                              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all border duration-200 cursor-pointer ${
+                                status === 'absent' 
+                                  ? 'border-rose-500/50 bg-rose-500/15 text-rose-400 shadow-[0_0_12px_rgba(244,63,94,0.15)] scale-105' 
+                                  : 'border-white/5 bg-black/10 text-gray-400 hover:border-white/10 hover:text-white'
+                              }`}
+                            >
+                              <X size={14} /> Falta
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
-            )}
-            
-            <div className="mt-6 flex justify-end">
-              <button 
-                onClick={saveAttendance}
-                disabled={saving || (students.length === 0 && !instructorPresence)}
-                className="flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-medium text-white transition-all hover:opacity-90 disabled:opacity-50"
-                style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}
-              >
-                <ClipboardCheck size={18} />
-                {saving ? 'Salvando...' : 'Salvar Chamada'}
-              </button>
+            </div>
+
+            {/* Right Column: Instructor Status & Sinking Action */}
+            <div className="space-y-6">
+              {/* Instructor Team Card */}
+              <div className="rounded-2xl bg-[#12121a]/40 border border-white/5 p-6 shadow-xl relative overflow-hidden">
+                <h3 className="text-lg font-bold text-white mb-4">Professor da Turma</h3>
+                
+                {(() => {
+                  const selectedClass = classes.find(c => c.id === selectedClassId)
+                  return (
+                    <div className="space-y-6">
+                      <div className="p-4 rounded-xl bg-black/20 border border-white/5 flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-300 font-bold">
+                          👨‍🏫
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-semibold text-white">
+                            {selectedClass ? "Docente Vinculado" : "Nenhum professor"}
+                          </h4>
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            {selectedClass?.schedule || "Horário não definido"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <span className="text-xs font-semibold uppercase tracking-wider text-gray-400 block mb-1">Presença do Professor</span>
+                        <div className="grid grid-cols-3 gap-2">
+                          <button 
+                            onClick={() => setInstructorPresence('present')}
+                            className={`flex flex-col items-center justify-center p-3 rounded-xl text-xs font-bold border transition-all duration-200 gap-1.5 cursor-pointer ${
+                              instructorPresence === 'present' 
+                                ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.15)] scale-105' 
+                                : 'border-white/5 bg-black/10 text-gray-400 hover:border-white/10 hover:text-white'
+                            }`}
+                          >
+                            <Check size={16} /> Presente
+                          </button>
+                          <button 
+                            onClick={() => setInstructorPresence('late')}
+                            className={`flex flex-col items-center justify-center p-3 rounded-xl text-xs font-bold border transition-all duration-200 gap-1.5 cursor-pointer ${
+                              instructorPresence === 'late' 
+                                ? 'border-amber-500/50 bg-amber-500/15 text-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.15)] scale-105' 
+                                : 'border-white/5 bg-black/10 text-gray-400 hover:border-white/10 hover:text-white'
+                            }`}
+                          >
+                            <Clock size={16} /> Atrasado
+                          </button>
+                          <button 
+                            onClick={() => setInstructorPresence('absent')}
+                            className={`flex flex-col items-center justify-center p-3 rounded-xl text-xs font-bold border transition-all duration-200 gap-1.5 cursor-pointer ${
+                              instructorPresence === 'absent' 
+                                ? 'border-rose-500/50 bg-rose-500/15 text-rose-400 shadow-[0_0_12px_rgba(244,63,94,0.15)] scale-105' 
+                                : 'border-white/5 bg-black/10 text-gray-400 hover:border-white/10 hover:text-white'
+                            }`}
+                          >
+                            <X size={16} /> Faltou
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()}
+              </div>
+
+              {/* Sync Action Card */}
+              <div className="rounded-2xl bg-[#12121a]/40 border border-white/5 p-6 shadow-xl space-y-4">
+                <h4 className="text-sm font-bold text-white">Finalizar Chamada</h4>
+                <p className="text-xs text-gray-400 leading-relaxed">
+                  Ao salvar, o registro será sincronizado com o banco de dados da escola para fins de acompanhamento pedagógico e financeiro.
+                </p>
+                <button 
+                  onClick={saveAttendance}
+                  disabled={saving || (students.length === 0 && !instructorPresence)}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold text-white transition-all hover:opacity-90 disabled:opacity-50 hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] cursor-pointer"
+                  style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}
+                >
+                  <ClipboardCheck size={18} />
+                  {saving ? 'Salvando...' : 'Salvar Chamada'}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   )

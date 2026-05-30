@@ -7,11 +7,13 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false)
   const [settingsId, setSettingsId] = useState<string | null>(null)
   
+  const [hasBgMenuColumn, setHasBgMenuColumn] = useState(false)
   const [formData, setFormData] = useState({
     school_name: 'DanceFlow',
     logo_url: '',
     bg_color: '#0a0a0f',
     bg_card: '#1a1a2e',
+    bg_menu: '#1a1a2e',
     text_color: '#f0f0ff',
     accent_color: '#8b5cf6',
     title_font_size: 32,
@@ -30,11 +32,14 @@ export default function SettingsPage() {
     const { data } = await supabase.from('school_settings').select('*').limit(1).single()
     if (data) {
       setSettingsId(data.id)
+      const hasMenuCol = 'bg_menu' in data
+      setHasBgMenuColumn(hasMenuCol)
       setFormData({
         school_name: data.school_name || 'DanceFlow',
         logo_url: data.logo_url || '',
         bg_color: data.bg_color || '#0a0a0f',
         bg_card: data.bg_card || '#1a1a2e',
+        bg_menu: data.bg_menu || data.bg_card || '#1a1a2e',
         text_color: data.text_color || '#f0f0ff',
         accent_color: data.accent_color || '#8b5cf6',
         title_font_size: data.title_font_size || 32,
@@ -43,6 +48,9 @@ export default function SettingsPage() {
         address: data.address || '',
         director: data.director || '',
       })
+    } else {
+      const { error } = await supabase.from('school_settings').select('bg_menu').limit(1)
+      setHasBgMenuColumn(!error)
     }
     setLoading(false)
   }
@@ -73,12 +81,24 @@ export default function SettingsPage() {
     e.preventDefault()
     setSaving(true)
     
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      alert('Erro: Usuário não autenticado.')
+      setSaving(false)
+      return
+    }
+
+    const savePayload: any = { ...formData }
+    if (!hasBgMenuColumn) {
+      delete savePayload.bg_menu
+    }
+    
     let error = null
     if (settingsId) {
-      const res = await supabase.from('school_settings').update(formData).eq('id', settingsId)
+      const res = await supabase.from('school_settings').update(savePayload).eq('id', settingsId)
       error = res.error
     } else {
-      const res = await supabase.from('school_settings').insert([formData]).select().single()
+      const res = await supabase.from('school_settings').insert([{ ...savePayload, id: user.id }]).select().single()
       error = res.error
       if (res.data) setSettingsId(res.data.id)
     }
@@ -93,6 +113,7 @@ export default function SettingsPage() {
     // Apply styles immediately
     document.documentElement.style.setProperty('--bg-primary', formData.bg_color)
     document.documentElement.style.setProperty('--bg-card', formData.bg_card)
+    document.documentElement.style.setProperty('--bg-secondary', formData.bg_menu)
     document.documentElement.style.setProperty('--text-primary', formData.text_color)
     document.documentElement.style.setProperty('--accent-color', formData.accent_color)
     document.documentElement.style.setProperty('--title-size', `${formData.title_font_size}px`)
@@ -132,19 +153,21 @@ export default function SettingsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
           <div className="space-y-4">
             <h1 
-              className="font-black tracking-tighter leading-tight inline-block px-16 py-8 rounded-2xl shadow-2xl shadow-purple-500/30" 
+              className="font-black tracking-tighter leading-tight inline-block py-8 rounded-2xl shadow-2xl shadow-purple-500/30" 
               style={{ 
                 backgroundColor: 'var(--accent-color)', 
                 color: '#fff',
-                fontSize: 'var(--title-size, 32px)' 
+                fontSize: 'var(--title-size, 32px)',
+                paddingLeft: '40px',
+                paddingRight: '40px'
               }}
             >
               Configurações
             </h1>
             <br />
             <p 
-              className="font-bold inline-block px-12 py-6 mt-2 rounded-2xl shadow-xl border border-white/10" 
-               style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)' }}
+              className="font-bold inline-block py-6 mt-2 rounded-2xl shadow-xl border border-white/10" 
+               style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', paddingLeft: '32px', paddingRight: '32px' }}
             >
               Personalize a aparência do sistema
             </p>
@@ -152,11 +175,11 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <div className="max-w-3xl rounded-3xl p-8 sm:p-10" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+      <div className="max-w-3xl rounded-3xl p-8 sm:p-10" style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>Nome da Escola</label>
+              <label className="text-sm font-bold block mb-1.5" style={{ color: 'var(--text-primary)' }}>Nome da Escola</label>
               <input 
                 value={formData.school_name} 
                 onChange={(e) => setFormData({ ...formData, school_name: e.target.value })} 
@@ -166,7 +189,7 @@ export default function SettingsPage() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>CNPJ</label>
+                <label className="text-sm font-bold block mb-1.5" style={{ color: 'var(--text-primary)' }}>CNPJ</label>
                 <input 
                   value={formData.cnpj} 
                   onChange={(e) => setFormData({ ...formData, cnpj: e.target.value })} 
@@ -176,7 +199,7 @@ export default function SettingsPage() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>Direção / Responsável</label>
+                <label className="text-sm font-bold block mb-1.5" style={{ color: 'var(--text-primary)' }}>Direção / Responsável</label>
                 <input 
                   value={formData.director} 
                   onChange={(e) => setFormData({ ...formData, director: e.target.value })} 
@@ -188,7 +211,7 @@ export default function SettingsPage() {
             </div>
 
             <div>
-              <label className="text-sm font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>Endereço Completo</label>
+              <label className="text-sm font-bold block mb-1.5" style={{ color: 'var(--text-primary)' }}>Endereço Completo</label>
               <input 
                 value={formData.address} 
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })} 
@@ -199,7 +222,7 @@ export default function SettingsPage() {
             </div>
             
             <div>
-              <label className="text-sm font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>Logotipo da Escola</label>
+              <label className="text-sm font-bold block mb-1.5" style={{ color: 'var(--text-primary)' }}>Logotipo da Escola</label>
               
               <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center mt-2">
                 {formData.logo_url ? (
@@ -247,21 +270,30 @@ export default function SettingsPage() {
                 <label className="text-sm font-bold block mb-3 text-purple-400 uppercase tracking-wider">Cores</label>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Fundo</span>
+                    <span className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Fundo</span>
                     <input type="color" value={formData.bg_color} onChange={(e) => setFormData({ ...formData, bg_color: e.target.value })} className="h-8 w-12 rounded-2xl cursor-pointer border-0 p-0" />
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Texto</span>
+                    <span className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Texto</span>
                     <input type="color" value={formData.text_color} onChange={(e) => setFormData({ ...formData, text_color: e.target.value })} className="h-8 w-12 rounded-2xl cursor-pointer border-0 p-0" />
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Cards</span>
+                    <span className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Cards</span>
                     <input type="color" value={formData.bg_card} onChange={(e) => setFormData({ ...formData, bg_card: e.target.value })} className="h-8 w-12 rounded-2xl cursor-pointer border-0 p-0" />
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-sm font-bold" style={{ color: 'var(--accent-color)' }}>Destaque</span>
+                    <span className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Menu Lateral</span>
+                    <input type="color" value={formData.bg_menu} onChange={(e) => setFormData({ ...formData, bg_menu: e.target.value })} className="h-8 w-12 rounded-2xl cursor-pointer border-0 p-0" />
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Destaque</span>
                     <input type="color" value={formData.accent_color} onChange={(e) => setFormData({ ...formData, accent_color: e.target.value })} className="h-8 w-12 rounded-2xl cursor-pointer border-0 p-0" />
                   </div>
+                  {!hasBgMenuColumn && (
+                    <div className="text-[10px] text-yellow-500/80 p-2.5 rounded-xl border border-yellow-500/20 bg-yellow-500/5 leading-normal mt-2">
+                      💡 <strong>Dica:</strong> Para salvar a cor do menu de forma persistente, rode o script <code>migration_bg_menu.sql</code> no <strong>SQL Editor</strong> do painel Supabase! Por enquanto, ela será aplicada apenas nesta sessão.
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -270,7 +302,7 @@ export default function SettingsPage() {
                 <div className="space-y-6">
                   <div>
                     <div className="flex justify-between mb-1.5">
-                      <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Título</span>
+                      <span className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Título</span>
                       <span className="text-xs font-bold text-purple-400">{formData.title_font_size}px</span>
                     </div>
                     <input 
@@ -281,7 +313,7 @@ export default function SettingsPage() {
                   </div>
                   <div>
                     <div className="flex justify-between mb-1.5">
-                      <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Subtítulo</span>
+                      <span className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Subtítulo</span>
                       <span className="text-xs font-bold text-purple-400">{formData.subtitle_font_size}px</span>
                     </div>
                     <input 

@@ -24,6 +24,7 @@ export default function Dashboard() {
     monthlyChartData: [],
   })
   const [loading, setLoading] = useState(true)
+  const [profile, setProfile] = useState<any>(null)
 
   useEffect(() => {
     loadDashboard()
@@ -32,6 +33,11 @@ export default function Dashboard() {
   async function loadDashboard() {
     setLoading(true)
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: profileData } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+        setProfile(profileData)
+      }
       // Total students
       const { count: studentCount } = await supabase
         .from('students')
@@ -169,6 +175,93 @@ export default function Dashboard() {
     )
   }
 
+  if (profile?.role === 'secretary') {
+    return (
+      <div className="flex flex-col pb-10">
+        {/* Header Section with Background Highlight */}
+        <div 
+          className="p-8 sm:p-10 pb-16 rounded-3xl border border-white/5 shadow-2xl mb-16 relative overflow-hidden"
+          style={{ backgroundColor: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)' }}
+        >
+          {/* Accent Glow */}
+          <div 
+            className="absolute -left-20 -top-20 w-64 h-64 rounded-full blur-[100px] opacity-20"
+            style={{ backgroundColor: 'var(--accent-color)' }}
+          />
+
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
+            <div className="space-y-4">
+              <h1 
+                className="font-black tracking-tighter leading-tight inline-block py-8 rounded-2xl shadow-2xl shadow-purple-500/30" 
+                style={{ 
+                  backgroundColor: 'var(--accent-color)', 
+                  color: '#fff',
+                  fontSize: 'var(--title-size, 32px)',
+                  paddingLeft: '40px',
+                  paddingRight: '40px'
+                }}
+              >
+                Painel
+              </h1>
+              <br />
+              <p 
+                className="font-bold inline-block py-6 mt-2 rounded-2xl shadow-xl border border-white/10" 
+                 style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', paddingLeft: '32px', paddingRight: '32px' }}
+              >
+                Bem-vindo de volta! Aqui está a lista de aniversariantes da semana.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Birthdays */}
+        <div
+          className="rounded-3xl p-8 sm:p-12 border max-w-2xl mx-auto w-full mt-8"
+          style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+        >
+          <h2 className="text-xl font-black mb-6 uppercase tracking-wider flex items-center gap-3 text-white">
+            <Cake size={24} className="text-amber-400" />
+            Aniversariantes da Semana
+          </h2>
+          {data.birthdaysThisWeek.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Cake size={64} style={{ color: 'var(--text-muted)' }} className="mb-4" />
+              <p className="text-sm font-bold" style={{ color: 'var(--text-muted)' }}>
+                Nenhum aniversariante esta semana
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {data.birthdaysThisWeek.map((student, i) => {
+                const birth = new Date(student.birth_date + 'T12:00:00')
+                const day = birth.getDate().toString().padStart(2, '0')
+                const month = (birth.getMonth() + 1).toString().padStart(2, '0')
+                return (
+                  <div
+                    key={i}
+                    className="flex items-center gap-4 rounded-2xl p-4 transition-colors border border-white/5"
+                    style={{ backgroundColor: 'var(--bg-secondary)' }}
+                  >
+                    <div
+                      className="flex h-12 w-12 items-center justify-center rounded-2xl text-xl shrink-0"
+                      style={{ background: 'linear-gradient(135deg, #f59e0b, #f97316)' }}
+                    >
+                      🎉
+                    </div>
+                    <div>
+                      <p className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>{student.name}</p>
+                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Dia {day}/{month}</p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col pb-10">
       {/* Header Section with Background Highlight */}
@@ -185,19 +278,21 @@ export default function Dashboard() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
           <div className="space-y-4">
             <h1 
-              className="font-black tracking-tighter leading-tight inline-block px-16 py-8 rounded-2xl shadow-2xl shadow-purple-500/30" 
+              className="font-black tracking-tighter leading-tight inline-block py-8 rounded-2xl shadow-2xl shadow-purple-500/30" 
               style={{ 
                 backgroundColor: 'var(--accent-color)', 
                 color: '#fff',
-                fontSize: 'var(--title-size, 32px)' 
+                fontSize: 'var(--title-size, 32px)',
+                paddingLeft: '40px',
+                paddingRight: '40px'
               }}
             >
               Dashboard
             </h1>
             <br />
             <p 
-              className="font-bold inline-block px-12 py-6 mt-2 rounded-2xl shadow-xl border border-white/10" 
-               style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)' }}
+              className="font-bold inline-block py-6 mt-2 rounded-2xl shadow-xl border border-white/10" 
+               style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', paddingLeft: '32px', paddingRight: '32px' }}
             >
               Bem-vindo de volta! Aqui está o resumo da sua escola hoje.
             </p>

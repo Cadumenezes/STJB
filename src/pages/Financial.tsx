@@ -29,6 +29,8 @@ export default function Financial() {
   const [fixedBillMonths, setFixedBillMonths] = useState<{id: string, fixed_bill_id: string, month: string, amount: number}[]>([])
   const [editingMonthBill, setEditingMonthBill] = useState<{billId: string, month: string, amount: string} | null>(null)
   const [filter, setFilter] = useState<'all' | 'income' | 'expense'>('all')
+  const [profile, setProfile] = useState<any>(null)
+  const [schoolAdminId, setSchoolAdminId] = useState<string | null>(null)
   
   const [formData, setFormData] = useState({
     type: 'income' as 'income' | 'expense',
@@ -52,6 +54,24 @@ export default function Financial() {
   async function loadData() {
     setLoading(true)
     try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: profileData } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+        setProfile(profileData)
+        
+        let adminId = user.id
+        if (profileData && profileData.role === 'secretary') {
+          const { data: teamData } = await supabase
+            .from('team_members')
+            .select('user_id')
+            .eq('email', user.email)
+            .maybeSingle()
+          if (teamData) {
+            adminId = teamData.user_id
+          }
+        }
+        setSchoolAdminId(adminId)
+      }
       if (activeTab === 'payroll') {
         const { data: members } = await supabase.from('team_members').select('*').eq('role', 'instructor').eq('status', 'active')
         const { data: att } = await supabase.from('attendance').select('*').eq('type', 'instructor').eq('status', 'present')
@@ -111,7 +131,13 @@ export default function Financial() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const payload = { ...formData, amount: parseFloat(formData.amount) }
+    const payload: any = { 
+      ...formData, 
+      amount: parseFloat(formData.amount) 
+    }
+    if (profile?.role === 'secretary' && schoolAdminId) {
+      payload.user_id = schoolAdminId
+    }
     const { error } = editEntry 
       ? await supabase.from('financial_entries').update(payload).eq('id', editEntry.id)
       : await supabase.from('financial_entries').insert([payload])
@@ -288,6 +314,172 @@ export default function Financial() {
     )
   }
 
+  if (profile?.role === 'secretary') {
+    return (
+      <div className="flex flex-col pb-10">
+        {/* Header Section with Dynamic Style */}
+        <div 
+          className="p-8 sm:p-10 pb-16 rounded-2xl border border-white/5 shadow-2xl mb-16 relative overflow-hidden"
+          style={{ 
+            backgroundColor: 'rgba(255,255,255,0.03)', 
+            backdropFilter: 'blur(20px)',
+          }}
+        >
+          {/* Accent Glow */}
+          <div 
+            className="absolute -left-20 -top-20 w-64 h-64 rounded-full blur-[100px] opacity-20"
+            style={{ backgroundColor: 'var(--accent-color)' }}
+          />
+
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
+            <div className="space-y-4">
+              <h1 
+                className="font-black tracking-tighter leading-tight inline-block py-8 rounded-2xl shadow-2xl shadow-purple-500/30" 
+                style={{ 
+                  backgroundColor: 'var(--accent-color)', 
+                  color: '#fff',
+                  fontSize: 'var(--title-size, 32px)',
+                  paddingLeft: '40px',
+                  paddingRight: '40px'
+                }}
+              >
+                Financeiro
+              </h1>
+              <br />
+              <p 
+                className="font-bold inline-block py-6 mt-2 rounded-2xl shadow-xl border border-white/10" 
+                 style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', paddingLeft: '32px', paddingRight: '32px' }}
+              >
+                Lançamento de novas receitas e despesas
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-2xl mx-auto w-full rounded-3xl p-8 sm:p-12 text-center border border-white/5 relative overflow-hidden mt-8" style={{ backgroundColor: 'var(--bg-card)' }}>
+          <div className="h-20 w-20 rounded-3xl mx-auto flex items-center justify-center mb-6 bg-purple-500/10 border border-purple-500/20">
+            <DollarSign size={40} className="text-purple-400 animate-pulse" />
+          </div>
+          <h2 className="text-2xl font-black text-white mb-4 uppercase tracking-wider">Novo Lançamento</h2>
+          <p className="text-sm mb-8 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+            Como Secretário(a), você possui acesso exclusivo para registrar novos lançamentos de fluxo de caixa (entradas e saídas) do DanceFlow.
+          </p>
+          <button
+            onClick={() => { resetForm(); setEditEntry(null); setShowModal(true) }}
+            className="flex items-center justify-center gap-3 rounded-2xl px-10 py-5 text-sm font-black text-white transition-all hover:scale-105 active:scale-95 shadow-xl mx-auto"
+            style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}
+          >
+            <Plus size={22} />
+            CADASTRAR LANÇAMENTO
+          </button>
+        </div>
+
+        {/* Modal Lançamento Comum */}
+        <Modal isOpen={showModal} onClose={() => { setShowModal(false); setEditEntry(null); resetForm() }} title={editEntry ? 'Editar Entrada' : 'Nova Entrada'}>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="text-sm font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>Tipo *</label>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, type: 'income' })}
+                  className="flex-1 rounded-xl px-4 py-2.5 text-sm font-medium transition-all"
+                  style={{
+                    backgroundColor: formData.type === 'income' ? 'rgba(16,185,129,0.2)' : 'var(--bg-secondary)',
+                    color: formData.type === 'income' ? '#10b981' : 'var(--text-secondary)',
+                    border: '1px solid var(--border-color)'
+                  }}
+                >
+                  Entrada (Receita)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, type: 'expense' })}
+                  className="flex-1 rounded-xl px-4 py-2.5 text-sm font-medium transition-all"
+                  style={{
+                    backgroundColor: formData.type === 'expense' ? 'rgba(244,63,94,0.2)' : 'var(--bg-secondary)',
+                    color: formData.type === 'expense' ? '#f43f5e' : 'var(--text-secondary)',
+                    border: '1px solid var(--border-color)'
+                  }}
+                >
+                  Saída (Despesa)
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>Categoria *</label>
+              <input
+                required
+                value={formData.category}
+                onChange={e => setFormData({ ...formData, category: e.target.value })}
+                placeholder="Ex: Mensalidade, Uniforme, Limpeza..."
+                className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-500 transition-all"
+                style={inputStyle}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>Descrição *</label>
+              <input
+                required
+                value={formData.description}
+                onChange={e => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Ex: Mensalidade do aluno João..."
+                className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-500 transition-all"
+                style={inputStyle}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>Valor (R$) *</label>
+                <input
+                  required
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.amount}
+                  onChange={e => setFormData({ ...formData, amount: e.target.value })}
+                  placeholder="0,00"
+                  className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-500 transition-all"
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>Data *</label>
+                <input
+                  required
+                  type="date"
+                  value={formData.date}
+                  onChange={e => setFormData({ ...formData, date: e.target.value })}
+                  className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-purple-500 transition-all [color-scheme:dark]"
+                  style={inputStyle}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => setShowModal(false)}
+                className="rounded-xl px-4 py-2 text-sm font-medium bg-white/5 text-[var(--text-secondary)] hover:bg-white/10 transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="rounded-xl px-6 py-2 text-sm font-bold text-white bg-purple-600 hover:bg-purple-700 transition-all"
+              >
+                Salvar Lançamento
+              </button>
+            </div>
+          </form>
+        </Modal>
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col pb-10">
       {/* Header Section with Dynamic Style */}
@@ -307,19 +499,21 @@ export default function Financial() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
           <div className="space-y-4">
             <h1 
-              className="font-black tracking-tighter leading-tight inline-block px-16 py-8 rounded-2xl shadow-2xl shadow-purple-500/30" 
+              className="font-black tracking-tighter leading-tight inline-block py-8 rounded-2xl shadow-2xl shadow-purple-500/30" 
               style={{ 
                 backgroundColor: 'var(--accent-color)', 
                 color: '#fff',
-                fontSize: 'var(--title-size, 32px)' 
+                fontSize: 'var(--title-size, 32px)',
+                paddingLeft: '40px',
+                paddingRight: '40px'
               }}
             >
               Financeiro
             </h1>
             <br />
             <p 
-              className="font-bold inline-block px-12 py-6 mt-2 rounded-2xl shadow-xl border border-white/10" 
-               style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)' }}
+              className="font-bold inline-block py-6 mt-2 rounded-2xl shadow-xl border border-white/10" 
+               style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', paddingLeft: '32px', paddingRight: '32px' }}
             >
               Controle de caixa, contas fixas e pagamentos de equipe
             </p>
@@ -341,27 +535,36 @@ export default function Financial() {
       <div className="flex flex-wrap gap-4 p-1 bg-black/20 rounded-2xl w-fit mb-12">
         <button
           onClick={() => setActiveTab('flow')}
-          className={`px-6 py-2.5 text-sm font-bold transition-all rounded-2xl shadow-lg ${activeTab === 'flow' ? 'text-white' : 'text-[var(--text-muted)] hover:text-white hover:bg-white/5'}`}
+          className={`px-12 py-4 text-sm font-bold transition-all rounded-2xl shadow-lg border ${
+            activeTab === 'flow' ? 'text-white' : 'text-[var(--text-muted)] hover:text-white hover:bg-white/5'
+          }`}
           style={{ 
-            background: activeTab === 'flow' ? 'linear-gradient(135deg, #8b5cf6, #7c3aed)' : 'transparent'
+            backgroundColor: activeTab === 'flow' ? 'var(--bg-card)' : 'transparent',
+            borderColor: activeTab === 'flow' ? 'var(--border-color)' : 'transparent'
           }}
         >
           Fluxo de Caixa
         </button>
         <button
           onClick={() => setActiveTab('fixed')}
-          className={`px-6 py-2.5 text-sm font-bold transition-all rounded-xl shadow-lg ${activeTab === 'fixed' ? 'text-white' : 'text-[var(--text-muted)] hover:text-white hover:bg-white/5'}`}
+          className={`px-12 py-4 text-sm font-bold transition-all rounded-2xl shadow-lg border ${
+            activeTab === 'fixed' ? 'text-white' : 'text-[var(--text-muted)] hover:text-white hover:bg-white/5'
+          }`}
           style={{ 
-            background: activeTab === 'fixed' ? 'linear-gradient(135deg, #8b5cf6, #7c3aed)' : 'transparent'
+            backgroundColor: activeTab === 'fixed' ? 'var(--bg-card)' : 'transparent',
+            borderColor: activeTab === 'fixed' ? 'var(--border-color)' : 'transparent'
           }}
         >
           Contas Fixas
         </button>
         <button
           onClick={() => setActiveTab('payroll')}
-          className={`px-6 py-2.5 text-sm font-bold transition-all rounded-xl shadow-lg ${activeTab === 'payroll' ? 'text-white' : 'text-[var(--text-muted)] hover:text-white hover:bg-white/5'}`}
+          className={`px-12 py-4 text-sm font-bold transition-all rounded-2xl shadow-lg border ${
+            activeTab === 'payroll' ? 'text-white' : 'text-[var(--text-muted)] hover:text-white hover:bg-white/5'
+          }`}
           style={{ 
-            background: activeTab === 'payroll' ? 'linear-gradient(135deg, #8b5cf6, #7c3aed)' : 'transparent'
+            backgroundColor: activeTab === 'payroll' ? 'var(--bg-card)' : 'transparent',
+            borderColor: activeTab === 'payroll' ? 'var(--border-color)' : 'transparent'
           }}
         >
           Pagamentos Equipe
@@ -465,7 +668,7 @@ export default function Financial() {
           </div>
 
           {/* Entries List */}
-          <div className="rounded-2xl overflow-hidden shadow-xl" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+          <div className="rounded-none overflow-hidden shadow-xl" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>

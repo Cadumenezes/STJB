@@ -14,9 +14,14 @@ import {
   HelpCircle,
   Star,
   Calendar,
+  Shield,
+  Sparkles,
+  CalendarDays,
+  ShoppingBag,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { Profile } from '../types'
 import Modal from './Modal'
 
 const navItems = [
@@ -26,9 +31,12 @@ const navItems = [
   { path: '/financial', label: 'Financeiro', icon: DollarSign },
   { path: '/classes', label: 'Turmas', icon: Music },
   { path: '/attendance', label: 'Chamada', icon: ClipboardCheck },
+  { path: '/schedule', label: 'Agenda', icon: CalendarDays },
   { path: '/events', label: 'Eventos', icon: Calendar },
+  { path: '/shop', label: 'Loja', icon: ShoppingBag },
   { path: '/inventory', label: 'Estoque', icon: Package },
   { path: '/team', label: 'Equipe', icon: UserCog },
+  { path: '/ai-consultant', label: 'Pirueta (IA)', icon: Sparkles },
   { path: '/settings', label: 'Configurações', icon: Settings },
 ]
 
@@ -37,6 +45,8 @@ export default function Layout() {
   const [helpOpen, setHelpOpen] = useState(false)
   const [schoolName, setSchoolName] = useState('DanceFlow')
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [profile, setProfile] = useState<Profile | null>(null)
   const location = useLocation()
 
   useEffect(() => {
@@ -50,6 +60,8 @@ export default function Layout() {
       setLogoUrl(data.logo_url)
       if (data.bg_color) document.documentElement.style.setProperty('--bg-primary', data.bg_color)
       if (data.bg_card) document.documentElement.style.setProperty('--bg-card', data.bg_card)
+      const bgSecondaryColor = data.bg_menu || data.bg_card || '#1a1a2e'
+      document.documentElement.style.setProperty('--bg-secondary', bgSecondaryColor)
       if (data.text_color) document.documentElement.style.setProperty('--text-primary', data.text_color)
       if (data.accent_color) document.documentElement.style.setProperty('--accent-color', data.accent_color)
       
@@ -57,6 +69,17 @@ export default function Layout() {
       const subtitleSize = data.subtitle_font_size || 16
       document.documentElement.style.setProperty('--title-size', `${titleSize}px`)
       document.documentElement.style.setProperty('--subtitle-size', `${subtitleSize}px`)
+    }
+
+    const { data: userData } = await supabase.auth.getUser()
+    if (userData.user) {
+      const { data: profileData } = await supabase.from('profiles').select('*').eq('id', userData.user.id).single()
+      if (profileData) {
+        setProfile(profileData)
+        if (profileData.role === 'admin') {
+          setIsAdmin(true)
+        }
+      }
     }
   }
 
@@ -124,7 +147,7 @@ export default function Layout() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-56 transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         style={{ backgroundColor: 'var(--bg-secondary)', borderRight: '1px solid var(--border-color)' }}
@@ -156,14 +179,43 @@ export default function Layout() {
 
           {/* Navigation */}
           <nav className="flex-1 space-y-1 p-2 overflow-y-auto">
-            {navItems.map((item) => (
+            {navItems
+              .filter((item) => {
+                if (profile?.role === 'teacher') {
+                  return item.path === '/attendance' || item.path === '/schedule'
+                }
+                if (profile?.role === 'secretary') {
+                  return item.path !== '/inventory' && item.path !== '/team' && item.path !== '/settings'
+                }
+                return true
+              })
+              .map((item) => (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  end={item.path === '/'}
+                  onClick={() => setSidebarOpen(false)}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 rounded-2xl px-3 py-2 text-base font-semibold transition-all duration-200 ${
+                      isActive ? 'shadow-lg' : 'hover:opacity-80'
+                    }`
+                  }
+                  style={({ isActive }) => ({
+                    backgroundColor: isActive ? 'var(--accent-color)' : 'transparent',
+                    color: isActive ? '#fff' : 'var(--text-secondary)',
+                  })}
+                >
+                  <item.icon size={20} />
+                  {item.label}
+                </NavLink>
+              ))}
+
+            {isAdmin && (
               <NavLink
-                key={item.path}
-                to={item.path}
-                end={item.path === '/'}
+                to="/admin"
                 onClick={() => setSidebarOpen(false)}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-2xl px-3 py-2 text-lg font-semibold transition-all duration-200 ${
+                  `flex items-center gap-3 rounded-2xl px-3 py-2 text-base font-semibold transition-all duration-200 ${
                     isActive ? 'shadow-lg' : 'hover:opacity-80'
                   }`
                 }
@@ -172,14 +224,14 @@ export default function Layout() {
                   color: isActive ? '#fff' : 'var(--text-secondary)',
                 })}
               >
-                <item.icon size={20} />
-                {item.label}
+                <Shield size={20} />
+                Painel Admin
               </NavLink>
-            ))}
+            )}
 
             <button
               onClick={() => { setHelpOpen(true); setSidebarOpen(false); }}
-              className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-lg font-semibold text-[var(--text-secondary)] hover:opacity-80 transition-all duration-200"
+              className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-base font-semibold text-[var(--text-secondary)] hover:opacity-80 transition-all duration-200"
             >
               <HelpCircle size={20} />
               Dicas
@@ -197,12 +249,28 @@ export default function Layout() {
             </button>
 
             <div className="rounded-2xl p-4" style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.15), rgba(236,72,153,0.15))' }}>
-              <p className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
-                DanceFlow v1.0
-              </p>
-              <p className="text-[10px] mt-1" style={{ color: 'var(--text-muted)' }}>
-                Sistema de Gestão
-              </p>
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-[10px] font-black uppercase tracking-wider text-purple-400">
+                  Plano {
+                    profile?.plan === 'diamante' ? '💎 Diamante' :
+                    profile?.plan === 'ouro' ? '🥇 Ouro' :
+                    profile?.plan === 'prata' ? '🥈 Prata' : '🆓 Grátis'
+                  }
+                </span>
+              </div>
+              {profile?.expires_at && (
+                <p className="text-[9px]" style={{ color: 'var(--text-muted)' }}>
+                  Validade: {profile.expires_at === '2099-12-31' ? 'Vitalícia' : new Date(profile.expires_at).toLocaleDateString('pt-BR')}
+                </p>
+              )}
+              {profile?.expires_at !== '2099-12-31' && (
+                <NavLink
+                  to="/checkout"
+                  className="mt-2 block text-center py-1 px-3 rounded-lg text-[9px] font-black text-white bg-purple-600/80 hover:bg-purple-650 transition-colors uppercase tracking-wider"
+                >
+                  Renovar Plano
+                </NavLink>
+              )}
             </div>
           </div>
         </div>

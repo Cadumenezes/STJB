@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { LogIn, UserPlus, Mail, Lock, Phone, ArrowRight } from 'lucide-react'
+import { Mail, Lock, Phone, ArrowRight, Sparkles } from 'lucide-react'
+import loginBgImage from '../assets/dance_auth_login.png'
+import danceLoginJazz from '../assets/dance_login_jazz.png'
+import danceLoginKids from '../assets/dance_login_kids.png'
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true)
@@ -40,81 +43,93 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-[#0a0a0f]" style={{ backgroundColor: 'var(--bg-primary)' }}>
-      {/* Background blobs for aesthetics */}
-      <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-purple-600/20 blur-[120px]" />
-      <div className="fixed bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-pink-600/20 blur-[120px]" />
+    <div className="min-h-screen w-full flex bg-[#06060c] text-white selection:bg-purple-500/30 font-sans overflow-hidden">
+      
+      {/* Left Column: Compact Login Form (35% on large screens, full screen on mobile) */}
+      <div className="w-full md:w-[40%] lg:w-[35%] flex flex-col justify-between p-8 sm:p-10 lg:p-12 relative z-10 bg-[#0a0a0f] border-r border-white/5 shrink-0">
+        {/* Subtle Background Accent */}
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-purple-600/5 blur-[100px] pointer-events-none -z-10" />
 
-      <div className="w-full max-w-md relative z-10">
-        {/* Logo Section */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="h-20 w-20 rounded-3xl flex items-center justify-center mb-4 shadow-2xl" style={{ background: 'var(--accent-gradient, linear-gradient(135deg, #8b5cf6, #ec4899))' }}>
-            <span className="text-white text-4xl font-black">D</span>
+        {/* Top Header Logo */}
+        <div className="flex items-center gap-2">
+          <div className="h-7 w-7 rounded-lg flex items-center justify-center bg-gradient-to-br from-purple-600 to-pink-500 shadow-lg shadow-purple-500/20">
+            <span className="text-white text-xs font-black">D</span>
           </div>
-          <h1 className="text-3xl font-black text-white tracking-tight">Dance<span className="text-purple-500">Flow</span></h1>
-          <p className="text-gray-400 mt-2 font-medium">Gestão Inteligente para sua Escola</p>
+          <span className="text-base font-black tracking-tight text-white">Dance<span className="text-purple-500">Flow</span></span>
         </div>
 
-        {/* Auth Card */}
-        <div className="rounded-3xl p-8 backdrop-blur-xl border border-white/10 shadow-2xl" style={{ backgroundColor: 'rgba(26, 26, 46, 0.8)' }}>
-          <div className="flex gap-4 mb-8 p-1 bg-black/20 rounded-2xl">
+        {/* Form Container */}
+        <div className="my-auto py-8">
+          <div className="mb-6">
+            <h2 className="text-xl font-bold tracking-tight text-white">
+              {isLogin ? 'Bem-vindo de volta' : 'Crie sua conta comercial'}
+            </h2>
+            <p className="text-xs text-gray-400 mt-1">
+              {isLogin 
+                ? 'Insira suas credenciais abaixo para gerenciar sua escola.' 
+                : 'Preencha os campos para iniciar sua experiência no DanceFlow.'}
+            </p>
+          </div>
+
+          {/* Login / Signup Tabs Toggle */}
+          <div className="flex gap-2 mb-6 p-1 bg-black/30 border border-white/5 rounded-xl">
             <button
               onClick={() => setIsLogin(true)}
-              className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${isLogin ? 'bg-purple-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
+              className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${isLogin ? 'bg-purple-600 text-white shadow-md' : 'text-gray-400 hover:text-white'}`}
             >
-              Login
+              Fazer Login
             </button>
             <button
               onClick={() => setIsLogin(false)}
-              className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${!isLogin ? 'bg-purple-600 text-white shadow-lg' : 'text-gray-400 hover:text-white'}`}
+              className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${!isLogin ? 'bg-purple-600 text-white shadow-md' : 'text-gray-400 hover:text-white'}`}
             >
-              Cadastro
+              Criar Cadastro
             </button>
           </div>
 
-          <form onSubmit={handleAuth} className="space-y-5">
+          <form onSubmit={handleAuth} className="space-y-4">
             {message.text && (
-              <div className={`p-4 rounded-xl text-sm font-medium ${message.type === 'error' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}`}>
+              <div className={`p-3 rounded-xl text-xs font-medium ${message.type === 'error' ? 'bg-red-500/10 text-red-400 border border-red-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}`}>
                 {message.text}
               </div>
             )}
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div className="relative group">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-500 transition-colors" size={20} />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-500 transition-colors" size={15} />
                 <input
                   type="email"
                   required
                   placeholder="Seu e-mail"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-black/20 border border-white/10 rounded-2xl pl-12 pr-4 py-3.5 text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500/50 transition-all"
+                  className="w-full bg-black/30 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
                 />
               </div>
 
               {!isLogin && (
                 <div className="relative group">
-                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-500 transition-colors" size={20} />
+                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-500 transition-colors" size={15} />
                   <input
                     type="tel"
                     required
                     placeholder="Telefone / WhatsApp"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full bg-black/20 border border-white/10 rounded-2xl pl-12 pr-4 py-3.5 text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500/50 transition-all"
+                    className="w-full bg-black/30 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
                   />
                 </div>
               )}
 
               <div className="relative group">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-500 transition-colors" size={20} />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-500 transition-colors" size={15} />
                 <input
                   type="password"
                   required
                   placeholder="Sua senha"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-black/20 border border-white/10 rounded-2xl pl-12 pr-4 py-3.5 text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/40 focus:border-purple-500/50 transition-all"
+                  className="w-full bg-black/30 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
                 />
               </div>
             </div>
@@ -122,35 +137,92 @@ export default function Auth() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 rounded-2xl transition-all shadow-xl shadow-purple-900/20 flex items-center justify-center gap-2 group disabled:opacity-50"
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3.5 rounded-xl text-xs transition-all shadow-lg shadow-purple-900/15 flex items-center justify-center gap-2 group disabled:opacity-50 cursor-pointer"
             >
               {loading ? (
-                <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
-                  {isLogin ? 'Entrar no Sistema' : 'Criar minha Conta'}
-                  <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                  {isLogin ? 'Acessar Conta' : 'Iniciar Avaliação Gratuita'}
+                  <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
                 </>
               )}
             </button>
           </form>
 
-          <p className="text-center text-gray-500 text-sm mt-8">
-            {isLogin ? 'Novo por aqui?' : 'Já tem uma conta?'}
+          <p className="text-center text-gray-500 text-xs mt-6">
+            {isLogin ? 'Novo por aqui?' : 'Já possui uma conta?'}
             <button
               onClick={() => setIsLogin(!isLogin)}
-              className="ml-2 text-purple-400 font-bold hover:text-purple-300 transition-colors"
+              className="ml-1 text-purple-400 font-bold hover:text-purple-300 transition-colors cursor-pointer"
             >
-              {isLogin ? 'Crie seu cadastro' : 'Faça seu login'}
+              {isLogin ? 'Cadastre sua escola' : 'Faça seu login'}
             </button>
           </p>
         </div>
 
-        {/* Footer */}
-        <p className="text-center mt-8 text-gray-600 text-xs font-medium uppercase tracking-widest">
-          DanceFlow Management v1.0
+        {/* Footer info */}
+        <p className="text-left text-gray-600 text-[9px] font-semibold tracking-wider uppercase">
+          DanceFlow Management v1.1
         </p>
       </div>
+
+      {/* Right Column: Visual Humanized Panel (SaaS Split-Screen Grid) */}
+      <div className="hidden md:flex md:w-[60%] lg:w-[65%] flex-col justify-between p-8 lg:p-12 bg-[#06060c] overflow-y-auto relative border-l border-white/5 shrink-0">
+        
+        {/* Subtle Radial Glow */}
+        <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-purple-600/10 blur-[130px] pointer-events-none -z-10" />
+
+        {/* Brand Quote (Completely separate, not overlaying any photo!) */}
+        <div className="w-full p-6 rounded-2xl bg-black/40 border border-white/5 backdrop-blur-md shadow-2xl space-y-3.5 mb-8 shrink-0">
+          <div className="flex items-center gap-2">
+            <div className="h-6 w-6 rounded-lg flex items-center justify-center bg-purple-500/20 text-purple-400">
+              <Sparkles size={14} />
+            </div>
+            <span className="text-[10px] text-purple-400 uppercase tracking-widest font-black">Tecnologia & Arte em Movimento</span>
+          </div>
+          <blockquote className="text-xs italic leading-relaxed text-gray-300">
+            "A dança é a linguagem secreta da alma. Nosso propósito é fazer a gestão da sua escola fluir tão suavemente quanto cada passo de dança."
+          </blockquote>
+          <div>
+            <h4 className="font-bold text-[11px] text-white">DanceFlow Management</h4>
+          </div>
+        </div>
+
+        {/* Gallery of multiple images (Fully visible, completely uncovered!) */}
+        <div className="flex-1 w-full grid grid-cols-1 lg:grid-cols-4 gap-4 min-h-[300px]">
+          {/* Photo 1 (Spans 2 columns to give the couple ample horizontal space so both are fully visible!) */}
+          <div className="lg:col-span-2 relative rounded-2xl overflow-hidden border border-white/5 shadow-xl group hover:border-purple-500/30 transition-all duration-300">
+            <img 
+              src={loginBgImage} 
+              alt="Casal de adolescentes negros fazendo dança urbana" 
+              className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 filter brightness-[0.8]"
+            />
+          </div>
+
+          {/* Photo 2 */}
+          <div className="lg:col-span-1 relative rounded-2xl overflow-hidden border border-white/5 shadow-xl group hover:border-purple-500/30 transition-all duration-300">
+            <img 
+              src={danceLoginJazz} 
+              alt="Bailarina clássica contemporânea" 
+              className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 filter brightness-[0.8]"
+            />
+          </div>
+
+          {/* Photo 3 */}
+          <div className="lg:col-span-1 relative rounded-2xl overflow-hidden border border-white/5 shadow-xl group hover:border-purple-500/30 transition-all duration-300">
+            <img 
+              src={danceLoginKids} 
+              alt="Dança urbana e coreografia moderna" 
+              className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500 filter brightness-[0.8]"
+            />
+          </div>
+        </div>
+
+        {/* Subtle Bottom Glow */}
+        <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-pink-600/5 blur-[120px] pointer-events-none -z-10" />
+      </div>
+      
     </div>
   )
 }

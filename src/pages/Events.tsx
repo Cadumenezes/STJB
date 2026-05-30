@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Plus, Edit, Trash2, Calendar, MapPin, DollarSign, Users, Download, PlusCircle, CheckCircle, CreditCard, Box, Search } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { Event, EventParticipant, Student, Installment } from '../types'
+import { Event, EventParticipant, Student, Installment, Profile } from '../types'
 import Modal from '../components/Modal'
 
 export default function Events() {
@@ -14,6 +14,15 @@ export default function Events() {
   const [showEventModal, setShowEventModal] = useState(false)
   const [editEvent, setEditEvent] = useState<Event | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [profile, setProfile] = useState<Profile | null>(null)
+
+  function getDynamicFontSize(val: string | number) {
+    const len = val.toString().length
+    if (len > 15) return 'text-sm'
+    if (len > 11) return 'text-base'
+    if (len > 8) return 'text-lg'
+    return 'text-2xl'
+  }
   
   const [eventFormData, setEventFormData] = useState({
     name: '',
@@ -32,6 +41,12 @@ export default function Events() {
 
   async function loadData() {
     setLoading(true)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const { data: profileData } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+      setProfile(profileData)
+    }
+
     const { data: eventsData } = await supabase.from('events').select('*').order('date', { ascending: true })
     setEvents(eventsData || [])
     
@@ -362,28 +377,30 @@ export default function Events() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
           <div className="space-y-4">
             <h1 
-              className="font-black tracking-tighter leading-tight inline-block px-16 py-8 rounded-2xl shadow-2xl shadow-purple-500/30" 
-              style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--title-size, 32px)' }}
+              className="font-black tracking-tighter leading-tight inline-block py-8 rounded-2xl shadow-2xl shadow-purple-500/30" 
+              style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--title-size, 32px)', paddingLeft: '40px', paddingRight: '40px' }}
             >
               Eventos
             </h1>
             <br />
-            <p className="font-bold inline-block px-12 py-6 mt-2 rounded-2xl shadow-xl border border-white/10" style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)' }}>
+            <p className="font-bold inline-block py-6 mt-2 rounded-2xl shadow-xl border border-white/10" style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', paddingLeft: '32px', paddingRight: '32px' }}>
               Gerencie espetáculos, festivais e participantes
             </p>
           </div>
-          <button
-            onClick={() => {
-              setEditEvent(null)
-              setEventFormData({ name: '', date: new Date().toISOString().split('T')[0], location: '', description: '', ticket_price: 0, cost: 0, base_choreography_price: 0, base_clothes_cost: 0 })
-              setShowEventModal(true)
-            }}
-            className="flex items-center gap-2 rounded-2xl px-8 py-4 text-sm font-bold text-white transition-all hover:scale-105 shadow-xl"
-            style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}
-          >
-            <Calendar size={26} />
-            Novo Evento
-          </button>
+          {profile?.role !== 'secretary' && (
+            <button
+              onClick={() => {
+                setEditEvent(null)
+                setEventFormData({ name: '', date: new Date().toISOString().split('T')[0], location: '', description: '', ticket_price: 0, cost: 0, base_choreography_price: 0, base_clothes_cost: 0 })
+                setShowEventModal(true)
+              }}
+              className="flex items-center gap-2 rounded-2xl px-8 py-4 text-sm font-bold text-white transition-all hover:scale-105 shadow-xl"
+              style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}
+            >
+              <Calendar size={26} />
+              Novo Evento
+            </button>
+          )}
         </div>
       </div>
 
@@ -414,43 +431,87 @@ export default function Events() {
 
           {activeEvent && (
             <div className="space-y-8">
+              {/* Highlighted Event Title/Subtitle Header */}
+              <div 
+                className="p-8 sm:p-10 pb-16 rounded-3xl border border-white/5 shadow-2xl mb-8 relative overflow-hidden"
+                style={{ backgroundColor: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)' }}
+              >
+                {/* Accent Glow */}
+                <div 
+                  className="absolute -left-20 -top-20 w-64 h-64 rounded-full blur-[100px] opacity-20"
+                  style={{ backgroundColor: 'var(--accent-color)' }}
+                />
+
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
+                  <div className="space-y-4">
+                    <h2 
+                      className="font-black tracking-tighter leading-tight inline-block py-8 rounded-2xl shadow-2xl shadow-purple-500/30" 
+                      style={{ 
+                        backgroundColor: 'var(--accent-color)', 
+                        color: '#fff',
+                        fontSize: 'var(--title-size, 32px)',
+                        paddingLeft: '40px',
+                        paddingRight: '40px'
+                      }}
+                    >
+                      {activeEvent.name}
+                    </h2>
+                    <br />
+                    <p 
+                      className="font-bold inline-block py-6 mt-2 rounded-2xl shadow-xl border border-white/10" 
+                       style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', paddingLeft: '32px', paddingRight: '32px' }}
+                    >
+                      {activeEvent.description || 'Sem descrição'} {activeEvent.location ? `• Local: ${activeEvent.location}` : ''}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               {/* Event Summary Cards */}
               <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-                <div className="p-6 rounded-3xl border border-white/5" style={{ backgroundColor: 'var(--bg-card)' }}>
-                  <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1">Participantes</p>
-                  <p className="text-2xl font-black text-white">{currentParticipants.length}</p>
+                <div className="p-6 rounded-3xl border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
+                  <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">Participantes</p>
+                  <p className={`font-black text-white ${getDynamicFontSize(currentParticipants.length)}`}>{currentParticipants.length}</p>
                 </div>
-                <div className="p-6 rounded-3xl border border-white/5" style={{ backgroundColor: 'var(--bg-card)' }}>
-                  <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1">Custo do Evento</p>
-                  <p className="text-2xl font-black text-rose-400">R$ {Number(eventCost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                <div className="p-6 rounded-3xl border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
+                  <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">Custo do Evento</p>
+                  <p className={`font-black text-rose-400 ${getDynamicFontSize(`R$ ${Number(eventCost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`)}`}>
+                    R$ {Number(eventCost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
                 </div>
-                <div className="p-6 rounded-3xl border border-white/5" style={{ backgroundColor: 'var(--bg-card)' }}>
-                  <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1">A Receber Total</p>
-                  <p className="text-2xl font-black text-blue-400">R$ {Number(expectedRevenue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                <div className="p-6 rounded-3xl border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
+                  <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">A Receber Total</p>
+                  <p className={`font-black text-blue-400 ${getDynamicFontSize(`R$ ${Number(expectedRevenue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`)}`}>
+                    R$ {Number(expectedRevenue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
                 </div>
-                <div className="p-6 rounded-3xl border border-white/5" style={{ backgroundColor: 'var(--bg-card)' }}>
-                  <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1">Já Recebido</p>
-                  <p className="text-2xl font-black text-emerald-400">R$ {Number(totalReceived).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                <div className="p-6 rounded-3xl border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
+                  <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">Já Recebido</p>
+                  <p className={`font-black text-emerald-400 ${getDynamicFontSize(`R$ ${Number(totalReceived).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`)}`}>
+                    R$ {Number(totalReceived).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
                 </div>
-                <div className="p-6 rounded-3xl border border-white/5" style={{ backgroundColor: 'var(--bg-card)' }}>
-                  <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1">Falta Receber</p>
-                  <p className="text-2xl font-black text-amber-400">R$ {Number(expectedRevenue - totalReceived).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                <div className="p-6 rounded-3xl border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
+                  <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">Falta Receber</p>
+                  <p className={`font-black text-amber-400 ${getDynamicFontSize(`R$ ${Number(expectedRevenue - totalReceived).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`)}`}>
+                    R$ {Number(expectedRevenue - totalReceived).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
                 </div>
-                <div className="p-6 rounded-3xl border border-white/5" style={{ backgroundColor: 'var(--bg-card)' }}>
-                  <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1">Convites Vendidos</p>
-                  <p className="text-2xl font-black text-purple-400">{totalTickets}</p>
+                <div className="p-6 rounded-3xl border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
+                  <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">Convites Vendidos</p>
+                  <p className={`font-black text-purple-400 ${getDynamicFontSize(totalTickets)}`}>{totalTickets}</p>
                 </div>
               </div>
 
               {/* Relatório Financeiro Detalhado */}
-              <div className="p-6 rounded-3xl border border-white/5 bg-black/20 mt-4">
+              <div className="p-6 rounded-3xl border mt-4" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
                 <h3 className="text-lg font-black text-white mb-4 uppercase tracking-widest flex items-center gap-2">
                   <DollarSign size={20} className="text-emerald-400" />
                   Relatório Detalhado
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {/* Convites */}
-                  <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                  <div className="p-4 rounded-2xl" style={{ backgroundColor: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)' }}>
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Convites Vendidos</span>
                       <span className="px-2 py-1 bg-purple-500/20 text-purple-400 rounded-lg text-xs font-black">{totalTickets} un.</span>
@@ -468,7 +529,7 @@ export default function Events() {
                   </div>
 
                   {/* Coreografias */}
-                  <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                  <div className="p-4 rounded-2xl" style={{ backgroundColor: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)' }}>
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Coreografias</span>
                       <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded-lg text-xs font-black">{totalChoreographies} un.</span>
@@ -486,7 +547,7 @@ export default function Events() {
                   </div>
 
                   {/* Roupas */}
-                  <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                  <div className="p-4 rounded-2xl" style={{ backgroundColor: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)' }}>
                     <div className="flex justify-between items-center mb-2">
                       <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Roupas</span>
                       <span className="px-2 py-1 bg-rose-500/20 text-rose-400 rounded-lg text-xs font-black">{totalClothesQuantity} un.</span>
@@ -508,52 +569,55 @@ export default function Events() {
               {/* Event Actions & Add Participant */}
               <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-black/20 p-4 rounded-3xl border border-white/5">
                 <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
-                  <div className="flex items-center gap-4 w-full sm:w-auto">
-                    <select 
-                      className="flex-1 sm:w-64 rounded-xl px-4 py-3 text-sm focus:outline-none" 
-                      style={inputStyle}
-                      id="addStudentSelect"
-                    >
-                      <option value="">Selecione um Aluno para Adicionar</option>
-                      {students.map(s => (
-                        <option key={s.id} value={s.id} disabled={currentParticipants.some(p => p.student_id === s.id)}>{s.name}</option>
-                      ))}
-                    </select>
-                    <button 
-                      onClick={() => {
-                        const sel = document.getElementById('addStudentSelect') as HTMLSelectElement
-                        handleAddParticipant(sel.value)
-                        sel.value = ''
-                      }}
-                      className="p-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all"
-                    >
-                      <Plus size={20} />
-                    </button>
-                  </div>
-                  <div className="relative w-full sm:w-auto">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
+                  {profile?.role !== 'secretary' && (
+                    <div className="flex items-center gap-4 w-full sm:w-auto">
+                      <select 
+                        className="flex-1 sm:w-64 rounded-xl px-4 py-3 text-sm focus:outline-none" 
+                        style={inputStyle}
+                        id="addStudentSelect"
+                      >
+                        <option value="">Selecione um Aluno para Adicionar</option>
+                        {students.map(s => (
+                          <option key={s.id} value={s.id} disabled={currentParticipants.some(p => p.student_id === s.id)}>{s.name}</option>
+                        ))}
+                      </select>
+                      <button 
+                        onClick={() => {
+                          const sel = document.getElementById('addStudentSelect') as HTMLSelectElement
+                          handleAddParticipant(sel.value)
+                          sel.value = ''
+                        }}
+                        className="p-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all"
+                      >
+                        <Plus size={20} />
+                      </button>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-3 rounded-xl px-4 py-3 border w-full sm:w-64" style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border-color)' }}>
+                    <Search className="text-white/30 shrink-0" size={18} />
                     <input 
                       type="text" 
                       placeholder="Buscar aluno na planilha..." 
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full sm:w-64 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none"
-                      style={inputStyle}
+                      className="w-full bg-transparent text-sm text-white focus:outline-none placeholder:text-white/30"
                     />
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <button onClick={() => openEventEdit(activeEvent)} className="px-6 py-3 rounded-xl bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 font-bold text-sm transition-all flex items-center gap-2">
-                    <Edit size={16} /> Detalhes do Evento
-                  </button>
-                  <button onClick={() => handleDeleteEvent(activeEvent.id)} className="px-6 py-3 rounded-xl bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 font-bold text-sm transition-all flex items-center gap-2">
-                    <Trash2 size={16} /> Excluir Evento
-                  </button>
-                </div>
+                {profile?.role !== 'secretary' && (
+                  <div className="flex gap-2">
+                    <button onClick={() => openEventEdit(activeEvent)} className="px-6 py-3 rounded-xl bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 font-bold text-sm transition-all flex items-center gap-2">
+                      <Edit size={16} /> Detalhes do Evento
+                    </button>
+                    <button onClick={() => handleDeleteEvent(activeEvent.id)} className="px-6 py-3 rounded-xl bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 font-bold text-sm transition-all flex items-center gap-2">
+                      <Trash2 size={16} /> Excluir Evento
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Spreadsheet Table */}
-              <div className="overflow-x-auto rounded-3xl border border-white/5 shadow-2xl" style={{ backgroundColor: 'var(--bg-card)' }}>
+              <div className="overflow-x-auto rounded-none border border-white/5 shadow-2xl" style={{ backgroundColor: 'var(--bg-card)' }}>
                 <table className="w-full text-left text-sm whitespace-nowrap">
                   <thead style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}>
                     <tr>
@@ -598,7 +662,8 @@ export default function Events() {
                               <select 
                                 value={p.payment_method || ''} 
                                 onChange={(e) => handleUpdateParticipant(p.id, 'payment_method', e.target.value)}
-                                className="bg-transparent border border-white/10 rounded-lg px-2 py-1 text-xs focus:ring-1 focus:ring-purple-500"
+                                disabled={profile?.role === 'secretary'}
+                                className="bg-transparent border border-white/10 rounded-lg px-2 py-1 text-xs focus:ring-1 focus:ring-purple-500 disabled:opacity-50"
                               >
                                 <option value="" className="bg-gray-900">-</option>
                                 <option value="Boleto" className="bg-gray-900">Boleto</option>
@@ -615,7 +680,8 @@ export default function Events() {
                                 min="0"
                                 value={p.choreography_count || 0} 
                                 onChange={(e) => handleUpdateParticipant(p.id, 'choreography_count', parseInt(e.target.value) || 0)}
-                                className={`w-16 text-center bg-transparent border border-white/10 rounded-lg px-2 py-1 font-black transition-all ${p.choreography_count > 0 ? 'text-purple-400' : 'text-white/30'}`}
+                                disabled={profile?.role === 'secretary'}
+                                className={`w-16 text-center bg-transparent border border-white/10 rounded-lg px-2 py-1 font-black transition-all disabled:opacity-50 ${p.choreography_count > 0 ? 'text-purple-400' : 'text-white/30'}`}
                               />
                             </td>
 
@@ -626,7 +692,8 @@ export default function Events() {
                                 min="0"
                                 value={p.clothes_cost || 0} 
                                 onChange={(e) => handleUpdateParticipant(p.id, 'clothes_cost', parseInt(e.target.value) || 0)}
-                                className={`w-16 text-center bg-transparent border border-white/10 rounded-lg px-2 py-1 font-black transition-all ${p.clothes_cost > 0 ? 'text-rose-400' : 'text-white/30'}`}
+                                disabled={profile?.role === 'secretary'}
+                                className={`w-16 text-center bg-transparent border border-white/10 rounded-lg px-2 py-1 font-black transition-all disabled:opacity-50 ${p.clothes_cost > 0 ? 'text-rose-400' : 'text-white/30'}`}
                               />
                             </td>
 
@@ -641,7 +708,8 @@ export default function Events() {
                                       min="0"
                                       value={(p.installments || []).length}
                                       onChange={(e) => handleInstallmentCountChange(p, parseInt(e.target.value) || 0)}
-                                      className="w-12 bg-transparent border border-white/10 rounded-lg px-2 py-1 text-xs font-bold text-emerald-400 focus:outline-none focus:ring-1 focus:ring-purple-500 text-center ml-auto"
+                                      disabled={profile?.role === 'secretary'}
+                                      className="w-12 bg-transparent border border-white/10 rounded-lg px-2 py-1 text-xs font-bold text-emerald-400 focus:outline-none focus:ring-1 focus:ring-purple-500 text-center ml-auto disabled:opacity-50"
                                     />
                                   </div>
                                   {(p.installments || []).map((inst, i) => (
@@ -659,7 +727,8 @@ export default function Events() {
                                         step="0.01"
                                         value={inst.value} 
                                         onChange={(e) => handleUpdateInstallment(p, inst.id, 'value', e.target.value)}
-                                        className="w-20 text-right bg-transparent border-none px-1 py-0.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-purple-500 rounded ml-auto"
+                                        disabled={profile?.role === 'secretary'}
+                                        className="w-20 text-right bg-transparent border-none px-1 py-0.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-purple-500 rounded ml-auto disabled:opacity-50"
                                       />
                                     </div>
                                   ))}
@@ -680,8 +749,8 @@ export default function Events() {
                                   step="0.01"
                                   value={p.total_value} 
                                   onChange={(e) => handleUpdateParticipant(p.id, 'total_value', e.target.value)}
-                                  className="w-24 text-right bg-transparent border border-white/10 rounded-lg px-2 py-1 font-black text-blue-400 focus:bg-black/40 focus:ring-1 focus:ring-purple-500 transition-all"
-                                  disabled={(p.installments || []).length > 0}
+                                  className="w-24 text-right bg-transparent border border-white/10 rounded-lg px-2 py-1 font-black text-blue-400 focus:bg-black/40 focus:ring-1 focus:ring-purple-500 transition-all disabled:opacity-50"
+                                  disabled={profile?.role === 'secretary' || (p.installments || []).length > 0}
                                   title={(p.installments || []).length > 0 ? "Calculado pelas parcelas" : ""}
                                 />
                               </div>
@@ -696,7 +765,7 @@ export default function Events() {
                                   step="0.01"
                                   value={p.amount_paid} 
                                   onChange={(e) => handleUpdateParticipant(p.id, 'amount_paid', e.target.value)}
-                                  className="w-24 text-right bg-transparent border border-white/10 rounded-lg px-2 py-1 font-black text-emerald-400 focus:bg-black/40 focus:ring-1 focus:ring-purple-500 transition-all"
+                                  className="w-24 text-right bg-transparent border border-white/10 rounded-lg px-2 py-1 font-black text-emerald-400 focus:bg-black/40 focus:ring-1 focus:ring-purple-500 transition-all disabled:opacity-50"
                                   disabled={(p.installments || []).length > 0}
                                   title={(p.installments || []).length > 0 ? "Calculado pelas parcelas pagas" : ""}
                                 />
@@ -743,13 +812,17 @@ export default function Events() {
 
                             {/* Actions */}
                             <td className="p-4 text-center">
-                              <button 
-                                onClick={() => handleRemoveParticipant(p.id)}
-                                className="p-2 text-rose-400/50 hover:text-rose-400 hover:bg-rose-400/10 rounded-lg transition-all"
-                                title="Remover Aluno"
-                              >
-                                <Trash2 size={16} />
-                              </button>
+                              {profile?.role !== 'secretary' ? (
+                                <button 
+                                  onClick={() => handleRemoveParticipant(p.id)}
+                                  className="p-2 text-rose-400/50 hover:text-rose-400 hover:bg-rose-400/10 rounded-lg transition-all"
+                                  title="Remover Aluno"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              ) : (
+                                <span className="text-white/20 text-xs font-bold">-</span>
+                              )}
                             </td>
                           </tr>
                         )
