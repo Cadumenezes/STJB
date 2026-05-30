@@ -959,11 +959,11 @@ export default function Layout() {
             <div className="p-6 md:p-8 flex-1 overflow-y-auto space-y-6">
               {/* Highlight Box with gradient background */}
               <div
-                className="rounded-2xl p-6 border border-white/5 shadow-inner flex flex-col items-center text-center space-y-4"
+                className="rounded-none p-6 border border-white/5 shadow-inner flex flex-col items-center text-center space-y-4"
                 style={{ background: tourSlides[tourStep].bg }}
               >
                 <div
-                  className="rounded-full p-4 flex items-center justify-center shadow-lg"
+                  className="rounded-none p-4 flex items-center justify-center shadow-lg"
                   style={{
                     backgroundColor: 'rgba(255, 255, 255, 0.05)',
                     border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -1013,7 +1013,7 @@ export default function Layout() {
                   <button
                     key={idx}
                     onClick={() => setTourStep(idx)}
-                    className={`h-2 rounded-full transition-all duration-300 ${
+                    className={`h-2 transition-all duration-300 ${
                       idx === tourStep ? 'w-6 bg-purple-500' : 'w-2 bg-gray-600 hover:bg-gray-400'
                     }`}
                   />
@@ -1025,7 +1025,7 @@ export default function Layout() {
                 {tourStep > 0 && (
                   <button
                     onClick={() => setTourStep((prev) => prev - 1)}
-                    className="px-4 py-2 rounded-xl text-xs font-bold text-gray-400 hover:text-white bg-white/5 border border-white/5 transition-all cursor-pointer"
+                    className="px-4 py-2 rounded-none text-xs font-bold text-gray-400 hover:text-white bg-white/5 border border-white/5 transition-all cursor-pointer"
                   >
                     Anterior
                   </button>
@@ -1033,14 +1033,14 @@ export default function Layout() {
                 {tourStep < tourSlides.length - 1 ? (
                   <button
                     onClick={() => setTourStep((prev) => prev + 1)}
-                    className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-purple-600 hover:bg-purple-500 shadow-lg shadow-purple-500/20 transition-all flex items-center gap-1.5 cursor-pointer"
+                    className="px-5 py-2.5 rounded-none text-xs font-bold text-white bg-purple-600 hover:bg-purple-500 shadow-lg shadow-purple-500/20 transition-all flex items-center gap-1.5 cursor-pointer"
                   >
                     Próximo <ArrowRight size={14} />
                   </button>
                 ) : (
                   <button
                     onClick={finishTour}
-                    className="px-6 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 shadow-lg shadow-purple-500/20 transition-all cursor-pointer"
+                    className="px-6 py-2.5 rounded-none text-xs font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 shadow-lg shadow-purple-500/20 transition-all cursor-pointer"
                   >
                     Concluir Tour ✨
                   </button>
