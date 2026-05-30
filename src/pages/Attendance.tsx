@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ClipboardCheck, Check, X, Clock, Users } from 'lucide-react'
+import { ClipboardCheck, Check, X, Clock, Users, Calendar } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { DanceClass, Student } from '../types'
 
@@ -13,6 +13,47 @@ export default function AttendancePage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [schoolOwnerId, setSchoolOwnerId] = useState<string | null>(null)
+
+  // Estados e auxiliares para o mini calendário customizado
+  const [showCalendar, setShowCalendar] = useState(false)
+  const [currentMonth, setCurrentMonth] = useState(new Date())
+
+  useEffect(() => {
+    if (date) {
+      const [year, month, day] = date.split('-')
+      setCurrentMonth(new Date(parseInt(year), parseInt(month) - 1, 1))
+    }
+  }, [date])
+
+  const getDaysInMonth = (dateVal: Date) => {
+    const year = dateVal.getFullYear()
+    const month = dateVal.getMonth()
+    const daysInMonth = new Date(year, month + 1, 0).getDate()
+    const firstDayIndex = new Date(year, month, 1).getDay()
+    
+    const daysArr: (number | null)[] = []
+    for (let i = 0; i < firstDayIndex; i++) {
+      daysArr.push(null)
+    }
+    for (let i = 1; i <= daysInMonth; i++) {
+      daysArr.push(i)
+    }
+    return daysArr
+  }
+
+  function formatDateDisplay(dateStr: string) {
+    if (!dateStr) return ''
+    const [year, month, day] = dateStr.split('-')
+    return `${day}/${month}/${year}`
+  }
+
+  const monthNames = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ]
+
+  const weekDays = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S']
+
 
   useEffect(() => {
     async function loadUserProfile() {
@@ -193,15 +234,87 @@ export default function AttendancePage() {
             ))}
           </select>
         </div>
-        <div className="sm:w-60">
+        <div className="sm:w-60 relative">
           <label className="text-xs font-semibold uppercase tracking-wider text-gray-400 block mb-2">Data da Aula</label>
-          <input 
-            type="date" 
-            value={date} 
-            onChange={(e) => setDate(e.target.value)}
-            className="w-full rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50 text-white transition-all hover:border-purple-500/30"
+          <button 
+            type="button"
+            onClick={() => setShowCalendar(!showCalendar)}
+            className="w-full rounded-xl px-4 py-3 text-sm flex items-center justify-between text-white transition-all hover:border-purple-500/30 text-left border cursor-pointer"
             style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', color: 'var(--text-primary)' }}
-          />
+          >
+            <span>{formatDateDisplay(date)}</span>
+            <Calendar size={18} className="text-purple-400" />
+          </button>
+          
+          {showCalendar && (
+            <div 
+              className="absolute right-0 top-full mt-2 z-50 p-4 rounded-xl shadow-2xl w-72 border backdrop-blur-md"
+              style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+            >
+              {/* Header: Month & Year Navigation */}
+              <div className="flex items-center justify-between mb-4">
+                <button 
+                  type="button"
+                  onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}
+                  className="p-1 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-all cursor-pointer font-bold text-sm"
+                >
+                  &larr;
+                </button>
+                <span className="font-bold text-sm text-white">
+                  {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+                </span>
+                <button 
+                  type="button"
+                  onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}
+                  className="p-1 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-all cursor-pointer font-bold text-sm"
+                >
+                  &rarr;
+                </button>
+              </div>
+
+              {/* Weekday headers */}
+              <div className="grid grid-cols-7 gap-1 text-center mb-2">
+                {weekDays.map((d, i) => (
+                  <span key={i} className="text-[10px] font-bold text-gray-500 uppercase">
+                    {d}
+                  </span>
+                ))}
+              </div>
+
+              {/* Days Grid */}
+              <div className="grid grid-cols-7 gap-1 text-center">
+                {getDaysInMonth(currentMonth).map((day, index) => {
+                  if (day === null) {
+                    return <div key={index} className="h-8 w-8" />
+                  }
+                  
+                  const formattedDay = day.toString().padStart(2, '0')
+                  const formattedMonth = (currentMonth.getMonth() + 1).toString().padStart(2, '0')
+                  const formattedYear = currentMonth.getFullYear()
+                  const currentDayStr = `${formattedYear}-${formattedMonth}-${formattedDay}`
+                  const isSelected = date === currentDayStr
+                  
+                  return (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => {
+                        setDate(currentDayStr)
+                        setShowCalendar(false)
+                      }}
+                      className={`h-8 w-8 text-xs font-semibold rounded-lg flex items-center justify-center transition-all cursor-pointer ${
+                        isSelected 
+                          ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20' 
+                          : 'text-gray-300 hover:bg-white/10 hover:text-white'
+                      }`}
+                    >
+                      {day}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -209,7 +322,10 @@ export default function AttendancePage() {
         <>
           {/* Real-time Stats Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="p-5 rounded-none bg-[#12121a] border border-white/5 flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-purple-500/20 transition-all">
+            <div 
+              className="p-5 rounded-none flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-purple-500/30 transition-all"
+              style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
+            >
               <div>
                 <span className="text-xs font-medium text-gray-400 uppercase">Frequência Geral</span>
                 <h4 className="text-2xl font-black text-white mt-1">{attendanceRate}%</h4>
@@ -218,7 +334,10 @@ export default function AttendancePage() {
                 <ClipboardCheck size={20} />
               </div>
             </div>
-            <div className="p-5 rounded-none bg-[#12121a] border border-white/5 flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-emerald-500/20 transition-all">
+            <div 
+              className="p-5 rounded-none flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-emerald-500/30 transition-all"
+              style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
+            >
               <div>
                 <span className="text-xs font-medium text-gray-400 uppercase">Presentes</span>
                 <h4 className="text-2xl font-black text-emerald-400 mt-1">
@@ -229,7 +348,10 @@ export default function AttendancePage() {
                 <Check size={20} />
               </div>
             </div>
-            <div className="p-5 rounded-none bg-[#12121a] border border-white/5 flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-amber-500/20 transition-all">
+            <div 
+              className="p-5 rounded-none flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-amber-500/30 transition-all"
+              style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
+            >
               <div>
                 <span className="text-xs font-medium text-gray-400 uppercase">Atrasados</span>
                 <h4 className="text-2xl font-black text-amber-400 mt-1">{lateCount}</h4>
@@ -238,7 +360,10 @@ export default function AttendancePage() {
                 <Clock size={20} />
               </div>
             </div>
-            <div className="p-5 rounded-none bg-[#12121a] border border-white/5 flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-rose-500/20 transition-all">
+            <div 
+              className="p-5 rounded-none flex items-center justify-between shadow-lg relative overflow-hidden group hover:border-rose-500/30 transition-all"
+              style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
+            >
               <div>
                 <span className="text-xs font-medium text-gray-400 uppercase">Faltas</span>
                 <h4 className="text-2xl font-black text-rose-400 mt-1">{absentCount}</h4>
@@ -253,7 +378,10 @@ export default function AttendancePage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Left/Main Column: Students List */}
             <div className="lg:col-span-2 space-y-6">
-              <div className="rounded-none bg-[#12121a]/40 border border-white/5 p-6 shadow-xl relative overflow-hidden">
+              <div 
+                className="rounded-none p-6 shadow-xl relative overflow-hidden"
+                style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
+              >
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h3 className="text-lg font-bold text-white">Alunos Matriculados</h3>
@@ -270,12 +398,12 @@ export default function AttendancePage() {
                     <span className="text-xs text-gray-400">Buscando alunos...</span>
                   </div>
                 ) : students.length === 0 ? (
-                  <div className="text-center py-12 border border-dashed border-white/5 rounded-xl bg-black/10">
+                  <div className="text-center py-12 border border-dashed rounded-xl bg-black/10" style={{ borderColor: 'var(--border-color)' }}>
                     <Users className="mx-auto text-gray-600 mb-2" size={32} />
                     <p className="text-sm text-gray-400">Nenhum aluno matriculado nesta turma.</p>
                   </div>
                 ) : (
-                  <div className="divide-y divide-white/5">
+                  <div className="divide-y" style={{ borderColor: 'var(--border-color)' }}>
                     {students.map(student => {
                       const status = attendance[student.id]
                       return (
@@ -297,8 +425,9 @@ export default function AttendancePage() {
                               className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all border duration-200 cursor-pointer ${
                                 status === 'present' 
                                   ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.15)] scale-105' 
-                                  : 'border-white/5 bg-black/10 text-gray-400 hover:border-white/10 hover:text-white'
+                                  : 'text-gray-400 hover:text-white'
                               }`}
+                              style={status !== 'present' ? { borderColor: 'var(--border-color)', backgroundColor: 'rgba(0,0,0,0.15)' } : {}}
                             >
                               <Check size={14} /> Presente
                             </button>
@@ -307,8 +436,9 @@ export default function AttendancePage() {
                               className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all border duration-200 cursor-pointer ${
                                 status === 'late' 
                                   ? 'border-amber-500/50 bg-amber-500/15 text-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.15)] scale-105' 
-                                  : 'border-white/5 bg-black/10 text-gray-400 hover:border-white/10 hover:text-white'
+                                  : 'text-gray-400 hover:text-white'
                               }`}
+                              style={status !== 'late' ? { borderColor: 'var(--border-color)', backgroundColor: 'rgba(0,0,0,0.15)' } : {}}
                             >
                               <Clock size={14} /> Atrasado
                             </button>
@@ -317,8 +447,9 @@ export default function AttendancePage() {
                               className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold transition-all border duration-200 cursor-pointer ${
                                 status === 'absent' 
                                   ? 'border-rose-500/50 bg-rose-500/15 text-rose-400 shadow-[0_0_12px_rgba(244,63,94,0.15)] scale-105' 
-                                  : 'border-white/5 bg-black/10 text-gray-400 hover:border-white/10 hover:text-white'
+                                  : 'text-gray-400 hover:text-white'
                               }`}
+                              style={status !== 'absent' ? { borderColor: 'var(--border-color)', backgroundColor: 'rgba(0,0,0,0.15)' } : {}}
                             >
                               <X size={14} /> Falta
                             </button>
@@ -334,14 +465,20 @@ export default function AttendancePage() {
             {/* Right Column: Instructor Status & Sinking Action */}
             <div className="space-y-6">
               {/* Instructor Team Card */}
-              <div className="rounded-none bg-[#12121a]/40 border border-white/5 p-6 shadow-xl relative overflow-hidden">
+              <div 
+                className="rounded-none p-6 shadow-xl relative overflow-hidden"
+                style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
+              >
                 <h3 className="text-lg font-bold text-white mb-4">Professor da Turma</h3>
                 
                 {(() => {
                   const selectedClass = classes.find(c => c.id === selectedClassId)
                   return (
                     <div className="space-y-6">
-                      <div className="p-4 rounded-xl bg-black/20 border border-white/5 flex items-center gap-3">
+                      <div 
+                        className="p-4 rounded-xl flex items-center gap-3"
+                        style={{ backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid var(--border-color)' }}
+                      >
                         <div className="h-10 w-10 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-300 font-bold">
                           👨‍🏫
                         </div>
@@ -363,8 +500,9 @@ export default function AttendancePage() {
                             className={`flex flex-col items-center justify-center p-3 rounded-xl text-xs font-bold border transition-all duration-200 gap-1.5 cursor-pointer ${
                               instructorPresence === 'present' 
                                 ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.15)] scale-105' 
-                                : 'border-white/5 bg-black/10 text-gray-400 hover:border-white/10 hover:text-white'
+                                : 'text-gray-400 hover:text-white'
                             }`}
+                            style={instructorPresence !== 'present' ? { borderColor: 'var(--border-color)', backgroundColor: 'rgba(0,0,0,0.15)' } : {}}
                           >
                             <Check size={16} /> Presente
                           </button>
@@ -373,8 +511,9 @@ export default function AttendancePage() {
                             className={`flex flex-col items-center justify-center p-3 rounded-xl text-xs font-bold border transition-all duration-200 gap-1.5 cursor-pointer ${
                               instructorPresence === 'late' 
                                 ? 'border-amber-500/50 bg-amber-500/15 text-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.15)] scale-105' 
-                                : 'border-white/5 bg-black/10 text-gray-400 hover:border-white/10 hover:text-white'
+                                : 'text-gray-400 hover:text-white'
                             }`}
+                            style={instructorPresence !== 'late' ? { borderColor: 'var(--border-color)', backgroundColor: 'rgba(0,0,0,0.15)' } : {}}
                           >
                             <Clock size={16} /> Atrasado
                           </button>
@@ -383,8 +522,9 @@ export default function AttendancePage() {
                             className={`flex flex-col items-center justify-center p-3 rounded-xl text-xs font-bold border transition-all duration-200 gap-1.5 cursor-pointer ${
                               instructorPresence === 'absent' 
                                 ? 'border-rose-500/50 bg-rose-500/15 text-rose-400 shadow-[0_0_12px_rgba(244,63,94,0.15)] scale-105' 
-                                : 'border-white/5 bg-black/10 text-gray-400 hover:border-white/10 hover:text-white'
+                                : 'text-gray-400 hover:text-white'
                             }`}
+                            style={instructorPresence !== 'absent' ? { borderColor: 'var(--border-color)', backgroundColor: 'rgba(0,0,0,0.15)' } : {}}
                           >
                             <X size={16} /> Faltou
                           </button>
@@ -396,7 +536,10 @@ export default function AttendancePage() {
               </div>
 
               {/* Sync Action Card */}
-              <div className="rounded-none bg-[#12121a]/40 border border-white/5 p-6 shadow-xl space-y-4">
+              <div 
+                className="rounded-none p-6 shadow-xl space-y-4"
+                style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
+              >
                 <h4 className="text-sm font-bold text-white">Finalizar Chamada</h4>
                 <p className="text-xs text-gray-400 leading-relaxed">
                   Ao salvar, o registro será sincronizado com o banco de dados da escola para fins de acompanhamento pedagógico e financeiro.

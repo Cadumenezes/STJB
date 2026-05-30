@@ -536,11 +536,11 @@ export default function Financial() {
         <button
           onClick={() => setActiveTab('flow')}
           className={`px-12 py-4 text-sm font-bold transition-all rounded-2xl shadow-lg border ${
-            activeTab === 'flow' ? 'text-white' : 'text-[var(--text-muted)] hover:text-white hover:bg-white/5'
+            activeTab === 'flow' ? 'text-white font-black scale-105' : 'text-[var(--text-primary)] hover:text-white hover:bg-white/10'
           }`}
           style={{ 
-            backgroundColor: activeTab === 'flow' ? 'var(--bg-card)' : 'transparent',
-            borderColor: activeTab === 'flow' ? 'var(--border-color)' : 'transparent'
+            backgroundColor: activeTab === 'flow' ? 'var(--bg-card)' : 'rgba(0, 0, 0, 0.15)',
+            borderColor: activeTab === 'flow' ? 'var(--accent-color)' : 'var(--border-color)'
           }}
         >
           Fluxo de Caixa
@@ -548,11 +548,11 @@ export default function Financial() {
         <button
           onClick={() => setActiveTab('fixed')}
           className={`px-12 py-4 text-sm font-bold transition-all rounded-2xl shadow-lg border ${
-            activeTab === 'fixed' ? 'text-white' : 'text-[var(--text-muted)] hover:text-white hover:bg-white/5'
+            activeTab === 'fixed' ? 'text-white font-black scale-105' : 'text-[var(--text-primary)] hover:text-white hover:bg-white/10'
           }`}
           style={{ 
-            backgroundColor: activeTab === 'fixed' ? 'var(--bg-card)' : 'transparent',
-            borderColor: activeTab === 'fixed' ? 'var(--border-color)' : 'transparent'
+            backgroundColor: activeTab === 'fixed' ? 'var(--bg-card)' : 'rgba(0, 0, 0, 0.15)',
+            borderColor: activeTab === 'fixed' ? 'var(--accent-color)' : 'var(--border-color)'
           }}
         >
           Contas Fixas
@@ -560,11 +560,11 @@ export default function Financial() {
         <button
           onClick={() => setActiveTab('payroll')}
           className={`px-12 py-4 text-sm font-bold transition-all rounded-2xl shadow-lg border ${
-            activeTab === 'payroll' ? 'text-white' : 'text-[var(--text-muted)] hover:text-white hover:bg-white/5'
+            activeTab === 'payroll' ? 'text-white font-black scale-105' : 'text-[var(--text-primary)] hover:text-white hover:bg-white/10'
           }`}
           style={{ 
-            backgroundColor: activeTab === 'payroll' ? 'var(--bg-card)' : 'transparent',
-            borderColor: activeTab === 'payroll' ? 'var(--border-color)' : 'transparent'
+            backgroundColor: activeTab === 'payroll' ? 'var(--bg-card)' : 'rgba(0, 0, 0, 0.15)',
+            borderColor: activeTab === 'payroll' ? 'var(--accent-color)' : 'var(--border-color)'
           }}
         >
           Pagamentos Equipe
@@ -578,7 +578,7 @@ export default function Financial() {
             {summaryCards.map((card) => (
               <div
                 key={card.label}
-                className="group relative overflow-hidden rounded-none p-8 sm:p-10 transition-all duration-300 hover:scale-[1.05] hover:shadow-2xl"
+                className="group relative overflow-hidden rounded-2xl p-8 sm:p-10 transition-all duration-300 hover:scale-[1.05] hover:shadow-2xl"
                 style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
               >
                 <div className="flex flex-col items-center justify-center h-28 text-center gap-2 relative z-10">
@@ -598,7 +598,7 @@ export default function Financial() {
           </div>
 
           {/* Monthly Report */}
-          <div className="rounded-none p-8 shadow-xl mt-8 mb-8" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+          <div className="rounded-none p-8 shadow-xl mb-8" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', marginTop: '48px' }}>
             <h3 className="text-lg font-black uppercase tracking-tighter mb-6" style={{ color: 'var(--text-primary)' }}>
               📊 Relatório de {new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
             </h3>
@@ -952,7 +952,7 @@ export default function Financial() {
                       </div>
                     </div>
 
-                    <div className="w-full lg:w-72 p-8 sm:p-10 rounded-none bg-black/40 border border-white/10 flex flex-col justify-center items-center text-center">
+                    <div className="w-full lg:w-72 p-8 sm:p-10 rounded-2xl bg-black/40 border border-white/10 flex flex-col justify-center items-center text-center">
                       <p className="text-xs font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Total Acumulado</p>
                       <p className="text-3xl font-black text-white mb-4">R$ {teacher.totalToPay.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                       <button 

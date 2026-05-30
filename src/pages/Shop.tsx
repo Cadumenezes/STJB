@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { ShoppingBag, Search, Plus, Minus, Check, AlertCircle } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { Product, Profile } from '../types'
+import Modal from '../components/Modal'
 
 export default function Shop() {
   const [products, setProducts] = useState<Product[]>([])
@@ -10,8 +11,16 @@ export default function Shop() {
   const [sellingId, setSellingId] = useState<string | null>(null)
   const [saleQuantities, setSaleQuantities] = useState<Record<string, number>>({})
   const [recentSales, setRecentSales] = useState<any[]>([])
-  const [schoolAdminId, setSchoolAdminId] = useState<string | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
+
+  const [showSaleModal, setShowSaleModal] = useState(false)
+
+  const [customSaleForm, setCustomSaleForm] = useState({
+    productId: '',
+    quantity: 1,
+    hasDiscount: false,
+    discountAmount: '0'
+  })
 
   useEffect(() => {
     loadInitialData()
@@ -27,25 +36,11 @@ export default function Shop() {
       const { data: profileData } = await supabase.from('profiles').select('*').eq('id', user.id).single()
       setProfile(profileData)
 
-      let adminId = user.id
-      if (profileData && profileData.role === 'secretary') {
-        // Find secretary's school admin user_id
-        const { data: teamData } = await supabase
-          .from('team_members')
-          .select('user_id')
-          .eq('email', user.email)
-          .single()
-        if (teamData) {
-          adminId = teamData.user_id
-        }
-      }
-      setSchoolAdminId(adminId)
-
       // 2. Load products
-      await loadProducts(adminId)
+      await loadProducts()
       
       // 3. Load recent sales (financial entries type=income and category=Venda today)
-      await loadRecentSales(adminId)
+      await loadRecentSales()
 
     } catch (err) {
       console.error('Erro ao carregar dados iniciais:', err)
@@ -54,11 +49,10 @@ export default function Shop() {
     }
   }
 
-  async function loadProducts(adminId: string) {
+  async function loadProducts() {
     const { data } = await supabase
       .from('products')
       .select('*')
-      .eq('user_id', adminId)
       .order('name')
     setProducts(data || [])
     
@@ -72,12 +66,11 @@ export default function Shop() {
     setSaleQuantities(qtyMap)
   }
 
-  async function loadRecentSales(adminId: string) {
+  async function loadRecentSales() {
     const today = new Date().toISOString().split('T')[0]
     const { data } = await supabase
       .from('financial_entries')
       .select('*')
-      .eq('user_id', adminId)
       .eq('type', 'income')
       .eq('category', 'Venda de Produto')
       .eq('date', today)
@@ -102,11 +95,6 @@ export default function Shop() {
       return
     }
 
-    if (!schoolAdminId) {
-      alert('Configuração do administrador da escola não localizada.')
-      return
-    }
-
     setSellingId(product.id)
 
     try {
@@ -123,7 +111,6 @@ export default function Shop() {
       const { error: finErr } = await supabase
         .from('financial_entries')
         .insert([{
-          user_id: schoolAdminId,
           type: 'income',
           category: 'Venda de Produto',
           description: `Venda Loja: ${qty}x ${product.name}`,
@@ -134,8 +121,8 @@ export default function Shop() {
       if (finErr) throw finErr
 
       // 3. Reload
-      await loadProducts(schoolAdminId)
-      await loadRecentSales(schoolAdminId)
+      await loadProducts()
+      await loadRecentSales()
       
       // Success visual feedback
       alert(`Venda de ${qty}x ${product.name} registrada com sucesso!`)
@@ -145,6 +132,69 @@ export default function Shop() {
       alert('Erro ao processar venda: ' + err.message)
     } finally {
       setSellingId(null)
+    }
+  }
+
+  async function handleCustomSale(e: React.FormEvent) {
+    e.preventDefault()
+    const product = products.find(p => p.id === customSaleForm.productId)
+    if (!product) {
+      alert('Selecione um produto cadastrado!')
+      return
+    }
+
+    const qty = customSaleForm.quantity
+    if (qty > product.quantity) {
+      alert(`Quantidade solicitada (${qty}) é maior que o estoque disponível (${product.quantity})!`)
+      return
+    }
+
+    const discount = customSaleForm.hasDiscount ? parseFloat(customSaleForm.discountAmount) || 0 : 0
+    const subtotal = product.price * qty
+    if (discount > subtotal) {
+      alert('O valor do desconto não pode ser maior que o subtotal da venda!')
+      return
+    }
+
+    const total = subtotal - discount
+    setLoading(true)
+
+    try {
+      // 1. Decrement product quantity in DB
+      const newQty = product.quantity - qty
+      const { error: prodErr } = await supabase
+        .from('products')
+        .update({ quantity: newQty })
+        .eq('id', product.id)
+
+      if (prodErr) throw prodErr
+
+      // 2. Insert into financial_entries
+      const descStr = `Venda Loja: ${qty}x ${product.name}${discount > 0 ? ` (Desconto: R$ ${discount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})` : ''}`
+      const { error: finErr } = await supabase
+        .from('financial_entries')
+        .insert([{
+          type: 'income',
+          category: 'Venda de Produto',
+          description: descStr,
+          amount: total,
+          date: new Date().toISOString().split('T')[0]
+        }])
+
+      if (finErr) throw finErr
+
+      // 3. Reload
+      await loadProducts()
+      await loadRecentSales()
+      
+      alert('Venda registrada com sucesso! ✅💰')
+      setShowSaleModal(false)
+      setCustomSaleForm({ productId: '', quantity: 1, hasDiscount: false, discountAmount: '0' })
+    } catch (err: any) {
+      console.error(err)
+      alert('Erro ao registrar venda: ' + err.message)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -163,7 +213,7 @@ export default function Shop() {
     <div className="flex flex-col pb-10">
       {/* Header section with accent glows */}
       <div 
-        className="p-8 sm:p-10 pb-16 rounded-2xl border border-white/5 shadow-2xl mb-52 relative overflow-hidden"
+        className="p-8 sm:p-10 pb-16 rounded-2xl border border-white/5 shadow-2xl mb-12 relative overflow-hidden"
         style={{ backgroundColor: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)' }}
       >
         <div 
@@ -192,6 +242,17 @@ export default function Shop() {
             >
               Realize vendas de produtos com baixa automática de estoque e fluxo de caixa
             </p>
+          </div>
+
+          <div className="flex flex-wrap gap-4 relative z-10 shrink-0">
+            <button
+              onClick={() => setShowSaleModal(true)}
+              className="flex items-center gap-2 rounded-2xl px-6 py-4 text-sm font-bold text-white transition-all hover:scale-105 active:scale-95 shadow-xl shadow-purple-500/20 cursor-pointer"
+              style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}
+            >
+              <ShoppingBag size={20} />
+              Nova Venda 🛍️
+            </button>
           </div>
         </div>
       </div>
@@ -294,7 +355,7 @@ export default function Shop() {
                               <button
                                 onClick={() => handleSell(product)}
                                 disabled={isSelling}
-                                className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-3 px-4 text-xs font-bold text-white transition-all hover:scale-105 active:scale-95 shadow-lg disabled:opacity-50"
+                                className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-3 px-4 text-xs font-bold text-white transition-all hover:scale-105 active:scale-95 shadow-lg disabled:opacity-50 cursor-pointer"
                                 style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}
                               >
                                 {isSelling ? (
@@ -302,7 +363,7 @@ export default function Shop() {
                                 ) : (
                                   <>
                                     <ShoppingBag size={14} />
-                                    VENDER (R$ {(product.price * qtyToSell).toLocaleString('pt-BR', { minimumFractionDigits: 2 })})
+                                    Realizar Venda (R$ {(product.price * qtyToSell).toLocaleString('pt-BR', { minimumFractionDigits: 2 })})
                                   </>
                                 )}
                               </button>
@@ -355,6 +416,128 @@ export default function Shop() {
 
         </div>
       )}
+
+      {/* Modal Nova Venda */}
+      <Modal isOpen={showSaleModal} onClose={() => setShowSaleModal(false)} title="Registrar Nova Venda 🛍️">
+        <form onSubmit={handleCustomSale} className="space-y-4">
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-bold block mb-1.5" style={{ color: 'var(--text-secondary)' }}>Selecione o Produto *</label>
+              <select
+                required
+                value={customSaleForm.productId}
+                onChange={(e) => setCustomSaleForm({ ...customSaleForm, productId: e.target.value, quantity: 1 })}
+                className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition-all font-medium"
+              >
+                <option value="" className="bg-gray-900">-- Selecione um produto --</option>
+                {products.map(p => (
+                  <option key={p.id} value={p.id} disabled={p.quantity <= 0} className="bg-gray-900">
+                    {p.name} {p.quantity <= 0 ? '(Esgotado)' : `(Estoque: ${p.quantity})`}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {customSaleForm.productId && (() => {
+              const selectedProduct = products.find(p => p.id === customSaleForm.productId)
+              if (!selectedProduct) return null
+              
+              const subtotal = selectedProduct.price * customSaleForm.quantity
+              const discount = customSaleForm.hasDiscount ? parseFloat(customSaleForm.discountAmount) || 0 : 0
+              const total = Math.max(0, subtotal - discount)
+
+              return (
+                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-4 animate-in">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-gray-400 font-bold">Preço Unitário</p>
+                      <p className="text-lg font-black text-white">R$ {selectedProduct.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-400 font-bold">Estoque Disponível</p>
+                      <p className="text-lg font-black text-purple-400">{selectedProduct.quantity} unidades</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs text-gray-400 font-bold block mb-1">Quantidade *</label>
+                      <input
+                        required
+                        type="number"
+                        min="1"
+                        max={selectedProduct.quantity}
+                        value={customSaleForm.quantity}
+                        onChange={(e) => setCustomSaleForm({ ...customSaleForm, quantity: Math.max(1, Math.min(selectedProduct.quantity, parseInt(e.target.value) || 1)) })}
+                        className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="text-xs text-gray-400 font-bold block mb-2">Desconto?</label>
+                      <label className="inline-flex items-center gap-2 cursor-pointer mt-1">
+                        <input
+                          type="checkbox"
+                          checked={customSaleForm.hasDiscount}
+                          onChange={(e) => setCustomSaleForm({ ...customSaleForm, hasDiscount: e.target.checked, discountAmount: '0' })}
+                          className="rounded border-white/10 text-purple-600 focus:ring-purple-500/50 bg-black/20 h-4 w-4"
+                        />
+                        <span className="text-xs text-white font-medium">Aplicar Desconto</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {customSaleForm.hasDiscount && (
+                    <div className="animate-in">
+                      <label className="text-xs text-gray-400 font-bold block mb-1">Valor do Desconto (R$)</label>
+                      <input
+                        required
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max={subtotal}
+                        value={customSaleForm.discountAmount}
+                        onChange={(e) => setCustomSaleForm({ ...customSaleForm, discountAmount: e.target.value })}
+                        placeholder="0,00"
+                        className="w-full bg-black/20 border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none"
+                      />
+                    </div>
+                  )}
+
+                  <div className="pt-3 border-t border-white/10 flex justify-between items-center">
+                    <div>
+                      <span className="text-xs text-gray-400 font-bold">Subtotal: R$ {subtotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                      {discount > 0 && <span className="block text-[10px] text-rose-400 font-bold">Desconto: - R$ {discount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>}
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xs text-gray-400 font-bold block">Total a Pagar:</span>
+                      <span className="text-2xl font-black text-emerald-400">R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
+          </div>
+          <div className="flex justify-end gap-3 pt-4 border-t" style={{ borderColor: 'var(--border-color)' }}>
+            <button 
+              type="button" 
+              onClick={() => setShowSaleModal(false)} 
+              className="rounded-2xl px-5 py-2.5 text-sm font-bold border cursor-pointer" 
+              style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-secondary)', borderColor: 'var(--border-color)' }}
+            >
+              Cancelar
+            </button>
+            <button 
+              type="submit" 
+              disabled={!customSaleForm.productId || loading}
+              className="rounded-2xl px-5 py-2.5 text-sm font-bold text-white transition-all hover:scale-105 cursor-pointer disabled:opacity-50 disabled:hover:scale-100" 
+              style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}
+            >
+              Confirmar Venda 💰
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   )
 }

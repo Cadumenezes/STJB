@@ -150,18 +150,18 @@ export default function TrialClasses() {
               className="rounded-3xl p-8 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1"
               style={{ backgroundColor: 'var(--bg-card)', border: `1px solid var(--border-color)` }}
             >
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 to-black text-white font-black text-lg shadow-lg">
+              <div className="flex justify-between items-center mb-4 gap-2 min-w-0">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500 to-black text-white font-black text-lg shadow-lg shrink-0">
                     {trial.student_name.charAt(0).toUpperCase()}
                   </div>
-                  <div>
-                    <h3 className="font-black uppercase tracking-tight" style={{ color: 'var(--text-primary)' }}>{trial.student_name}</h3>
-                    <p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Agendado em {new Date(trial.created_at).toLocaleDateString('pt-BR')}</p>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-black uppercase tracking-tight truncate text-sm sm:text-base" style={{ color: 'var(--text-primary)' }} title={trial.student_name}>{trial.student_name}</h3>
+                    <p className="text-[10px] sm:text-xs font-medium truncate" style={{ color: 'var(--text-muted)' }}>Agendado em {new Date(trial.created_at).toLocaleDateString('pt-BR')}</p>
                   </div>
                 </div>
                 <span 
-                  className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border"
+                  className="px-3 py-1 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-widest border shrink-0 whitespace-nowrap"
                   style={{ backgroundColor: statusInfo.bg, color: statusInfo.text, borderColor: `${statusInfo.text}33` }}
                 >
                   {statusInfo.label}

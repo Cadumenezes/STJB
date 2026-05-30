@@ -59,18 +59,18 @@ export default function Auth() {
         </div>
 
         {/* Brand Quote (Completely separate, on top of where login is made!) */}
-        <div className="w-full p-4 rounded-xl bg-black/40 border border-white/5 backdrop-blur-md shadow-2xl space-y-2 mt-6">
-          <div className="flex items-center gap-2">
-            <div className="h-5 w-5 rounded-lg flex items-center justify-center bg-purple-500/20 text-purple-400">
-              <Sparkles size={11} />
+        <div className="w-full p-6 rounded-2xl bg-black/45 border border-white/5 backdrop-blur-md shadow-2xl space-y-3 mt-6">
+          <div className="flex items-center gap-2.5">
+            <div className="h-6 w-6 rounded-lg flex items-center justify-center bg-purple-500/20 text-purple-400">
+              <Sparkles size={13} />
             </div>
-            <span className="text-[9px] text-purple-400 uppercase tracking-widest font-black">Tecnologia & Arte em Movimento</span>
+            <span className="text-xs text-purple-400 uppercase tracking-widest font-black">Tecnologia & Arte em Movimento</span>
           </div>
-          <blockquote className="text-[10px] italic leading-relaxed text-gray-300">
+          <blockquote className="text-sm italic leading-relaxed text-gray-300">
             "A dança é a linguagem secreta da alma. Nosso propósito é fazer a gestão da sua escola fluir tão suavemente quanto cada passo de dança."
           </blockquote>
           <div>
-            <h4 className="font-bold text-[9px] text-white">DanceFlow Management</h4>
+            <h4 className="font-bold text-xs text-white">DanceFlow Management</h4>
           </div>
         </div>
 

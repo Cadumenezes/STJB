@@ -36,17 +36,14 @@ export default function LandingPage() {
       <section className="relative z-10 max-w-6xl mx-auto px-6 pt-24 pb-36 md:pt-32 md:pb-48 flex flex-col md:flex-row items-center gap-12 lg:gap-16">
         
         {/* Left Side: Text and CTA */}
-        <div className="flex-1 space-y-8 text-left">
+        <div className="w-full md:w-[58%] space-y-8 text-left">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 font-semibold text-xs tracking-wider uppercase">
             <Sparkles size={12} className="animate-pulse" />
             O Futuro da Gestão de Dança
           </div>
           
-          <h1 className="text-3xl sm:text-4xl lg:text-[44px] font-black tracking-tight leading-[1.15] text-white">
-            <span className="block">Sua escola de dança,</span>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-pink-500 block mt-2">
-              100% sob controle.
-            </span>
+          <h1 className="text-3xl sm:text-4xl lg:text-[38px] xl:text-[42px] font-black tracking-tight leading-[1.15] text-white whitespace-nowrap md:whitespace-normal lg:whitespace-nowrap">
+            Sua escola de dança, <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-pink-500">100% sob controle.</span>
           </h1>
           
           <p className="text-gray-400 text-base sm:text-lg leading-relaxed max-w-lg">
@@ -62,7 +59,7 @@ export default function LandingPage() {
         </div>
 
         {/* Right Side: AI Ballerina Neon Image */}
-        <div className="flex-1 w-full max-w-md md:max-w-none relative flex justify-center items-center">
+        <div className="w-full md:w-[38%] shrink-0 max-w-md md:max-w-none relative flex justify-center items-center">
           {/* Subtle Background Glow behind image */}
           <div className="absolute w-[80%] h-[80%] rounded-full bg-purple-500/10 blur-[90px] animate-pulse" style={{ animationDuration: '4s' }} />
           

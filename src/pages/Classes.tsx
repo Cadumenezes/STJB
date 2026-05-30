@@ -20,6 +20,9 @@ export default function Classes() {
     style: '',
     instructor_id: '',
   })
+  
+  const [selectedDays, setSelectedDays] = useState<string[]>([])
+  const [classTime, setClassTime] = useState('')
 
   useEffect(() => {
     loadData()
@@ -42,8 +45,13 @@ export default function Classes() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     
+    const finalSchedule = selectedDays.length > 0 
+      ? `${selectedDays.join(', ')} às ${classTime}`
+      : classTime
+
     const payload = {
       ...formData,
+      schedule: finalSchedule,
       instructor_id: formData.instructor_id || null
     }
 
@@ -83,6 +91,21 @@ export default function Classes() {
       style: cls.style || '',
       instructor_id: cls.instructor_id || '',
     })
+
+    const sched = cls.schedule || ''
+    const parts = sched.split(/ às | - | at /i)
+    if (parts.length >= 2) {
+      const daysPart = parts[0]
+      const timePart = parts.slice(1).join(' - ')
+      
+      const parsedDays = daysPart.split(',').map(d => d.trim()).filter(Boolean)
+      setSelectedDays(parsedDays)
+      setClassTime(timePart)
+    } else {
+      setSelectedDays([])
+      setClassTime(sched)
+    }
+
     setShowModal(true)
   }
 
@@ -91,6 +114,8 @@ export default function Classes() {
       name: '', description: '', schedule: '', 
       max_students: 20, style: '', instructor_id: '' 
     })
+    setSelectedDays([])
+    setClassTime('')
   }
 
   const inputStyle: React.CSSProperties = {
@@ -260,9 +285,44 @@ export default function Classes() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Horário / Dias</label>
-                <input value={formData.schedule} onChange={(e) => setFormData({ ...formData, schedule: e.target.value })} className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50" style={inputStyle} />
+              <div className="col-span-full space-y-4">
+                <div>
+                  <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Dias da Semana</label>
+                  <div className="flex flex-wrap gap-2 p-3.5 rounded-2xl bg-black/20 border" style={{ borderColor: 'var(--border-color)' }}>
+                    {['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map(day => {
+                      const isSelected = selectedDays.includes(day)
+                      return (
+                        <button
+                          key={day}
+                          type="button"
+                          onClick={() => {
+                            if (isSelected) {
+                              setSelectedDays(selectedDays.filter(d => d !== day))
+                            } else {
+                              setSelectedDays([...selectedDays, day])
+                            }
+                          }}
+                          className={`px-4 py-2 text-xs font-black rounded-xl transition-all cursor-pointer border ${
+                            isSelected ? 'bg-purple-600 text-white border-transparent shadow-lg shadow-purple-500/20 scale-[1.02]' : 'bg-transparent text-[var(--text-secondary)] border-white/10 hover:text-white'
+                          }`}
+                        >
+                          {day}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Horário das Aulas *</label>
+                  <input 
+                    required 
+                    placeholder="Ex: 19:00 - 20:00 ou 18:30" 
+                    value={classTime} 
+                    onChange={(e) => setClassTime(e.target.value)} 
+                    className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50" 
+                    style={inputStyle} 
+                  />
+                </div>
               </div>
               <div>
                 <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Vagas Totais</label>

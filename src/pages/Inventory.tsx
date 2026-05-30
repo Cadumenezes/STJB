@@ -32,10 +32,15 @@ export default function Inventory() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    
+    // Obter o usuário autenticado para definir o user_id no cadastro do produto
+    const { data: { user } } = await supabase.auth.getUser()
+    
     const payload = {
       ...formData,
       price: parseFloat(formData.price),
       cost_price: parseFloat(formData.cost_price),
+      user_id: user?.id,
     }
 
     let error = null

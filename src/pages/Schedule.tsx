@@ -415,12 +415,12 @@ export default function Schedule() {
           }}
         >
           <div>
-            <div className="flex justify-between items-center pb-2 border-b border-white/5 mb-3">
+            <div className="flex flex-col items-center pb-2 border-b border-white/5 mb-3 text-center w-full">
               <h4 className="text-xs font-black uppercase tracking-wider text-gray-300 group-hover:text-purple-400 transition-colors">
                 {monthNames[m]}
               </h4>
-              <span className="text-[10px] font-black text-gray-500">
-                {monthEvents.length}
+              <span className="text-[10px] font-black text-gray-500 mt-1">
+                {monthEvents.length} {monthEvents.length === 1 ? 'compromisso' : 'compromissos'}
               </span>
             </div>
             
@@ -454,9 +454,40 @@ export default function Schedule() {
 
     return (
       <div className="space-y-6">
-        <div className="text-center py-4 bg-purple-500/5 rounded-2xl border border-purple-500/10 mb-2">
-          <h3 className="text-lg font-black tracking-tight text-white uppercase">Planejamento Anual de {curYear}</h3>
-          <p className="text-xs text-purple-400 font-semibold mt-1">Clique em qualquer mês para abrir a visualização detalhada da agenda!</p>
+        <div 
+          className="p-8 sm:p-10 pb-12 rounded-2xl border border-white/5 shadow-2xl mb-8 relative overflow-hidden text-center flex flex-col items-center justify-center gap-4 w-full"
+          style={{ backgroundColor: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)' }}
+        >
+          {/* Accent Glow */}
+          <div 
+            className="absolute -left-20 -top-20 w-64 h-64 rounded-full blur-[100px] opacity-10"
+            style={{ backgroundColor: 'var(--accent-color)' }}
+          />
+          
+          <h3 
+            className="font-black tracking-tighter leading-tight inline-block py-6 rounded-2xl shadow-2xl shadow-purple-500/30 text-center uppercase"
+            style={{ 
+              backgroundColor: 'var(--accent-color)', 
+              color: '#fff',
+              fontSize: 'var(--title-size, 26px)',
+              paddingLeft: '32px',
+              paddingRight: '32px'
+            }}
+          >
+            Planejamento Anual de {curYear}
+          </h3>
+          <p 
+            className="font-bold inline-block py-4 rounded-xl shadow-md border border-white/10 text-center"
+            style={{ 
+              backgroundColor: 'var(--accent-color)', 
+              color: '#fff', 
+              fontSize: 'var(--subtitle-size, 13px)',
+              paddingLeft: '24px',
+              paddingRight: '24px'
+            }}
+          >
+            Clique em qualquer mês para abrir a visualização detalhada da agenda!
+          </p>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">{annualMonths}</div>
       </div>
@@ -555,7 +586,7 @@ export default function Schedule() {
           </div>
         ) : (
           <div className="flex items-center gap-2">
-            <CalendarIcon size={16} className="text-purple-400" />
+            <CalendarIcon size={16} className="text-gray-400" />
             <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Visualização Estendida</span>
           </div>
         )}

@@ -222,9 +222,9 @@ export default function Dashboard() {
   if (profile?.role === 'secretary') {
     return (
       <div className="flex flex-col pb-10">
-        {/* Header Section with Background Highlight - SQUARE */}
+        {/* Header Section with Background Highlight - LEVEMENTE ARREDONDADO */}
         <div 
-          className="p-8 sm:p-10 pb-16 rounded-none border border-white/5 shadow-2xl mb-16 relative overflow-hidden"
+          className="p-8 sm:p-10 pb-16 rounded-3xl border border-white/5 shadow-2xl mb-16 relative overflow-hidden"
           style={{ backgroundColor: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)' }}
         >
           {/* Accent Glow */}
@@ -236,7 +236,7 @@ export default function Dashboard() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
             <div className="space-y-4">
               <h1 
-                className="font-black tracking-tighter leading-tight inline-block py-8 rounded-none shadow-2xl shadow-purple-500/30" 
+                className="font-black tracking-tighter leading-tight inline-block py-8 rounded-2xl shadow-2xl shadow-purple-500/30" 
                 style={{ 
                   backgroundColor: 'var(--accent-color)', 
                   color: '#fff',
@@ -249,7 +249,7 @@ export default function Dashboard() {
               </h1>
               <br />
               <p 
-                className="font-bold inline-block py-6 mt-2 rounded-none shadow-xl border border-white/10" 
+                className="font-bold inline-block py-6 mt-2 rounded-2xl shadow-xl border border-white/10" 
                  style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', paddingLeft: '32px', paddingRight: '32px' }}
               >
                 Bem-vindo de volta! Aqui está o resumo da sua escola hoje.
@@ -258,9 +258,9 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Birthdays - SQUARE */}
+        {/* Birthdays - LEVEMENTE ARREDONDADO */}
         <div
-          className="rounded-none p-8 sm:p-12 border max-w-2xl mx-auto w-full mt-8 animate-fade-in"
+          className="rounded-3xl p-8 sm:p-12 border max-w-2xl mx-auto w-full mt-8 animate-fade-in"
           style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
         >
           <h2 className="text-xl font-black mb-6 uppercase tracking-wider flex items-center gap-3 text-white">
@@ -308,9 +308,9 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col pb-10">
-      {/* Header Section with Background Highlight - SQUARE */}
+      {/* Header Section with Background Highlight - LEVEMENTE ARREDONDADO */}
       <div 
-        className="p-8 sm:p-10 pb-16 rounded-none border border-white/5 shadow-2xl mb-12 relative overflow-hidden"
+        className="p-8 sm:p-10 pb-16 rounded-3xl border border-white/5 shadow-2xl mb-12 relative overflow-hidden"
         style={{ backgroundColor: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)' }}
       >
         {/* Accent Glow */}
@@ -322,7 +322,7 @@ export default function Dashboard() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
           <div className="space-y-4">
             <h1 
-              className="font-black tracking-tighter leading-tight inline-block py-8 rounded-none shadow-2xl shadow-purple-500/30" 
+              className="font-black tracking-tighter leading-tight inline-block py-8 rounded-2xl shadow-2xl shadow-purple-500/30" 
               style={{ 
                 backgroundColor: 'var(--accent-color)', 
                 color: '#fff',
@@ -335,7 +335,7 @@ export default function Dashboard() {
             </h1>
             <br />
             <p 
-              className="font-bold inline-block py-6 mt-2 rounded-none shadow-xl border border-white/10" 
+              className="font-bold inline-block py-6 mt-2 rounded-2xl shadow-xl border border-white/10" 
                style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', paddingLeft: '32px', paddingRight: '32px' }}
             >
               Bem-vindo de volta! Aqui está o resumo da sua escola hoje.
@@ -419,12 +419,15 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Summary Cards - SQUARE */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 xl:grid-cols-4 mb-12">
+      {/* Summary Cards - LEVEMENTE ARREDONDADO */}
+      <div 
+        className="grid grid-cols-2 gap-4 sm:grid-cols-4 xl:grid-cols-4"
+        style={{ marginBottom: '32px' }}
+      >
         {cards.map((card) => (
           <div
             key={card.title}
-            className="group relative overflow-hidden rounded-none p-6 sm:p-8 transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl"
+            className="group relative overflow-hidden rounded-2xl p-6 sm:p-8 transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl"
             style={{
               backgroundColor: 'var(--bg-card)',
               border: '1px solid var(--border-color)',
@@ -446,7 +449,10 @@ export default function Dashboard() {
       </div>
 
       {/* Charts Section - SQUARE */}
-      <div className="grid grid-cols-1 gap-6 mb-12">
+      <div 
+        className="grid grid-cols-1 gap-6"
+        style={{ marginBottom: '32px' }}
+      >
         <div className="rounded-none p-8 sm:p-10 shadow-2xl" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
           <h2 className="text-lg font-bold mb-6 flex items-center gap-3" style={{ color: 'var(--text-primary)' }}>
             <div className="p-2 rounded-none bg-purple-500/20">

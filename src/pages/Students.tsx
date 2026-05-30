@@ -664,11 +664,14 @@ export default function Students() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6 mb-12">
+      <div 
+        className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6"
+        style={{ marginBottom: '32px' }}
+      >
         {statCards.map((card) => (
           <div
             key={card.label}
-            className="group relative overflow-hidden rounded-none p-8 sm:p-10 transition-all duration-300 hover:scale-[1.05] hover:shadow-2xl"
+            className="group relative overflow-hidden rounded-2xl p-8 sm:p-10 transition-all duration-300 hover:scale-[1.05] hover:shadow-2xl"
             style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
           >
             <div className="flex flex-col items-center justify-center text-center gap-4">

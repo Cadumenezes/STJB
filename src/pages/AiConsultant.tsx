@@ -171,7 +171,39 @@ O "boca a boca" é a forma de captação mais barata e eficiente para escolas de
 
 3. **Gatilhos Visuais e Postáveis**:
    - Crie uma placa ou área bonita de fotos na recepção com frases divertidas: *"Dançar com amigos é muito melhor!"*.
-   - Incentive-os a tirar fotos, postar nos Stories e marcar a escola. Entregue um pequeno brinde (ex: adesivo personalizado ou cupom de desconto na lanchonete/estoque da escola) para quem postar e marcar.`
+   - Incentive-os a tirar fotos, postar nos Stories e marcar a escola. Entregue um pequeno brinde (ex: adesivo personalizado ou cupom de desconto na lanchonete/estoque da escola) para quem postar e marcar.`,
+
+    fidelizacao: `### 🔄 Campanha de Rematrícula e Fidelização de Alunos
+    
+Reter um aluno ativo é 5 vezes mais barato do que captar um novo. Veja como estruturar uma campanha irresistível de renovação de contratos e fidelização:
+
+1. **Pesquisa NPS de Clima Pedagógico (30 dias antes)**:
+   - Envie um formulário curto: *"De 0 a 10, quanto você recomendaria a nossa escola de dança a um amigo?"*.
+   - Entre em contato imediatamente com qualquer nota abaixo de 8 para resolver as insatisfações antes de propor a renovação.
+
+2. **A Janela de Ouro da "Garantia de Preço Antigo" (Urgência Comercial)**:
+   - Ofereça uma janela de 10 dias para que o aluno renove para o próximo ano letivo garantindo o valor da mensalidade antiga, livre do reajuste anual de inflação.
+   - Exemplo: *"Garanta sua vaga para o próximo ano com o valor de R$ 135/mês em vez do novo valor de R$ 155/mês. Promoção exclusiva para alunos ativos até o dia 20."*
+
+3. **Benefícios Exclusivos de Contrato Anual**:
+   - Ofereça um kit exclusivo da escola (camiseta personalizada ou garrafa térmica) para quem fechar o plano anual.
+   - Conceda isenção total na taxa de matrícula do ano seguinte e ofereça desconto progressivo em roupas e eventos oficiais da escola para contratos fidelizados.`,
+
+    espetaculo: `### 🎪 Guia Estratégico para Produção e Organização de Espetáculos
+
+O show de encerramento é o maior evento de marca da sua escola e uma grande fonte de receita. Organize seu festival sem estresse com este checklist profissional:
+
+1. **Definição de Cronograma e Orçamento Inicial (6 meses antes)**:
+   - Defina o tema central do espetáculo, faça a reserva do teatro municipal e estime o custo fixo (aluguel de teatro, iluminação, som, direitos autorais).
+   - Calcule o ponto de equilíbrio: defina o preço de venda dos ingressos e o valor do kit figurino por aluno de modo a cobrir 100% dos custos e gerar lucro na bilheteria.
+
+2. **Cronograma de Ensaios e Lançamento na Agenda (3 meses antes)**:
+   - Cadastre todos os ensaios gerais e de palco no módulo **Agenda** do DanceFlow.
+   - Organize os horários e vincule os professores de forma que não ocorram choques de salas ou cansaço excessivo para os alunos infantis.
+
+3. **Planilha de Ingressos e Roupas no Módulo Eventos (2 meses antes)**:
+   - Cadastre o espetáculo no painel de **Eventos** e adicione todos os alunos.
+   - Use a baixa automatizada para controlar quem já efetuou o pagamento das parcelas do figurino, quem já comprou os convites e quem já recebeu o kit oficial do evento.`
   }
 
   const handleSend = (textToSend?: string) => {
@@ -211,6 +243,10 @@ O "boca a boca" é a forma de captação mais barata e eficiente para escolas de
         matchedKey = 'adultos'
       } else if (normalizedPrompt.includes('indica') || normalizedPrompt.includes('amigo') || normalizedPrompt.includes('boca')) {
         matchedKey = 'indicacao'
+      } else if (normalizedPrompt.includes('fideliza') || normalizedPrompt.includes('rematr') || normalizedPrompt.includes('renov') || normalizedPrompt.includes('reter')) {
+        matchedKey = 'fidelizacao'
+      } else if (normalizedPrompt.includes('espetaculo') || normalizedPrompt.includes('espetáculo') || normalizedPrompt.includes('festival') || normalizedPrompt.includes('show') || normalizedPrompt.includes('teatro')) {
+        matchedKey = 'espetaculo'
       }
 
       let responseText = ''
@@ -336,7 +372,7 @@ No mercado das escolas de dança, o sucesso operacional reside em três pilares 
               {/* Captação */}
               <div className="space-y-2">
                 <span className="text-[10px] font-black uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
-                  <Target size={12} /> Captação de Alunos
+                  <Target size={12} /> Captação & Fidelização
                 </span>
                 <button 
                   onClick={() => handleSend('Como captar novos alunos pelas redes sociais?')}
@@ -356,6 +392,12 @@ No mercado das escolas de dança, o sucesso operacional reside em três pilares 
                 >
                   Campanha de Indicação 👥
                 </button>
+                <button 
+                  onClick={() => handleSend('Como estruturar uma campanha de rematrícula e fidelização de alunos?')}
+                  className="w-full text-left p-3 rounded-xl bg-[#0a0a0f] border border-white/5 hover:border-purple-500/30 text-xs text-gray-300 hover:text-white transition-all cursor-pointer"
+                >
+                  Fidelização & Rematrícula 🔄
+                </button>
               </div>
 
               {/* Financeiro */}
@@ -374,6 +416,19 @@ No mercado das escolas de dança, o sucesso operacional reside em três pilares 
                   className="w-full text-left p-3 rounded-xl bg-[#0a0a0f] border border-white/5 hover:border-emerald-500/30 text-xs text-gray-300 hover:text-white transition-all cursor-pointer"
                 >
                   Inadimplência Zero no Pix 💳
+                </button>
+              </div>
+
+              {/* Eventos e Shows */}
+              <div className="space-y-2">
+                <span className="text-[10px] font-black uppercase tracking-wider text-blue-400 flex items-center gap-1.5">
+                  <BookOpen size={12} /> Produção de Shows
+                </span>
+                <button 
+                  onClick={() => handleSend('Como organizar e planejar um espetáculo de dança de encerramento?')}
+                  className="w-full text-left p-3 rounded-xl bg-[#0a0a0f] border border-white/5 hover:border-blue-500/30 text-xs text-gray-300 hover:text-white transition-all cursor-pointer"
+                >
+                  Show de Encerramento 🎪
                 </button>
               </div>
 

@@ -6,6 +6,7 @@ import Modal from '../components/Modal'
 
 export default function Events() {
   const [events, setEvents] = useState<Event[]>([])
+  const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([])
   const [participants, setParticipants] = useState<EventParticipant[]>([])
   const [students, setStudents] = useState<Student[]>([])
   const [activeEventId, setActiveEventId] = useState<string | null>(null)
@@ -64,12 +65,28 @@ export default function Events() {
     setLoading(false)
   }
 
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return
+    const files = Array.from(e.target.files)
+    files.forEach(file => {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        if (reader.result) {
+          setUploadedPhotos(prev => [...prev, reader.result as string])
+        }
+      }
+      reader.readAsDataURL(file)
+    })
+  }
+
+  const handleRemovePhoto = (index: number) => {
+    setUploadedPhotos(prev => prev.filter((_, i) => i !== index))
+  }
+
   async function handleEventSubmit(e: React.FormEvent) {
     e.preventDefault()
     
-    const photoUrlsArray = eventFormData.photos
-      ? eventFormData.photos.split(',').map(url => url.trim()).filter(Boolean)
-      : []
+    const photoUrlsArray = uploadedPhotos
 
     const payload = {
       name: eventFormData.name,
@@ -100,6 +117,7 @@ export default function Events() {
     } else {
       setShowEventModal(false)
       setEditEvent(null)
+      setUploadedPhotos([])
       setEventFormData({
         name: '',
         date: new Date().toISOString().split('T')[0],
@@ -124,6 +142,7 @@ export default function Events() {
 
   function openEventEdit(ev: Event) {
     setEditEvent(ev)
+    setUploadedPhotos(ev.photo_urls || [])
     setEventFormData({
       name: ev.name,
       date: ev.date,
@@ -420,6 +439,7 @@ export default function Events() {
             <button
               onClick={() => {
                 setEditEvent(null)
+                setUploadedPhotos([])
                 setEventFormData({ name: '', date: new Date().toISOString().split('T')[0], location: '', description: '', ticket_price: 0, cost: 0, base_choreography_price: 0, base_clothes_cost: 0, photos: '' })
                 setShowEventModal(true)
               }}
@@ -442,12 +462,14 @@ export default function Events() {
       ) : (
         <>
           {/* Event Tabs */}
-          <div className="flex gap-4 overflow-x-auto pb-4 mb-4 custom-scrollbar">
+          <div className="flex gap-4 overflow-x-auto pb-4 mb-6 custom-scrollbar">
             {events.map(ev => (
               <button
                 key={ev.id}
                 onClick={() => setActiveEventId(ev.id)}
-                className={`flex-shrink-0 px-8 py-4 rounded-2xl font-bold transition-all ${activeEventId === ev.id ? 'shadow-xl text-white' : 'text-[var(--text-muted)] hover:bg-white/5'}`}
+                className={`flex-shrink-0 px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all text-center min-w-[170px] cursor-pointer whitespace-nowrap ${
+                  activeEventId === ev.id ? 'shadow-xl text-white' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5'
+                }`}
                 style={{
                   background: activeEventId === ev.id ? 'linear-gradient(135deg, var(--accent-color), #000)' : 'var(--bg-card)',
                   border: activeEventId === ev.id ? 'none' : '1px solid var(--border-color)'
@@ -635,10 +657,10 @@ export default function Events() {
                 </div>
                 {profile?.role !== 'secretary' && (
                   <div className="flex gap-2">
-                    <button onClick={() => openEventEdit(activeEvent)} className="px-6 py-3 rounded-xl bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 font-bold text-sm transition-all flex items-center gap-2">
+                    <button onClick={() => openEventEdit(activeEvent)} className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all flex items-center gap-2 shadow-lg shadow-blue-600/20 hover:scale-[1.03] active:scale-95 cursor-pointer">
                       <Edit size={16} /> Detalhes do Evento
                     </button>
-                    <button onClick={() => handleDeleteEvent(activeEvent.id)} className="px-6 py-3 rounded-xl bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 font-bold text-sm transition-all flex items-center gap-2">
+                    <button onClick={() => handleDeleteEvent(activeEvent.id)} className="px-6 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm transition-all flex items-center gap-2 shadow-lg shadow-rose-600/20 hover:scale-[1.03] active:scale-95 cursor-pointer">
                       <Trash2 size={16} /> Excluir Evento
                     </button>
                   </div>
@@ -902,17 +924,55 @@ export default function Events() {
               <input type="number" step="0.01" value={eventFormData.base_clothes_cost} onChange={e => setEventFormData({...eventFormData, base_clothes_cost: parseFloat(e.target.value) || 0})} className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none" style={inputStyle} />
             </div>
           </div>
-          <div>
-            <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Fotos do Evento (URLs separadas por vírgula)</label>
-            <textarea 
-              value={eventFormData.photos} 
-              onChange={e => setEventFormData({...eventFormData, photos: e.target.value})} 
-              placeholder="https://exemplo.com/foto1.jpg, https://exemplo.com/foto2.jpg" 
-              rows={2} 
-              className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none resize-none" 
-              style={inputStyle} 
-            />
-            <p className="text-[10px] text-gray-500 mt-1">Insira os links das imagens do evento. Essas fotos serão exibidas em um carrossel animado no Dashboard!</p>
+          <div className="space-y-4">
+            <label className="text-sm font-bold block mb-1" style={{ color: 'var(--text-secondary)' }}>
+              Galeria de Fotos do Evento
+            </label>
+            
+            {/* Drag & Drop simulated uploader */}
+            <div 
+              className="border-2 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all hover:border-purple-500/50"
+              style={{ 
+                borderColor: 'rgba(255,255,255,0.1)', 
+                backgroundColor: 'rgba(255,255,255,0.02)' 
+              }}
+              onClick={() => document.getElementById('photo-uploader')?.click()}
+            >
+              <span className="text-2xl mb-2">📤</span>
+              <span className="text-xs font-bold text-gray-300">Arraste ou Clique para fazer Upload</span>
+              <span className="text-[10px] text-gray-500 mt-1">PNG, JPG, JPEG (Múltiplas Fotos permitidas)</span>
+              
+              <input 
+                id="photo-uploader"
+                type="file"
+                multiple
+                accept="image/*"
+                className="hidden"
+                onChange={handlePhotoUpload}
+              />
+            </div>
+
+            {/* Thumbnail Preview Grid */}
+            {uploadedPhotos.length > 0 && (
+              <div className="grid grid-cols-3 gap-3 p-4 rounded-2xl bg-white/5 border border-white/5 max-h-48 overflow-y-auto">
+                {uploadedPhotos.map((url, index) => (
+                  <div key={index} className="relative group aspect-video rounded-xl overflow-hidden border border-white/10 shadow-lg">
+                    <img src={url} alt={`Preview ${index}`} className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePhoto(index)}
+                      className="absolute top-1 right-1 h-5 w-5 bg-black/85 hover:bg-rose-600 rounded-full flex items-center justify-center text-[10px] text-white font-bold transition-all shadow-md"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            <p className="text-[10px] text-gray-500">
+              Faça upload das imagens do evento. Essas fotos serão exibidas em um carrossel animado no Dashboard!
+            </p>
           </div>
           <div className="flex justify-end gap-3 pt-6">
             <button type="button" onClick={() => setShowEventModal(false)} className="px-6 py-3 rounded-2xl text-sm font-bold text-white/50 hover:text-white transition-all">Cancelar</button>

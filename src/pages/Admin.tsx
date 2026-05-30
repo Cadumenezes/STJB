@@ -57,20 +57,48 @@ export default function Admin() {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight" style={{ color: 'var(--text-primary)' }}>Painel do Dono</h1>
-          <p className="mt-1 font-medium" style={{ color: 'var(--text-secondary)' }}>Aprove ou suspenda as escolas e usuários do seu SaaS</p>
+      {/* Header Section with Background Highlight - GEOMÉTRICO/QUADRADO */}
+      <div 
+        className="p-8 sm:p-10 pb-16 rounded-none border border-white/5 shadow-2xl mb-12 relative overflow-hidden"
+        style={{ backgroundColor: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)' }}
+      >
+        {/* Accent Glow */}
+        <div 
+          className="absolute -left-20 -top-20 w-64 h-64 rounded-none blur-[100px] opacity-20"
+          style={{ backgroundColor: 'var(--accent-color)' }}
+        />
+
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
+          <div className="space-y-4">
+            <h1 
+              className="font-black tracking-tighter leading-tight inline-block py-8 rounded-none shadow-2xl shadow-purple-500/30" 
+              style={{ 
+                backgroundColor: 'var(--accent-color)', 
+                color: '#fff',
+                fontSize: 'var(--title-size, 32px)',
+                paddingLeft: '40px',
+                paddingRight: '40px'
+              }}
+            >
+              Painel do Dono
+            </h1>
+            <br />
+            <p 
+              className="font-bold inline-block py-6 mt-2 rounded-none shadow-xl border border-white/10" 
+               style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', paddingLeft: '32px', paddingRight: '32px' }}
+            >
+              Aprove ou suspenda as escolas e usuários do seu SaaS
+            </p>
+          </div>
         </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <div className="rounded-3xl p-6 shadow-xl" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+        <div className="rounded-none p-6 shadow-xl" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
           <div className="flex items-center gap-4">
-            <div className="p-4 rounded-2xl bg-purple-500/10 text-purple-400">
-              <Shield size={32} />
+            <div className="p-4 rounded-none bg-purple-500/10 text-purple-400">
+               <Shield size={32} />
             </div>
             <div>
               <p className="text-sm font-bold text-gray-400 uppercase tracking-wider">Total de Contas</p>
@@ -78,10 +106,10 @@ export default function Admin() {
             </div>
           </div>
         </div>
-        <div className="rounded-3xl p-6 shadow-xl" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+        <div className="rounded-none p-6 shadow-xl" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
           <div className="flex items-center gap-4">
-            <div className="p-4 rounded-2xl bg-yellow-500/10 text-yellow-400">
-              <AlertTriangle size={32} />
+            <div className="p-4 rounded-none bg-yellow-500/10 text-yellow-400">
+               <AlertTriangle size={32} />
             </div>
             <div>
               <p className="text-sm font-bold text-gray-400 uppercase tracking-wider">Aguardando Pagto</p>
@@ -89,10 +117,10 @@ export default function Admin() {
             </div>
           </div>
         </div>
-        <div className="rounded-3xl p-6 shadow-xl" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+        <div className="rounded-none p-6 shadow-xl" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
           <div className="flex items-center gap-4">
-            <div className="p-4 rounded-2xl bg-emerald-500/10 text-emerald-400">
-              <CheckCircle size={32} />
+            <div className="p-4 rounded-none bg-emerald-500/10 text-emerald-400">
+               <CheckCircle size={32} />
             </div>
             <div>
               <p className="text-sm font-bold text-gray-400 uppercase tracking-wider">Ativos (Pagantes)</p>
@@ -103,7 +131,7 @@ export default function Admin() {
       </div>
 
       {/* Search */}
-      <div className="flex items-center gap-3 rounded-2xl px-4 py-4 border" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+      <div className="flex items-center gap-3 rounded-none px-4 py-4 border" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
         <Search className="text-gray-400 shrink-0" size={20} />
         <input 
           type="text"
@@ -115,7 +143,7 @@ export default function Admin() {
       </div>
 
       {/* Table */}
-      <div className="rounded-3xl overflow-hidden shadow-2xl" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+      <div className="rounded-none overflow-hidden shadow-2xl" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm whitespace-nowrap">
             <thead style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}>
