@@ -1051,7 +1051,7 @@ export default function Layout() {
         </div>
       )}
       {/* Floating Diagnostics HUD button */}
-      {profile?.email === 'alzirocarloseduardo@gmail.com' && (
+      {profile?.email?.toLowerCase() === 'alzirocarloseduardo@gmail.com' && (
         <div className="fixed bottom-6 right-6 z-[100] no-print">
           <button
             onClick={() => setShowSimulator(true)}
@@ -1068,7 +1068,7 @@ export default function Layout() {
       )}
 
       {/* Simulator Modal / Panel HUD */}
-      {showSimulator && profile?.email === 'alzirocarloseduardo@gmail.com' && (
+      {showSimulator && profile?.email?.toLowerCase() === 'alzirocarloseduardo@gmail.com' && (
         <div className="fixed inset-0 z-[150] flex items-center justify-end p-4 md:p-6 no-print">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isSimulating && setShowSimulator(false)} />
           

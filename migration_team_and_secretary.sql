@@ -127,13 +127,13 @@ begin
 
   if member_role = 'Secretário' or member_role = 'secretary' then
     insert into public.profiles (id, email, phone, role, status, plan)
-    values (new.id, new.email, new.raw_user_meta_data->>'phone', 'secretary', 'active', 'starter');
+    values (new.id, new.email, new.raw_user_meta_data->>'phone', 'secretary', 'active', 'gratis');
   elsif member_role = 'instructor' or member_role = 'Professor' then
     insert into public.profiles (id, email, phone, role, status, plan)
-    values (new.id, new.email, new.raw_user_meta_data->>'phone', 'teacher', 'active', 'starter');
+    values (new.id, new.email, new.raw_user_meta_data->>'phone', 'teacher', 'active', 'gratis');
   else
     insert into public.profiles (id, email, phone, role, status, plan)
-    values (new.id, new.email, new.raw_user_meta_data->>'phone', 'user', 'pending', 'starter');
+    values (new.id, new.email, new.raw_user_meta_data->>'phone', 'user', 'pending', 'gratis');
   end if;
   
   return new;

@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, Link, useLocation } from 'react-router-dom'
+import { Routes, Route, Navigate, Link, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { supabase } from './lib/supabase'
 import { Profile } from './types'
@@ -62,6 +62,7 @@ function PendingApproval({ status, onSignOut }: { status: string, onSignOut: () 
 
 export default function App() {
   const location = useLocation()
+  const navigate = useNavigate()
   const [session, setSession] = useState<any>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
@@ -85,7 +86,11 @@ export default function App() {
     })
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        localStorage.setItem('resetting_password', 'true')
+        navigate('/auth')
+      }
       setSession(session)
       if (session?.user) {
         setLoading(true)
@@ -110,6 +115,7 @@ export default function App() {
   const isExpired = profile?.expires_at ? new Date(profile.expires_at) < new Date() : false;
   const isBlocked = profile && (profile.status === 'pending' || profile.status === 'suspended' || isExpired)
   const isCheckoutRoute = location.pathname === '/checkout';
+  const isResettingPassword = localStorage.getItem('resetting_password') === 'true';
 
   if (session && isBlocked && !isCheckoutRoute) {
     const blockReason = isExpired && profile.status === 'active' ? 'expired' : profile.status;
@@ -118,7 +124,7 @@ export default function App() {
 
   return (
     <Routes>
-      <Route path="/auth" element={!session ? <Auth /> : <Navigate to="/" />} />
+      <Route path="/auth" element={(!session || isResettingPassword) ? <Auth /> : <Navigate to="/" />} />
       <Route path="/checkout" element={session ? <Checkout /> : <Navigate to="/auth" />} />
       
       <Route path="/" element={!session ? <LandingPage /> : (profile?.status === 'active' && !isExpired ? <Layout /> : <Navigate to="/auth" />)}>
