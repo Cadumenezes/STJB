@@ -936,7 +936,7 @@ export default function Layout() {
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/85 backdrop-blur-md" onClick={finishTour} />
           <div
-            className="relative w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden animate-in flex flex-col z-[210]"
+            className="relative w-full max-w-xl rounded-none shadow-2xl overflow-hidden animate-in flex flex-col z-[210]"
             style={{
               backgroundColor: 'var(--bg-card)',
               border: '1px solid var(--border-color)',
