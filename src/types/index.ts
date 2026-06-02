@@ -1,5 +1,6 @@
 export interface Student {
   id: string
+  user_id?: string
   name: string
   email: string
   phone: string
@@ -7,11 +8,13 @@ export interface Student {
   cpf: string
   address: string
   guardian_name: string
+  guardian_phone?: string
   photo_url: string | null
   class_id: string | null
   class_ids: string[] | null
-  status: 'active' | 'inactive' | 'scholarship' | 'locked'
+  status: 'active' | 'inactive' | 'scholarship' | 'partial_scholarship' | 'locked'
   monthly_fee: number
+  discount_monthly_fee?: number
   enrollment_fee: number
   notes: string
   created_at: string
@@ -20,6 +23,7 @@ export interface Student {
 
 export interface MonthlyPayment {
   id: string
+  user_id?: string
   student_id: string
   amount: number
   due_date: string
@@ -107,6 +111,11 @@ export interface SchoolSettings {
   cnpj: string | null
   address: string | null
   director: string | null
+  discount_due_day?: number
+  gateway_type?: 'none' | 'asaas' | 'cora'
+  gateway_api_key?: string | null
+  cora_client_id?: string | null
+  cora_client_secret?: string | null
   created_at: string
   updated_at: string
 }
@@ -141,6 +150,8 @@ export interface Event {
   cost?: number
   base_choreography_price?: number
   base_clothes_cost?: number
+  has_kit?: boolean
+  kit_price?: number
   photo_urls?: string[] | null
   created_at: string
 }

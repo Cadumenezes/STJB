@@ -8,13 +8,13 @@ import ricardoImg from '../assets/director_ricardo.png'
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#06060c] text-white selection:bg-purple-500/30 overflow-x-hidden font-sans">
+    <div className="min-h-screen w-full bg-[#06060c] text-white selection:bg-purple-500/30 overflow-x-hidden font-sans flex flex-col items-center gap-y-8 md:gap-y-14">
       {/* Dynamic Background Accents */}
       <div className="fixed top-[-15%] left-[-15%] w-[50%] h-[50%] rounded-full bg-purple-900/10 blur-[140px] pointer-events-none" />
       <div className="fixed bottom-[-15%] right-[-15%] w-[50%] h-[50%] rounded-full bg-pink-900/10 blur-[140px] pointer-events-none" />
 
       {/* Clean Navigation */}
-      <nav className="relative z-20 max-w-6xl mx-auto px-6 py-6 flex items-center justify-between">
+      <nav className="relative z-20 w-full max-w-6xl mx-auto px-6 py-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="h-9 w-9 rounded-xl flex items-center justify-center bg-gradient-to-br from-purple-600 to-pink-500 shadow-lg shadow-purple-500/20">
             <span className="text-white text-base font-black">D</span>
@@ -33,20 +33,20 @@ export default function LandingPage() {
       </nav>
 
       {/* Premium Hero Section */}
-      <section className="relative z-10 max-w-6xl mx-auto px-6 pt-24 pb-36 md:pt-32 md:pb-48 flex flex-col md:flex-row items-center gap-12 lg:gap-16">
+      <section className="relative z-10 w-full max-w-6xl mx-auto px-6 pt-24 pb-36 md:pt-32 md:pb-48 flex flex-col md:flex-row items-center justify-between gap-12 md:gap-16">
         
-        {/* Left Side: Text and CTA */}
-        <div className="w-full md:w-[58%] space-y-8 text-left">
+        {/* Text and CTA */}
+        <div className="flex-1 space-y-8 flex flex-col items-center md:items-start text-center md:text-left">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 font-semibold text-xs tracking-wider uppercase">
             <Sparkles size={12} className="animate-pulse" />
             O Futuro da Gestão de Dança
           </div>
           
-          <h1 className="text-3xl sm:text-4xl lg:text-[38px] xl:text-[42px] font-black tracking-tight leading-[1.15] text-white whitespace-nowrap md:whitespace-normal lg:whitespace-nowrap">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.1] text-white max-w-3xl">
             Sua escola de dança, <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-pink-500">100% sob controle.</span>
           </h1>
           
-          <p className="text-gray-400 text-base sm:text-lg leading-relaxed max-w-lg">
+          <p className="text-gray-400 text-base sm:text-lg leading-relaxed max-w-xl mx-auto md:mx-0">
             Abandone as planilhas complexas. Automatize mensalidades, controle de turmas, eventos épicos e estoque em uma única plataforma minimalista e ultra-veloz.
           </p>
           
@@ -58,10 +58,10 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Right Side: AI Ballerina Neon Image */}
-        <div className="w-full md:w-[38%] shrink-0 max-w-md md:max-w-none relative flex justify-center items-center">
+        {/* Centered Image */}
+        <div className="flex-1 w-full max-w-xl relative flex justify-center items-center">
           {/* Subtle Background Glow behind image */}
-          <div className="absolute w-[80%] h-[80%] rounded-full bg-purple-500/10 blur-[90px] animate-pulse" style={{ animationDuration: '4s' }} />
+          <div className="absolute w-[80%] h-[80%] rounded-full bg-purple-500/10 blur-[120px] animate-pulse" style={{ animationDuration: '4s' }} />
           
           <div className="relative z-10 w-full overflow-hidden rounded-3xl border border-white/5 bg-white/5 backdrop-blur-3xl p-4 shadow-2xl hover:border-white/10 transition-all hover:scale-[1.01] group">
             <img 
@@ -77,11 +77,11 @@ export default function LandingPage() {
       </section>
 
       {/* Spacious 3-Column Features Section */}
-      <section className="relative z-10 py-36 border-t border-white/5 bg-black/10">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="max-w-2xl mx-auto text-center mb-28 space-y-4">
+      <section className="relative z-10 py-28 border-t border-white/5 bg-black/10 w-full flex justify-center">
+        <div className="w-full max-w-6xl mx-auto px-6 flex flex-col items-center gap-8 md:gap-12">
+          <div className="w-full max-w-4xl mx-auto text-center space-y-4 flex flex-col items-center">
             <h2 className="text-3xl sm:text-4xl font-black tracking-tight">Gestão simplificada. Resultados reais.</h2>
-            <p className="text-gray-400 text-sm sm:text-base leading-relaxed">Foque no que você faz de melhor: ensinar a arte da dança. O DanceFlow cuida de todo o resto.</p>
+            <p className="text-gray-400 text-sm sm:text-base leading-relaxed max-w-xl">Foque no que você faz de melhor: ensinar a arte da dança. O DanceFlow cuida de todo o resto.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
@@ -89,21 +89,25 @@ export default function LandingPage() {
               { 
                 icon: Sparkles, 
                 title: 'Financeiro Inteligente', 
-                desc: 'Mensalidades automáticas, gestão de caixa, contas fixas mensais dinâmicas e pagamentos integrados via Pix.',
+                desc: (
+                  <>
+                    Automação via <a href="https://www.asaas.com" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 underline font-bold transition-all">Asaas</a> (qualquer banco), conexão direta com <a href="https://www.cora.com.br" target="_blank" rel="noopener noreferrer" className="text-pink-400 hover:text-pink-300 underline font-bold transition-all">Banco Cora</a> PJ ou conciliação rápida por extrato OFX/CSV.
+                  </>
+                ),
                 color: 'text-purple-400',
                 bg: 'bg-purple-500/10'
               },
               { 
                 icon: Award, 
                 title: 'Área do Professor', 
-                desc: 'Acesso 100% restrito e seguro para professores realizarem a chamada das turmas direto pelo celular na sala de aula.',
+                desc: <>Acesso 100% restrito e seguro para professores realizarem a chamada das turmas direto pelo celular na sala de aula.</>,
                 color: 'text-pink-400',
                 bg: 'bg-pink-500/10'
               },
               { 
                 icon: Shield, 
                 title: 'Eventos & Espetáculos', 
-                desc: 'Módulo completo para gerenciar ingressos, kits, figurinos e parcelas dos festivals de dança da sua escola.',
+                desc: <>Módulo completo para gerenciar ingressos, kits, figurinos e parcelas dos festivals de dança da sua escola.</>,
                 color: 'text-blue-400',
                 bg: 'bg-blue-500/10'
               }
@@ -121,17 +125,17 @@ export default function LandingPage() {
       </section>
 
       {/* Premium Spotlight Section 1: Financial */}
-      <section className="relative z-10 py-36 border-t border-white/5">
-        <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center gap-16">
-          <div className="flex-1 space-y-6 text-left">
+      <section className="relative z-10 py-36 border-t border-white/5 w-full flex justify-center">
+        <div className="w-full max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center gap-16">
+          <div className="flex-1 space-y-6 text-center md:text-left flex flex-col items-center md:items-start">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 font-bold text-xs uppercase tracking-wider">
               ⚡ Controle Absoluto
             </div>
             <h2 className="text-3xl sm:text-4xl font-black tracking-tight leading-tight">
-              Sua Escola Financeiramente Saudável
+              Faturamento Automatizado e Conciliação Universal
             </h2>
             <p className="text-gray-400 text-base leading-relaxed">
-              Tenha uma visão clara e consolidada de faturamento e despesas. Esqueça o trabalho manual: automatize mensalidades recorrentes por PIX, controle despesas mensais dinâmicas por categoria e analise o saldo geral com painéis visuais intuitivos que ajudam você a escalar.
+              Não mude de banco! O DanceFlow se conecta de forma segura e oficial à sua própria conta do <a href="https://www.cora.com.br" target="_blank" rel="noopener noreferrer" className="text-pink-400 hover:text-pink-300 underline font-bold transition-all">Banco Cora</a> ou <a href="https://www.asaas.com" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 underline font-bold transition-all">Asaas</a> (permitindo receber em qualquer banco com repasses automáticos via Pix). E se você usa outro banco convencional (Itaú, Bradesco, Nubank, Inter, etc.), basta arrastar o extrato bancário (OFX ou CSV) na plataforma para o sistema fazer o cruzamento inteligente e dar baixa automática em lote nos alunos.
             </p>
             <div className="pt-2">
               <Link to="/auth" className="inline-flex items-center gap-3 px-6 py-3.5 bg-white/5 border border-white/10 hover:border-white/20 text-white font-bold rounded-xl transition-all hover:-translate-y-0.5 group text-sm">
@@ -154,9 +158,9 @@ export default function LandingPage() {
       </section>
 
       {/* Premium Spotlight Section 2: Class Management */}
-      <section className="relative z-10 py-36 border-t border-white/5 bg-black/10">
-        <div className="max-w-6xl mx-auto px-6 flex flex-col md:flex-row-reverse items-center gap-16">
-          <div className="flex-1 space-y-6 text-left">
+      <section className="relative z-10 py-36 border-t border-white/5 bg-black/10 w-full flex justify-center">
+        <div className="w-full max-w-6xl mx-auto px-6 flex flex-col md:flex-row-reverse items-center gap-16">
+          <div className="flex-1 space-y-6 text-center md:text-left flex flex-col items-center md:items-start">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-400 font-bold text-xs uppercase tracking-wider">
               🩰 Praticidade no Dia a Dia
             </div>
@@ -186,12 +190,45 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Premium Spotlight Section 3: Student Profile & IR Declaration */}
+      <section className="relative z-10 py-36 border-t border-white/5 w-full flex justify-center">
+        <div className="w-full max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center gap-16">
+          <div className="flex-1 space-y-6 text-center md:text-left flex flex-col items-center md:items-start">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 font-bold text-xs uppercase tracking-wider">
+              ⭐ Ficha Completa & Documentos
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-black tracking-tight leading-tight">
+              Perfil Completo do Aluno e Declaração de IR Automatizada
+            </h2>
+            <p className="text-gray-400 text-base leading-relaxed">
+              Tenha o raio-x completo de cada bailarino. Em uma única tela, acesse o histórico completo de pagamentos quitados, turmas vinculadas e um sumário de frequência detalhado com percentual de aproveitamento. Além disso, emita a declaração de rendimentos para dedução de instrução no Imposto de Renda (IRPF) do responsável financeiro com apenas um clique.
+            </p>
+            <div className="pt-2">
+              <Link to="/auth" className="inline-flex items-center gap-3 px-6 py-3.5 bg-white/5 border border-white/10 hover:border-white/20 text-white font-bold rounded-xl transition-all hover:-translate-y-0.5 group text-sm">
+                Experimentar Ficha de Alunos
+                <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+          </div>
+          <div className="flex-1 w-full max-w-md md:max-w-none relative flex justify-center items-center">
+            <div className="absolute w-[80%] h-[80%] rounded-full bg-purple-500/5 blur-[100px]" />
+            <div className="relative z-10 w-full overflow-hidden rounded-3xl border border-white/5 bg-white/5 backdrop-blur-3xl p-4 shadow-2xl hover:border-white/10 transition-all hover:scale-[1.01] group">
+              <img 
+                src={feature1Image} 
+                alt="Perfil Completo do Aluno DanceFlow" 
+                className="w-full h-auto rounded-2xl object-cover object-center shadow-lg"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Modern spacious Testimonials */}
-      <section className="relative z-10 py-36">
-        <div className="max-w-6xl mx-auto px-6">
-          <h2 className="text-2xl sm:text-3xl font-black text-center mb-24">Histórias de sucesso de quem usa</h2>
+      <section className="relative z-10 py-28 w-full flex justify-center">
+        <div className="w-full max-w-6xl mx-auto px-6 flex flex-col items-center gap-8 md:gap-12">
+          <h2 className="text-2xl sm:text-3xl font-black text-center">Histórias de sucesso de quem usa</h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto w-full">
             {[
               { 
                 name: 'Carolina Souza', 
@@ -206,17 +243,17 @@ export default function LandingPage() {
                 quote: 'O design é simplesmente maravilhoso e a facilidade de ver quem pagou a mensalidade pelo gráfico me poupa horas de trabalho semanal.' 
               }
             ].map((t, i) => (
-              <div key={i} className="p-8 sm:p-10 rounded-3xl bg-white/[0.02] border border-white/5 flex flex-col justify-between">
+              <div key={i} className="p-8 sm:p-10 rounded-3xl bg-white/[0.02] border border-white/5 flex flex-col items-center text-center justify-between">
                 <p className="text-gray-300 text-sm italic leading-relaxed mb-8">"{t.quote}"</p>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col items-center gap-4">
                   <img 
                     src={t.image} 
                     alt={t.name} 
-                    className="h-10 w-10 rounded-full object-cover object-center border border-white/10"
+                    className="h-12 w-12 rounded-full object-cover object-center border-2 border-purple-500/20 shadow-md"
                   />
-                  <div>
-                    <h4 className="font-bold text-sm">{t.name}</h4>
-                    <span className="text-xs text-purple-400 font-semibold uppercase tracking-wider">{t.role}</span>
+                  <div className="flex flex-col items-center">
+                    <h4 className="font-bold text-sm text-white">{t.name}</h4>
+                    <span className="text-xs text-purple-400 font-bold uppercase tracking-wider mt-0.5">{t.role}</span>
                   </div>
                 </div>
               </div>
@@ -226,11 +263,11 @@ export default function LandingPage() {
       </section>
 
       {/* Spacious Pricing */}
-      <section className="relative z-10 py-36 border-t border-white/5 bg-black/10">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center max-w-2xl mx-auto mb-24 space-y-4">
+      <section className="relative z-10 py-28 border-t border-white/5 bg-black/10 w-full flex justify-center">
+        <div className="w-full max-w-6xl mx-auto px-6 flex flex-col items-center gap-8 md:gap-12">
+          <div className="w-full text-center max-w-4xl mx-auto space-y-4 flex flex-col items-center">
             <h2 className="text-3xl sm:text-4xl font-black tracking-tight">Planos transparentes. Liberação imediata.</h2>
-            <p className="text-gray-400 text-sm sm:text-base">Escolha o plano ideal para a sua escola e comece a escalar hoje mesmo.</p>
+            <p className="text-gray-400 text-sm sm:text-base max-w-xl">Escolha o plano ideal para a sua escola e comece a escalar hoje mesmo.</p>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto items-stretch">
@@ -331,7 +368,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="relative z-10 py-16 text-center border-t border-white/5">
+      <footer className="relative z-10 py-16 text-center border-t border-white/5 w-full">
         <div className="flex items-center justify-center gap-2 mb-4">
           <div className="h-5 w-5 rounded-md flex items-center justify-center bg-gradient-to-br from-purple-600 to-pink-500">
             <span className="text-white text-[10px] font-black">D</span>

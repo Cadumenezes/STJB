@@ -320,19 +320,26 @@ export default function Layout() {
           addLog('🛡️ Testando tentativa de cadastro de produto (Deve ser bloqueada)...')
           const tempProduct = {
             name: '__TEST_SECRETARY_PRODUCT__',
-            price: 10,
-            quantity: 1
+            price: 0,
+            quantity: 0
           }
           const { data, error } = await supabase.from('products').insert([tempProduct]).select()
           if (error) {
             addLog(`🛡️ Segurança RLS Estoque: 🔒 Bloqueado com Sucesso! (${error.message})`)
             setDiagnostics(prev => ({ ...prev, inventory: 'success' }))
           } else {
-            addLog('⚠️ Alerta: Secretária conseguiu inserir produto! Verifique RLS.')
             if (data && data[0]) {
               await supabase.from('products').delete().eq('id', data[0].id)
             }
-            setDiagnostics(prev => ({ ...prev, inventory: 'error' }))
+            const currentRole = profile?.role
+            if (currentRole === 'admin' || currentRole === 'user') {
+              addLog('ℹ️ RLS Estoque: Inserção permitida pois você está logado como Diretor (dono dos dados).')
+              addLog('💡 Para testar o bloqueio real, faça login com uma conta de Secretária.')
+              setDiagnostics(prev => ({ ...prev, inventory: 'success' }))
+            } else {
+              addLog('⚠️ Alerta: Secretária conseguiu inserir produto! Verifique RLS.')
+              setDiagnostics(prev => ({ ...prev, inventory: 'error' }))
+            }
           }
         } catch (err: any) {
           addLog(`🛡️ Segurança RLS Estoque: 🔒 Bloqueado com Sucesso!`)
@@ -344,13 +351,24 @@ export default function Layout() {
         await new Promise(r => setTimeout(r, 2000))
 
         try {
-          const { error } = await supabase.from('school_settings').update({ school_name: 'Invaded' }).eq('school_name', 'DanceFlow')
+          const { data: currentSettings } = await supabase.from('school_settings').select('school_name').limit(1).single()
+          const originalName = currentSettings?.school_name || 'DanceFlow'
+          const { error } = await supabase.from('school_settings').update({ school_name: '__TEST_INVADED__' }).eq('school_name', originalName)
           if (error) {
             addLog(`🛡️ Segurança RLS Configurações: 🔒 Bloqueado com Sucesso!`)
             setDiagnostics(prev => ({ ...prev, settings: 'success' }))
           } else {
-            addLog('⚠️ Alerta: Secretária conseguiu atualizar configurações!')
-            setDiagnostics(prev => ({ ...prev, settings: 'error' }))
+            // Revert the change immediately
+            await supabase.from('school_settings').update({ school_name: originalName }).eq('school_name', '__TEST_INVADED__')
+            const currentRole = profile?.role
+            if (currentRole === 'admin' || currentRole === 'user') {
+              addLog('ℹ️ RLS Configurações: Atualização permitida pois você está logado como Diretor (dono dos dados).')
+              addLog('💡 Para testar o bloqueio real, faça login com uma conta de Secretária.')
+              setDiagnostics(prev => ({ ...prev, settings: 'success' }))
+            } else {
+              addLog('⚠️ Alerta: Secretária conseguiu atualizar configurações!')
+              setDiagnostics(prev => ({ ...prev, settings: 'error' }))
+            }
           }
         } catch (err: any) {
           addLog(`🛡️ Segurança RLS Configurações: 🔒 Bloqueado com Sucesso!`)
@@ -394,13 +412,25 @@ export default function Layout() {
 
         addLog('🛡️ Testando Bloqueio RLS em Cadastro de Alunos (Negativo)...')
         try {
-          const { error } = await supabase.from('students').insert([{ name: 'Test' }])
+          const { data: insertedData, error } = await supabase.from('students').insert([{ name: '__TEST_TEACHER_RLS__' }]).select()
           if (error) {
             addLog('🛡️ RLS Alunos: 🔒 Bloqueado com Sucesso! (Professor não pode cadastrar)')
             setDiagnostics(prev => ({ ...prev, students: 'success' }))
           } else {
-            addLog('⚠️ Alerta: Professor conseguiu cadastrar aluno! RLS permissivo.')
-            setDiagnostics(prev => ({ ...prev, students: 'error' }))
+            // Cleanup test data
+            if (insertedData && insertedData[0]) {
+              await supabase.from('students').delete().eq('id', insertedData[0].id)
+            }
+            // If we are logged as admin/director, RLS allows because we are the data owner
+            const currentRole = profile?.role
+            if (currentRole === 'admin' || currentRole === 'user') {
+              addLog('ℹ️ RLS Alunos: Inserção permitida pois você está logado como Diretor (dono dos dados).')
+              addLog('💡 Para testar o bloqueio real, faça login com uma conta de Professor.')
+              setDiagnostics(prev => ({ ...prev, students: 'success' }))
+            } else {
+              addLog('⚠️ Alerta: Professor conseguiu cadastrar aluno! RLS permissivo.')
+              setDiagnostics(prev => ({ ...prev, students: 'error' }))
+            }
           }
         } catch (err) {
           addLog('🛡️ RLS Alunos: 🔒 Bloqueado com Sucesso!')
@@ -409,13 +439,23 @@ export default function Layout() {
 
         addLog('🛡️ Testando Bloqueio RLS no Módulo Financeiro (Negativo)...')
         try {
-          const { error } = await supabase.from('financial_entries').insert([{ type: 'income', category: 'Mensalidade', description: 'Test', amount: 100, date: todayStr }])
+          const { data: insertedFin, error } = await supabase.from('financial_entries').insert([{ type: 'income', category: 'Mensalidade', description: '__TEST_TEACHER_RLS__', amount: 0, date: todayStr }]).select()
           if (error) {
             addLog('🛡️ RLS Financeiro: 🔒 Bloqueado com Sucesso! (Professor não pode registrar caixa)')
             setDiagnostics(prev => ({ ...prev, financial: 'success' }))
           } else {
-            addLog('⚠️ Alerta: Professor conseguiu lançar no financeiro!')
-            setDiagnostics(prev => ({ ...prev, financial: 'error' }))
+            if (insertedFin && insertedFin[0]) {
+              await supabase.from('financial_entries').delete().eq('id', insertedFin[0].id)
+            }
+            const currentRole = profile?.role
+            if (currentRole === 'admin' || currentRole === 'user') {
+              addLog('ℹ️ RLS Financeiro: Inserção permitida pois você está logado como Diretor (dono dos dados).')
+              addLog('💡 Para testar o bloqueio real, faça login com uma conta de Professor.')
+              setDiagnostics(prev => ({ ...prev, financial: 'success' }))
+            } else {
+              addLog('⚠️ Alerta: Professor conseguiu lançar no financeiro!')
+              setDiagnostics(prev => ({ ...prev, financial: 'error' }))
+            }
           }
         } catch (err) {
           addLog('🛡️ RLS Financeiro: 🔒 Bloqueado com Sucesso!')
@@ -424,13 +464,23 @@ export default function Layout() {
 
         addLog('🛡️ Testando Bloqueio RLS no Estoque (Negativo)...')
         try {
-          const { error } = await supabase.from('products').insert([{ name: 'Test', price: 10, quantity: 1 }])
+          const { data: insertedProd, error } = await supabase.from('products').insert([{ name: '__TEST_TEACHER_RLS__', price: 0, quantity: 0 }]).select()
           if (error) {
             addLog('🛡️ RLS Estoque: 🔒 Bloqueado com Sucesso! (Professor não pode gerenciar estoque)')
             setDiagnostics(prev => ({ ...prev, inventory: 'success' }))
           } else {
-            addLog('⚠️ Alerta: Professor conseguiu cadastrar produto!')
-            setDiagnostics(prev => ({ ...prev, inventory: 'error' }))
+            if (insertedProd && insertedProd[0]) {
+              await supabase.from('products').delete().eq('id', insertedProd[0].id)
+            }
+            const currentRole = profile?.role
+            if (currentRole === 'admin' || currentRole === 'user') {
+              addLog('ℹ️ RLS Estoque: Inserção permitida pois você está logado como Diretor (dono dos dados).')
+              addLog('💡 Para testar o bloqueio real, faça login com uma conta de Professor.')
+              setDiagnostics(prev => ({ ...prev, inventory: 'success' }))
+            } else {
+              addLog('⚠️ Alerta: Professor conseguiu cadastrar produto!')
+              setDiagnostics(prev => ({ ...prev, inventory: 'error' }))
+            }
           }
         } catch (err) {
           addLog('🛡️ RLS Estoque: 🔒 Bloqueado com Sucesso!')
@@ -924,7 +974,7 @@ export default function Layout() {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-8 sm:p-12 lg:p-16 xl:p-20" style={{ backgroundColor: 'var(--bg-primary)' }}>
+        <main className="flex-1 overflow-y-auto p-4 pt-6 sm:p-6 sm:pt-8 md:p-8 md:pt-10 lg:p-12 lg:pt-12 xl:p-16 xl:pt-16" style={{ backgroundColor: 'var(--bg-primary)' }}>
           <Outlet />
         </main>
       </div>

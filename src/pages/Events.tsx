@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Plus, Edit, Trash2, Calendar, MapPin, DollarSign, Users, Download, PlusCircle, CheckCircle, CreditCard, Box, Search } from 'lucide-react'
+import { Plus, Edit, Trash2, Calendar, MapPin, DollarSign, Users, Download, PlusCircle, CheckCircle, CreditCard, Box, Search, Printer } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { Event, EventParticipant, Student, Installment, Profile } from '../types'
 import Modal from '../components/Modal'
@@ -16,6 +16,7 @@ export default function Events() {
   const [editEvent, setEditEvent] = useState<Event | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [profile, setProfile] = useState<Profile | null>(null)
+  const [reportSchoolData, setReportSchoolData] = useState<any | null>(null)
 
   function getDynamicFontSize(val: string | number) {
     const len = val.toString().length
@@ -34,6 +35,8 @@ export default function Events() {
     cost: 0,
     base_choreography_price: 0,
     base_clothes_cost: 0,
+    has_kit: false,
+    kit_price: 0,
     photos: ''
   })
 
@@ -97,6 +100,8 @@ export default function Events() {
       cost: eventFormData.cost,
       base_choreography_price: eventFormData.base_choreography_price,
       base_clothes_cost: eventFormData.base_clothes_cost,
+      has_kit: eventFormData.has_kit,
+      kit_price: eventFormData.kit_price,
       photo_urls: photoUrlsArray
     }
 
@@ -127,6 +132,8 @@ export default function Events() {
         cost: 0,
         base_choreography_price: 0,
         base_clothes_cost: 0,
+        has_kit: false,
+        kit_price: 0,
         photos: ''
       })
       loadData()
@@ -138,6 +145,16 @@ export default function Events() {
     await supabase.from('events').delete().eq('id', id)
     if (activeEventId === id) setActiveEventId(null)
     loadData()
+  }
+
+  async function handlePrintReport() {
+    if (!activeEventId) return
+    const { data: school } = await supabase.from('school_settings').select('*').limit(1).single()
+    setReportSchoolData(school || { school_name: 'DanceFlow' })
+    setTimeout(() => {
+      window.print()
+      setReportSchoolData(null)
+    }, 500)
   }
 
   function openEventEdit(ev: Event) {
@@ -152,6 +169,8 @@ export default function Events() {
       cost: ev.cost || 0,
       base_choreography_price: ev.base_choreography_price || 0,
       base_clothes_cost: ev.base_clothes_cost || 0,
+      has_kit: ev.has_kit || false,
+      kit_price: ev.kit_price || 0,
       photos: ev.photo_urls ? ev.photo_urls.join(', ') : ''
     })
     setShowEventModal(true)
@@ -220,12 +239,13 @@ export default function Events() {
     if (!p) return
 
     // Auto-calculate total value if quantities change
-    if (field === 'choreography_count' || field === 'clothes_cost' || field === 'ticket_quantity') {
+    if (field === 'choreography_count' || field === 'clothes_cost' || field === 'ticket_quantity' || field === 'kit') {
       const activeEvent = events.find(e => e.id === p.event_id)
       if (activeEvent) {
         const choreoCount = field === 'choreography_count' ? Number(value) : Number(p.choreography_count || 0)
         let clothesQty = field === 'clothes_cost' ? Number(value) : Number(p.clothes_cost || 0)
         const ticketQty = field === 'ticket_quantity' ? Number(value) : Number(p.ticket_quantity || 0)
+        const hasKitSelected = field === 'kit' ? Boolean(value) : Boolean(p.kit)
         
         // Regra de Negócio: Se alterar o número de coreografias, auto-ajusta a quantidade de roupas para ser IGUAL
         if (field === 'choreography_count') {
@@ -243,7 +263,9 @@ export default function Events() {
           clothesFee = clothesQty * (activeEvent.base_clothes_cost || 0)
         }
         
-        const newTotal = choreoFee + clothesFee + (ticketQty * (activeEvent.ticket_price || 0))
+        const kitFee = (activeEvent.has_kit && hasKitSelected) ? (activeEvent.kit_price || 0) : 0
+        
+        const newTotal = choreoFee + clothesFee + (ticketQty * (activeEvent.ticket_price || 0)) + kitFee
         
         payload.total_value = newTotal
         optimUpdate.total_value = newTotal
@@ -394,6 +416,9 @@ export default function Events() {
     return acc + fee;
   }, 0);
 
+  const totalKits = currentParticipants.filter(p => p.kit).length
+  const totalKitRevenue = totalKits * (activeEvent?.kit_price || 0)
+
   const eventCost = activeEvent?.cost || 0
   const netResult = totalReceived - eventCost
 
@@ -415,7 +440,7 @@ export default function Events() {
     <div className="flex flex-col pb-10">
       {/* Header */}
       <div 
-        className="p-8 sm:p-10 pb-12 rounded-2xl border border-white/5 shadow-2xl relative overflow-hidden mb-8"
+        className="p-5 sm:p-8 md:p-10 pb-10 sm:pb-16 rounded-2xl border border-white/5 shadow-2xl relative overflow-hidden mb-8"
         style={{ backgroundColor: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)' }}
       >
         <div 
@@ -425,13 +450,13 @@ export default function Events() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
           <div className="space-y-4">
             <h1 
-              className="font-black tracking-tighter leading-tight inline-block py-8 rounded-2xl shadow-2xl shadow-purple-500/30" 
-              style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--title-size, 32px)', paddingLeft: '40px', paddingRight: '40px' }}
+              className="font-black tracking-tighter leading-tight inline-block py-4 sm:py-8 rounded-2xl shadow-2xl shadow-purple-500/30" 
+              style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--title-size, 32px)', paddingLeft: 'clamp(16px, 4vw, 40px)', paddingRight: 'clamp(16px, 4vw, 40px)' }}
             >
               Eventos
             </h1>
             <br />
-            <p className="font-bold inline-block py-6 mt-2 rounded-2xl shadow-xl border border-white/10" style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', paddingLeft: '32px', paddingRight: '32px' }}>
+            <p className="font-bold inline-block py-3 sm:py-6 mt-2 rounded-2xl shadow-xl border border-white/10" style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', paddingLeft: 'clamp(12px, 3vw, 32px)', paddingRight: 'clamp(12px, 3vw, 32px)' }}>
               Gerencie espetáculos, festivais e participantes
             </p>
           </div>
@@ -440,7 +465,7 @@ export default function Events() {
               onClick={() => {
                 setEditEvent(null)
                 setUploadedPhotos([])
-                setEventFormData({ name: '', date: new Date().toISOString().split('T')[0], location: '', description: '', ticket_price: 0, cost: 0, base_choreography_price: 0, base_clothes_cost: 0, photos: '' })
+                setEventFormData({ name: '', date: new Date().toISOString().split('T')[0], location: '', description: '', ticket_price: 0, cost: 0, base_choreography_price: 0, base_clothes_cost: 0, has_kit: false, kit_price: 0, photos: '' })
                 setShowEventModal(true)
               }}
               className="flex items-center gap-2 rounded-2xl px-8 py-4 text-sm font-bold text-white transition-all hover:scale-105 shadow-xl"
@@ -484,7 +509,7 @@ export default function Events() {
             <div className="space-y-8">
               {/* Highlighted Event Title/Subtitle Header */}
               <div 
-                className="p-8 sm:p-10 pb-16 rounded-none border border-white/5 shadow-2xl mb-8 relative overflow-hidden"
+                className="p-5 sm:p-8 md:p-10 pb-10 sm:pb-16 rounded-none border border-white/5 shadow-2xl mb-8 relative overflow-hidden"
                 style={{ backgroundColor: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)' }}
               >
                 {/* Accent Glow */}
@@ -496,21 +521,21 @@ export default function Events() {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
                   <div className="space-y-4">
                     <h2 
-                      className="font-black tracking-tighter leading-tight inline-block py-8 rounded-none shadow-2xl shadow-purple-500/30" 
+                      className="font-black tracking-tighter leading-tight inline-block py-4 sm:py-8 rounded-none shadow-2xl shadow-purple-500/30" 
                       style={{ 
                         backgroundColor: 'var(--accent-color)', 
                         color: '#fff',
                         fontSize: 'var(--title-size, 32px)',
-                        paddingLeft: '40px',
-                        paddingRight: '40px'
+                        paddingLeft: 'clamp(16px, 4vw, 40px)',
+                        paddingRight: 'clamp(16px, 4vw, 40px)'
                       }}
                     >
                       {activeEvent.name}
                     </h2>
                     <br />
                     <p 
-                      className="font-bold inline-block py-6 mt-2 rounded-none shadow-xl border border-white/10" 
-                       style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', paddingLeft: '32px', paddingRight: '32px' }}
+                      className="font-bold inline-block py-3 sm:py-6 mt-2 rounded-none shadow-xl border border-white/10" 
+                       style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', paddingLeft: 'clamp(12px, 3vw, 32px)', paddingRight: 'clamp(12px, 3vw, 32px)' }}
                     >
                       {activeEvent.description || 'Sem descrição'} {activeEvent.location ? `• Local: ${activeEvent.location}` : ''}
                     </p>
@@ -519,103 +544,115 @@ export default function Events() {
               </div>
 
               {/* Event Summary Cards */}
-              <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-                <div className="p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
+              <div className="flex flex-wrap md:flex-nowrap gap-4">
+                <div className="flex-1 min-w-0 p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
                   <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">Participantes</p>
                   <p className={`font-black text-white ${getDynamicFontSize(currentParticipants.length)}`}>{currentParticipants.length}</p>
                 </div>
-                <div className="p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
-                  <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">Custo do Evento</p>
-                  <p className={`font-black text-rose-400 ${getDynamicFontSize(`R$ ${Number(eventCost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`)}`}>
-                    R$ {Number(eventCost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <div className="p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
-                  <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">A Receber Total</p>
-                  <p className={`font-black text-blue-400 ${getDynamicFontSize(`R$ ${Number(expectedRevenue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`)}`}>
-                    R$ {Number(expectedRevenue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <div className="p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
-                  <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">Já Recebido</p>
-                  <p className={`font-black text-emerald-400 ${getDynamicFontSize(`R$ ${Number(totalReceived).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`)}`}>
-                    R$ {Number(totalReceived).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <div className="p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
-                  <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">Falta Receber</p>
-                  <p className={`font-black text-amber-400 ${getDynamicFontSize(`R$ ${Number(expectedRevenue - totalReceived).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`)}`}>
-                    R$ {Number(expectedRevenue - totalReceived).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </p>
-                </div>
-                <div className="p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
+                {profile?.role !== 'secretary' && (
+                  <>
+                    <div className="flex-1 min-w-0 p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
+                      <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">Custo do Evento</p>
+                      <p className={`font-black text-rose-400 ${getDynamicFontSize(`R$ ${Number(eventCost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`)}`}>
+                        R$ {Number(eventCost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                    <div className="flex-1 min-w-0 p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
+                      <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">A Receber Total</p>
+                      <p className={`font-black text-blue-400 ${getDynamicFontSize(`R$ ${Number(expectedRevenue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`)}`}>
+                        R$ {Number(expectedRevenue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                    <div className="flex-1 min-w-0 p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
+                      <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">Já Recebido</p>
+                      <p className={`font-black text-emerald-400 ${getDynamicFontSize(`R$ ${Number(totalReceived).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`)}`}>
+                        R$ {Number(totalReceived).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                    <div className="flex-1 min-w-0 p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
+                      <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">Falta Receber</p>
+                      <p className={`font-black text-amber-400 ${getDynamicFontSize(`R$ ${Number(expectedRevenue - totalReceived).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`)}`}>
+                        R$ {Number(expectedRevenue - totalReceived).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                  </>
+                )}
+                <div className="flex-1 min-w-0 p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
                   <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">Convites Vendidos</p>
                   <p className={`font-black text-purple-400 ${getDynamicFontSize(totalTickets)}`}>{totalTickets}</p>
                 </div>
+                {activeEvent.has_kit && (
+                  <div className="flex-1 min-w-0 p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
+                    <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">Total de Kits</p>
+                    <p className={`font-black text-blue-400 ${getDynamicFontSize(totalKits)}`}>{totalKits}</p>
+                  </div>
+                )}
               </div>
 
               {/* Relatório Financeiro Detalhado */}
-              <div className="p-6 rounded-none border mt-4" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
-                <h3 className="text-lg font-black text-white mb-4 uppercase tracking-widest flex items-center gap-2">
-                  <DollarSign size={20} className="text-emerald-400" />
-                  Relatório Detalhado
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Convites */}
-                  <div className="p-4 rounded-2xl" style={{ backgroundColor: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)' }}>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Convites Vendidos</span>
-                      <span className="px-2 py-1 bg-purple-500/20 text-purple-400 rounded-lg text-xs font-black">{totalTickets} un.</span>
-                    </div>
-                    <div className="flex justify-between items-end mt-4">
-                      <div>
-                        <p className="text-[10px] text-white/30 uppercase tracking-widest mb-1">Valor Base (un)</p>
-                        <p className="text-sm font-bold text-white/50">R$ {Number(activeEvent?.ticket_price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              {profile?.role !== 'secretary' && (
+                <div className="p-6 rounded-none border" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', marginTop: '24px' }}>
+                  <h3 className="text-lg font-black text-white mb-4 uppercase tracking-widest flex items-center gap-2">
+                    <DollarSign size={20} className="text-emerald-400" />
+                    Relatório Detalhado
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    {/* Convites */}
+                    <div className="p-4 rounded-2xl" style={{ backgroundColor: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)' }}>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Convites Vendidos</span>
+                        <span className="px-2 py-1 bg-purple-500/20 text-purple-400 rounded-lg text-xs font-black">{totalTickets} un.</span>
                       </div>
-                      <div className="text-right">
-                        <p className="text-[10px] text-white/30 uppercase tracking-widest mb-1">Total Convites</p>
-                        <p className="text-xl font-black text-purple-400">R$ {Number(totalTickets * (activeEvent?.ticket_price || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      <div className="flex justify-between items-end mt-4">
+                        <div>
+                          <p className="text-[10px] text-white/30 uppercase tracking-widest mb-1">Valor Base (un)</p>
+                          <p className="text-sm font-bold text-white/50">R$ {Number(activeEvent?.ticket_price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[10px] text-white/30 uppercase tracking-widest mb-1">Total Convites</p>
+                          <p className="text-xl font-black text-purple-400">R$ {Number(totalTickets * (activeEvent?.ticket_price || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Coreografias */}
-                  <div className="p-4 rounded-2xl" style={{ backgroundColor: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)' }}>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Coreografias</span>
-                      <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded-lg text-xs font-black">{totalChoreographies} un.</span>
-                    </div>
-                    <div className="flex justify-between items-end mt-4">
-                      <div>
-                        <p className="text-[10px] text-white/30 uppercase tracking-widest mb-1">Taxa Única (un)</p>
-                        <p className="text-sm font-bold text-white/50">R$ {Number(activeEvent?.base_choreography_price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    {/* Coreografias */}
+                    <div className="p-4 rounded-2xl" style={{ backgroundColor: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)' }}>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Coreografias</span>
+                        <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded-lg text-xs font-black">{totalChoreographies} un.</span>
                       </div>
-                      <div className="text-right">
-                        <p className="text-[10px] text-white/30 uppercase tracking-widest mb-1">Total (Pagantes: {participantsWithChoreo})</p>
-                        <p className="text-xl font-black text-blue-400">R$ {Number(totalChoreoRevenue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      <div className="flex justify-between items-end mt-4">
+                        <div>
+                          <p className="text-[10px] text-white/30 uppercase tracking-widest mb-1">Taxa Única (un)</p>
+                          <p className="text-sm font-bold text-white/50">R$ {Number(activeEvent?.base_choreography_price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[10px] text-white/30 uppercase tracking-widest mb-1">Total (Pagantes: {participantsWithChoreo})</p>
+                          <p className="text-xl font-black text-blue-400">R$ {Number(totalChoreoRevenue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Roupas */}
-                  <div className="p-4 rounded-2xl" style={{ backgroundColor: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)' }}>
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Roupas</span>
-                      <span className="px-2 py-1 bg-rose-500/20 text-rose-400 rounded-lg text-xs font-black">{totalClothesQuantity} un.</span>
-                    </div>
-                    <div className="flex justify-between items-end mt-4">
-                      <div>
-                        <p className="text-[10px] text-white/30 uppercase tracking-widest mb-1">Custo Base Estimado (un)</p>
-                        <p className="text-sm font-bold text-white/50">R$ {Number(activeEvent?.base_clothes_cost || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    {/* Roupas */}
+                    <div className="p-4 rounded-2xl" style={{ backgroundColor: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)' }}>
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Roupas</span>
+                        <span className="px-2 py-1 bg-rose-500/20 text-rose-400 rounded-lg text-xs font-black">{totalClothesQuantity} un.</span>
                       </div>
-                      <div className="text-right">
-                        <p className="text-[10px] text-white/30 uppercase tracking-widest mb-1">Total Arrecadado (Automático)</p>
-                        <p className="text-xl font-black text-rose-400">R$ {Number(totalClothesRevenue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      <div className="flex justify-between items-end mt-4">
+                        <div>
+                          <p className="text-[10px] text-white/30 uppercase tracking-widest mb-1">Custo Base Estimado (un)</p>
+                          <p className="text-sm font-bold text-white/50">R$ {Number(activeEvent?.base_clothes_cost || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[10px] text-white/30 uppercase tracking-widest mb-1">Total Arrecadado (Automático)</p>
+                          <p className="text-xl font-black text-rose-400">R$ {Number(totalClothesRevenue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              )}
 
               {/* Event Actions & Add Participant */}
               <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-black/20 p-4 rounded-3xl border border-white/5">
@@ -655,16 +692,19 @@ export default function Events() {
                     />
                   </div>
                 </div>
-                {profile?.role !== 'secretary' && (
-                  <div className="flex gap-2">
-                    <button onClick={() => openEventEdit(activeEvent)} className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all flex items-center gap-2 shadow-lg shadow-blue-600/20 hover:scale-[1.03] active:scale-95 cursor-pointer">
-                      <Edit size={16} /> Detalhes do Evento
-                    </button>
-                    <button onClick={() => handleDeleteEvent(activeEvent.id)} className="px-6 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm transition-all flex items-center gap-2 shadow-lg shadow-rose-600/20 hover:scale-[1.03] active:scale-95 cursor-pointer">
-                      <Trash2 size={16} /> Excluir Evento
-                    </button>
-                  </div>
-                )}
+                 {profile?.role !== 'secretary' && (
+                   <div className="flex gap-2">
+                     <button onClick={handlePrintReport} className="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm transition-all flex items-center gap-2 shadow-lg shadow-emerald-600/20 hover:scale-[1.03] active:scale-95 cursor-pointer">
+                       <Printer size={16} /> Imprimir Relatório
+                     </button>
+                     <button onClick={() => openEventEdit(activeEvent)} className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all flex items-center gap-2 shadow-lg shadow-blue-600/20 hover:scale-[1.03] active:scale-95 cursor-pointer">
+                       <Edit size={16} /> Detalhes do Evento
+                     </button>
+                     <button onClick={() => handleDeleteEvent(activeEvent.id)} className="px-6 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm transition-all flex items-center gap-2 shadow-lg shadow-rose-600/20 hover:scale-[1.03] active:scale-95 cursor-pointer">
+                       <Trash2 size={16} /> Excluir Evento
+                     </button>
+                   </div>
+                 )}
               </div>
 
               {/* Spreadsheet Table */}
@@ -853,12 +893,18 @@ export default function Events() {
 
                             {/* Kit */}
                             <td className="p-4 text-center">
-                              <button 
-                                onClick={() => handleUpdateParticipant(p.id, 'kit', !p.kit)}
-                                className={`p-1.5 rounded-lg transition-all ${p.kit ? 'bg-blue-500/20 text-blue-400' : 'bg-white/5 text-white/20'}`}
-                              >
-                                <Box size={18} />
-                              </button>
+                              {activeEvent.has_kit ? (
+                                <button 
+                                  onClick={() => handleUpdateParticipant(p.id, 'kit', !p.kit)}
+                                  disabled={profile?.role === 'secretary'}
+                                  className={`p-1.5 rounded-lg transition-all disabled:opacity-40 ${p.kit ? 'bg-blue-500/20 text-blue-400' : 'bg-white/5 text-white/20'}`}
+                                  title={`Adicionar Kit (R$ ${Number(activeEvent.kit_price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })})`}
+                                >
+                                  <Box size={18} />
+                                </button>
+                              ) : (
+                                <span className="text-white/20 text-xs font-semibold select-none cursor-default">Sem Kit</span>
+                              )}
                             </td>
 
                             {/* Actions */}
@@ -924,6 +970,50 @@ export default function Events() {
               <input type="number" step="0.01" value={eventFormData.base_clothes_cost} onChange={e => setEventFormData({...eventFormData, base_clothes_cost: parseFloat(e.target.value) || 0})} className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none" style={inputStyle} />
             </div>
           </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>O Evento possui Kit?</label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEventFormData({...eventFormData, has_kit: true})}
+                  className="flex-1 rounded-2xl py-3 text-xs font-black uppercase transition-all cursor-pointer"
+                  style={{
+                    backgroundColor: eventFormData.has_kit ? 'var(--accent-color)' : 'var(--bg-input)',
+                    border: '1px solid var(--border-color)',
+                    color: eventFormData.has_kit ? '#fff' : 'var(--text-muted)'
+                  }}
+                >
+                  Sim
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEventFormData({...eventFormData, has_kit: false, kit_price: 0})}
+                  className="flex-1 rounded-2xl py-3 text-xs font-black uppercase transition-all cursor-pointer"
+                  style={{
+                    backgroundColor: !eventFormData.has_kit ? 'var(--accent-color)' : 'var(--bg-input)',
+                    border: '1px solid var(--border-color)',
+                    color: !eventFormData.has_kit ? '#fff' : 'var(--text-muted)'
+                  }}
+                >
+                  Não
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Valor do Kit (R$)</label>
+              <input 
+                type="number" 
+                step="0.01" 
+                disabled={!eventFormData.has_kit}
+                value={eventFormData.kit_price} 
+                onChange={e => setEventFormData({...eventFormData, kit_price: parseFloat(e.target.value) || 0})} 
+                placeholder="Ex: 50.00"
+                className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none disabled:opacity-50" 
+                style={inputStyle} 
+              />
+            </div>
+          </div>
           <div className="space-y-4">
             <label className="text-sm font-bold block mb-1" style={{ color: 'var(--text-secondary)' }}>
               Galeria de Fotos do Evento
@@ -982,6 +1072,146 @@ export default function Events() {
           </div>
         </form>
       </Modal>
+
+      {/* Print-only template */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @media print {
+          body * { visibility: hidden; }
+          #printable-report, #printable-report * { visibility: visible; }
+          #printable-report { position: absolute; left: 0; top: 0; width: 100%; padding: 40px; background: white !important; color: black !important; }
+          .no-print { display: none !important; }
+        }
+      `}} />
+      
+      {reportSchoolData && activeEvent && (
+        <div id="printable-report" className="hidden print:block font-sans text-black">
+          {/* Header */}
+          <div className="flex items-center justify-between border-b-2 border-black pb-6 mb-8">
+            <div className="flex items-center gap-6">
+              {reportSchoolData.logo_url && (
+                <img src={reportSchoolData.logo_url} alt="Logo" className="w-24 h-24 object-contain" />
+              )}
+              <div>
+                <h1 className="text-3xl font-black uppercase tracking-tighter">{reportSchoolData.school_name}</h1>
+                <p className="text-sm font-bold">Relatório Financeiro do Evento</p>
+                {reportSchoolData.cnpj && <p className="text-[10px] mt-1 text-gray-600">CNPJ: {reportSchoolData.cnpj}</p>}
+                {reportSchoolData.address && <p className="text-[10px] text-gray-600">{reportSchoolData.address}</p>}
+              </div>
+            </div>
+            <div className="text-right text-xs">
+              <p>Gerado em: {new Date().toLocaleDateString('pt-BR')}</p>
+              <p>DanceFlow System</p>
+            </div>
+          </div>
+
+          {/* Event Details Summary */}
+          <div className="grid grid-cols-2 gap-8 mb-8 p-6 bg-gray-50 border border-black/10 rounded-lg">
+            <div className="space-y-2">
+              <p className="text-xs font-bold uppercase text-gray-500">Dados do Evento</p>
+              <p className="text-xl font-black uppercase">{activeEvent.name}</p>
+              <p className="text-sm"><b>Data:</b> {new Date(activeEvent.date).toLocaleDateString('pt-BR')}</p>
+              {activeEvent.location && <p className="text-sm"><b>Local:</b> {activeEvent.location}</p>}
+              {activeEvent.description && <p className="text-sm"><b>Descrição:</b> {activeEvent.description}</p>}
+            </div>
+            <div className="space-y-1 text-right text-sm">
+              <p className="text-xs font-bold uppercase text-gray-500">Resumo Geral</p>
+              <p className="text-sm"><b>Total de Participantes:</b> {currentParticipants.length}</p>
+              <p className="text-sm"><b>Custo do Evento:</b> R$ {Number(eventCost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              <p className="text-sm"><b>Receita Prevista (Total):</b> R$ {Number(expectedRevenue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              <p className="text-sm text-emerald-600"><b>Receita Recebida (Pago):</b> R$ {Number(totalReceived).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              <p className="text-sm text-amber-600"><b>Pendente:</b> R$ {Number(expectedRevenue - totalReceived).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              <div className="border-t border-black/10 pt-2 mt-2">
+                <p className="text-base font-black">
+                  <b>Saldo Líquido (Pago - Custo):</b> <span className={netResult >= 0 ? 'text-emerald-600' : 'text-rose-600'}>
+                    R$ {Number(netResult).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </span>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Breakdown / Receitas Por Categoria */}
+          <div className="mb-8">
+            <h3 className="text-sm font-black uppercase mb-4 border-b border-black pb-1">Detalhamento das Receitas</h3>
+            <div className="grid grid-cols-4 gap-4 text-xs">
+              <div className="p-3 bg-gray-50 border border-black/10 rounded">
+                <p className="font-bold uppercase text-gray-500">Convites</p>
+                <p className="text-sm font-black mt-1">{totalTickets} unidades</p>
+                <p className="text-xs text-gray-600 mt-0.5">R$ {Number(activeEvent.ticket_price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} /un</p>
+                <p className="font-black mt-2 text-right">R$ {Number(totalTickets * (activeEvent.ticket_price || 0)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              </div>
+
+              <div className="p-3 bg-gray-50 border border-black/10 rounded">
+                <p className="font-bold uppercase text-gray-500">Coreografias</p>
+                <p className="text-sm font-black mt-1">{totalChoreographies} insc.</p>
+                <p className="text-xs text-gray-600 mt-0.5">Base: R$ {Number(activeEvent.base_choreography_price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                <p className="font-black mt-2 text-right">R$ {Number(totalChoreoRevenue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              </div>
+
+              <div className="p-3 bg-gray-50 border border-black/10 rounded">
+                <p className="font-bold uppercase text-gray-500">Roupas</p>
+                <p className="text-sm font-black mt-1">{totalClothesQuantity} unidades</p>
+                <p className="text-xs text-gray-600 mt-0.5">Base: R$ {Number(activeEvent.base_clothes_cost || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                <p className="font-black mt-2 text-right">R$ {Number(totalClothesRevenue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              </div>
+
+              <div className="p-3 bg-gray-50 border border-black/10 rounded">
+                <p className="font-bold uppercase text-gray-500">Kits</p>
+                {activeEvent.has_kit ? (
+                  <>
+                    <p className="text-sm font-black mt-1">{totalKits} unidades</p>
+                    <p className="text-xs text-gray-600 mt-0.5">R$ {Number(activeEvent.kit_price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} /un</p>
+                    <p className="font-black mt-2 text-right">R$ {Number(totalKitRevenue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  </>
+                ) : (
+                  <p className="text-sm font-bold text-gray-400 mt-1">Sem Kit Cadastrado</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Participants Table */}
+          <div>
+            <h3 className="text-sm font-black uppercase mb-4 border-b border-black pb-1">Planilha de Participantes</h3>
+            <table className="w-full text-xs text-left border-collapse">
+              <thead>
+                <tr className="border-b border-black text-gray-600">
+                  <th className="py-2 font-bold">Aluno</th>
+                  <th className="py-2 font-bold text-center">Tipo Pgto</th>
+                  <th className="py-2 font-bold text-center">Coreos</th>
+                  <th className="py-2 font-bold text-center">Roupas</th>
+                  {activeEvent.has_kit && <th className="py-2 font-bold text-center">Kit</th>}
+                  <th className="py-2 font-bold text-center">Convites</th>
+                  <th className="py-2 font-bold text-right">Valor Total</th>
+                  <th className="py-2 font-bold text-right">Valor Pago</th>
+                  <th className="py-2 font-bold text-right">Falta Pagar</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-black/10">
+                {currentParticipants.map(p => {
+                  const student = students.find(s => s.id === p.student_id)
+                  const faltaPagar = (Number(p.total_value) || 0) - (Number(p.amount_paid) || 0)
+                  return (
+                    <tr key={p.id}>
+                      <td className="py-2 font-medium">{student?.name}</td>
+                      <td className="py-2 text-center uppercase">{p.payment_method || '-'}</td>
+                      <td className="py-2 text-center">{p.choreography_count || 0}</td>
+                      <td className="py-2 text-center">{p.clothes_cost || 0}</td>
+                      {activeEvent.has_kit && (
+                        <td className="py-2 text-center">{p.kit ? 'Sim' : 'Não'}</td>
+                      )}
+                      <td className="py-2 text-center">{p.ticket_quantity || 0}</td>
+                      <td className="py-2 text-right">R$ {Number(p.total_value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                      <td className="py-2 text-right text-emerald-600">R$ {Number(p.amount_paid || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                      <td className="py-2 text-right font-bold">R$ {faltaPagar.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
     </div>
   )

@@ -93,7 +93,7 @@ export default function TrialClasses() {
   return (
     <div className="flex flex-col pb-10">
       <div 
-        className="p-8 sm:p-10 pb-16 rounded-3xl border border-white/5 shadow-2xl mb-12 relative overflow-hidden"
+        className="p-5 sm:p-8 md:p-10 pb-10 sm:pb-16 rounded-3xl border border-white/5 shadow-2xl mb-12 relative overflow-hidden"
         style={{ backgroundColor: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)' }}
       >
         <div 
@@ -104,15 +104,15 @@ export default function TrialClasses() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
           <div className="space-y-4">
             <h1 
-              className="font-black tracking-tighter leading-tight inline-block py-6 rounded-2xl shadow-2xl shadow-purple-500/30" 
-              style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--title-size, 32px)', paddingLeft: '40px', paddingRight: '40px' }}
+              className="font-black tracking-tighter leading-tight inline-block py-3 sm:py-6 rounded-2xl shadow-2xl shadow-purple-500/30" 
+              style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--title-size, 32px)', paddingLeft: 'clamp(16px, 4vw, 40px)', paddingRight: 'clamp(16px, 4vw, 40px)' }}
             >
               Aulas Experimentais
             </h1>
             <br />
             <p 
-              className="font-bold inline-block py-4 mt-2 rounded-2xl shadow-xl border border-white/10" 
-              style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', paddingLeft: '32px', paddingRight: '32px' }}
+              className="font-bold inline-block py-2 sm:py-4 mt-2 rounded-2xl shadow-xl border border-white/10" 
+              style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', paddingLeft: 'clamp(12px, 3vw, 32px)', paddingRight: 'clamp(12px, 3vw, 32px)' }}
             >
               Gerencie interessados, agendamentos e converta leads em alunos!
             </p>

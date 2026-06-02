@@ -112,19 +112,19 @@ export default function Dashboard() {
         return thisYearBday >= startOfWeek && thisYearBday <= endOfWeek
       })
 
-      // Fetch last 6 months for chart
-      const sixMonthsAgo = new Date();
-      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
-      sixMonthsAgo.setDate(1);
+      // Fetch last 12 months for chart
+      const twelveMonthsAgo = new Date();
+      twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 11);
+      twelveMonthsAgo.setDate(1);
       const { data: allFinances } = await supabase
-        .from('financial_entries')
-        .select('*')
-        .gte('date', sixMonthsAgo.toISOString().split('T')[0]);
+          .from('financial_entries')
+          .select('*')
+          .gte('date', twelveMonthsAgo.toISOString().split('T')[0]);
 
       const monthlyDataMap: Record<string, any> = {};
       
-      // Initialize last 6 months
-      for (let i = 5; i >= 0; i--) {
+      // Initialize last 12 months
+      for (let i = 11; i >= 0; i--) {
         const d = new Date();
         d.setMonth(d.getMonth() - i);
         const monthStr = d.toISOString().slice(0, 7);
@@ -224,7 +224,7 @@ export default function Dashboard() {
       <div className="flex flex-col pb-10">
         {/* Header Section with Background Highlight - LEVEMENTE ARREDONDADO */}
         <div 
-          className="p-8 sm:p-10 pb-16 rounded-3xl border border-white/5 shadow-2xl mb-16 relative overflow-hidden"
+          className="p-5 sm:p-8 md:p-10 pb-10 sm:pb-16 rounded-3xl border border-white/5 shadow-2xl mb-8 sm:mb-12 relative overflow-hidden"
           style={{ backgroundColor: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)' }}
         >
           {/* Accent Glow */}
@@ -236,21 +236,21 @@ export default function Dashboard() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
             <div className="space-y-4">
               <h1 
-                className="font-black tracking-tighter leading-tight inline-block py-8 rounded-2xl shadow-2xl shadow-purple-500/30" 
+                className="font-black tracking-tighter leading-tight inline-block py-4 sm:py-8 rounded-2xl shadow-2xl shadow-purple-500/30" 
                 style={{ 
                   backgroundColor: 'var(--accent-color)', 
                   color: '#fff',
                   fontSize: 'var(--title-size, 32px)',
-                  paddingLeft: '40px',
-                  paddingRight: '40px'
+                  paddingLeft: 'clamp(16px, 4vw, 40px)',
+                  paddingRight: 'clamp(16px, 4vw, 40px)'
                 }}
               >
                 Painel
               </h1>
               <br />
               <p 
-                className="font-bold inline-block py-6 mt-2 rounded-2xl shadow-xl border border-white/10" 
-                 style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', paddingLeft: '32px', paddingRight: '32px' }}
+                className="font-bold inline-block py-3 sm:py-6 mt-2 rounded-2xl shadow-xl border border-white/10" 
+               style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', paddingLeft: 'clamp(12px, 3vw, 32px)', paddingRight: 'clamp(12px, 3vw, 32px)' }}
               >
                 Bem-vindo de volta! Aqui está o resumo da sua escola hoje.
               </p>
@@ -307,10 +307,10 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex flex-col pb-10">
+    <div className="flex flex-col pb-10 items-center">
       {/* Header Section with Background Highlight - LEVEMENTE ARREDONDADO */}
       <div 
-        className="p-8 sm:p-10 pb-16 rounded-3xl border border-white/5 shadow-2xl mb-12 relative overflow-hidden"
+        className="p-5 sm:p-8 md:p-10 pb-10 sm:pb-16 rounded-3xl border border-white/5 shadow-2xl mb-8 sm:mb-12 relative overflow-hidden max-w-7xl mx-auto w-full"
         style={{ backgroundColor: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)' }}
       >
         {/* Accent Glow */}
@@ -322,21 +322,21 @@ export default function Dashboard() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
           <div className="space-y-4">
             <h1 
-              className="font-black tracking-tighter leading-tight inline-block py-8 rounded-2xl shadow-2xl shadow-purple-500/30" 
+              className="font-black tracking-tighter leading-tight inline-block py-4 sm:py-8 rounded-2xl shadow-2xl shadow-purple-500/30" 
               style={{ 
                 backgroundColor: 'var(--accent-color)', 
                 color: '#fff',
                 fontSize: 'var(--title-size, 32px)',
-                paddingLeft: '40px',
-                paddingRight: '40px'
+                paddingLeft: 'clamp(16px, 4vw, 40px)',
+                paddingRight: 'clamp(16px, 4vw, 40px)'
               }}
             >
               Dashboard
             </h1>
             <br />
             <p 
-              className="font-bold inline-block py-6 mt-2 rounded-2xl shadow-xl border border-white/10" 
-               style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', paddingLeft: '32px', paddingRight: '32px' }}
+              className="font-bold inline-block py-3 sm:py-6 mt-2 rounded-2xl shadow-xl border border-white/10" 
+               style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', paddingLeft: 'clamp(12px, 3vw, 32px)', paddingRight: 'clamp(12px, 3vw, 32px)' }}
             >
               Bem-vindo de volta! Aqui está o resumo da sua escola hoje.
             </p>
@@ -344,164 +344,213 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* 🎪 Event Photos Carousel Animation - SQUARE */}
-      {allPhotosList.length > 0 && activePhotoObj && (
-        <div className="rounded-none border border-white/5 shadow-2xl p-6 sm:p-8 relative overflow-hidden mb-12" style={{ backgroundColor: 'var(--bg-card)' }}>
-          <div className="flex items-center gap-3 mb-6">
-            <div className="h-6 w-2 rounded-full bg-purple-500" />
-            <h3 className="text-sm font-black uppercase tracking-widest text-white flex items-center gap-2">
-              <ImageIcon size={16} className="text-purple-400" />
-              Galeria de Eventos & Espetáculos
-            </h3>
-          </div>
-
-          <div className="relative h-80 sm:h-[400px] w-full overflow-hidden rounded-none border border-white/5 shadow-2xl">
-            {/* Background Blur Image for premium depth */}
-            <div className="absolute inset-0 z-0">
-              <img 
-                src={activePhotoObj.url} 
-                alt="Blur Background" 
-                className="w-full h-full object-cover filter blur-2xl opacity-20 scale-105 transition-all duration-1000"
-              />
-              <div className="absolute inset-0 bg-black/40" />
-            </div>
-
-            {/* Front Image Slider Container */}
-            <div className="absolute inset-0 z-10 flex items-center justify-center p-4">
-              <div className="relative w-full h-full max-w-3xl rounded-none overflow-hidden border border-white/10 shadow-2xl group/slide">
-                <img 
-                  src={activePhotoObj.url} 
-                  alt={activePhotoObj.eventName} 
-                  className="w-full h-full object-contain transition-all duration-1000 transform scale-100 hover:scale-[1.01]"
-                />
-                
-                {/* Text Overlay Details */}
-                <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-6 text-left flex flex-col justify-end">
-                  <span className="text-[9px] font-black uppercase tracking-widest text-purple-400">
-                    Evento: {activePhotoObj.eventName}
-                  </span>
-                  <h4 className="text-lg sm:text-xl font-black text-white leading-tight mt-1">
-                    {activePhotoObj.eventDescription || 'Um espetáculo inesquecível da nossa escola'}
-                  </h4>
-                  <p className="text-[10px] text-gray-300 mt-2 font-bold flex items-center gap-2">
-                    📅 {new Date(activePhotoObj.eventDate + 'T12:00:00').toLocaleDateString('pt-BR')} 
-                    {activePhotoObj.eventLocation && ` 📍 ${activePhotoObj.eventLocation}`}
-                  </p>
+      {/* 🎪 Event Photos & Summary Cards Layout (Side-by-Side when photos exist) */}
+      {allPhotosList.length > 0 && activePhotoObj ? (
+        <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 mb-8 sm:mb-16 md:mb-24 items-stretch max-w-7xl mx-auto w-full lg:h-[520px]">
+          {/* Left Side: Slideshow Card (flex-[2] w-full) */}
+          <div className="flex-[2] w-full flex flex-col justify-between">
+            <div className="rounded-none border border-white/5 shadow-2xl p-6 sm:p-8 relative overflow-hidden h-full flex flex-col" style={{ backgroundColor: 'var(--bg-card)' }}>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="h-6 w-2 rounded-full bg-purple-500" />
+                <h3 className="text-sm font-black uppercase tracking-widest text-white flex items-center gap-2">
+                  <ImageIcon size={16} className="text-purple-400" />
+                  Galeria de Eventos & Espetáculos
+                </h3>
+              </div>
+     
+              <div className="relative h-80 sm:h-[400px] lg:h-full lg:flex-1 min-h-[320px] w-full overflow-hidden rounded-none border border-white/5 shadow-2xl">
+                {/* Background Blur Image for premium depth */}
+                <div className="absolute inset-0 z-0">
+                  <img 
+                    src={activePhotoObj.url} 
+                    alt="Blur Background" 
+                    className="w-full h-full object-cover filter blur-2xl opacity-20 scale-105 transition-all duration-1000"
+                  />
+                  <div className="absolute inset-0 bg-black/40" />
                 </div>
-
-                {/* Left/Right controls */}
-                <button 
-                  onClick={prevSlide}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/60 border border-white/10 flex items-center justify-center hover:bg-purple-650 hover:border-purple-500 text-white transition-all cursor-pointer shadow-lg z-20"
-                >
-                  ◀
-                </button>
-                <button 
-                  onClick={nextSlide}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/60 border border-white/10 flex items-center justify-center hover:bg-purple-650 hover:border-purple-500 text-white transition-all cursor-pointer shadow-lg z-20"
-                >
-                  ▶
-                </button>
+     
+                {/* Front Image Slider Container */}
+                <div className="absolute inset-0 z-10 flex items-center justify-center p-4">
+                  <div className="relative w-full h-full rounded-none overflow-hidden border border-white/10 shadow-2xl group/slide">
+                    <img 
+                      src={activePhotoObj.url} 
+                      alt={activePhotoObj.eventName} 
+                      className="w-full h-full object-contain transition-all duration-1000 transform scale-100 hover:scale-[1.01]"
+                    />
+                    
+                    {/* Text Overlay Details */}
+                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-6 text-left flex flex-col justify-end">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-purple-400">
+                        Evento: {activePhotoObj.eventName}
+                      </span>
+                      <h4 className="text-lg sm:text-xl font-black text-white leading-tight mt-1">
+                        {activePhotoObj.eventDescription || 'Um espetáculo inesquecível da nossa escola'}
+                      </h4>
+                      <p className="text-[10px] text-gray-300 mt-2 font-bold flex items-center gap-2">
+                        📅 {new Date(activePhotoObj.eventDate + 'T12:00:00').toLocaleDateString('pt-BR')} 
+                        {activePhotoObj.eventLocation && ` 📍 ${activePhotoObj.eventLocation}`}
+                      </p>
+                    </div>
+     
+                    {/* Left/Right controls */}
+                    <button 
+                      onClick={prevSlide}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/60 border border-white/10 flex items-center justify-center hover:bg-purple-650 hover:border-purple-500 text-white transition-all cursor-pointer shadow-lg z-20"
+                    >
+                      ◀
+                    </button>
+                    <button 
+                      onClick={nextSlide}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/60 border border-white/10 flex items-center justify-center hover:bg-purple-650 hover:border-purple-500 text-white transition-all cursor-pointer shadow-lg z-20"
+                    >
+                      ▶
+                    </button>
+                  </div>
+                </div>
+     
+                {/* Carousel Indicator Dots */}
+                <div className="absolute bottom-3 inset-x-0 z-20 flex justify-center gap-2">
+                  {allPhotosList.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setCurrentSlideIndex(idx)}
+                      className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentSlideIndex ? 'w-5 bg-purple-500' : 'w-1.5 bg-white/30'}`}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
-
-            {/* Carousel Indicator Dots */}
-            <div className="absolute bottom-3 inset-x-0 z-20 flex justify-center gap-2">
-              {allPhotosList.map((_, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setCurrentSlideIndex(idx)}
-                  className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentSlideIndex ? 'w-5 bg-purple-500' : 'w-1.5 bg-white/30'}`}
-                />
-              ))}
-            </div>
           </div>
+
+          {/* Right Side: Stacked Summary Cards */}
+          <div className="flex-1 lg:max-w-xs xl:max-w-sm w-full grid grid-cols-2 gap-4 lg:flex lg:flex-col lg:justify-between lg:h-full">
+            {cards.map((card) => (
+              <div
+                key={card.title}
+                className="group relative overflow-hidden rounded-2xl p-4 sm:p-5 transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl flex items-center gap-4 lg:flex-1"
+                style={{
+                  backgroundColor: 'var(--bg-card)',
+                  border: '1px solid var(--border-color)',
+                }}
+              >
+                <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-10" style={{ background: card.gradient }} />
+                
+                {/* Icon Wrapper */}
+                <div className="rounded-none p-3 animate-pulse-slow shrink-0" style={{ background: card.iconBg }}>
+                  <card.icon size={24} style={{ color: card.gradient.includes('#8b5cf6') ? '#8b5cf6' : card.gradient.includes('#f43f5e') ? '#f43f5e' : card.gradient.includes('#10b981') ? '#10b981' : '#f59e0b' }} />
+                </div>
+                
+                {/* Card Info */}
+                <div className="w-full text-left min-w-0">
+                  <p className="text-xl sm:text-2xl font-black leading-none truncate" style={{ color: 'var(--text-primary)' }}>
+                    {card.value}
+                  </p>
+                  <p className="mt-1 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-wrap" style={{ color: 'var(--text-secondary)' }}>
+                    {card.title}
+                  </p>
+                </div>
+                
+                <div className="absolute left-0 top-0 h-full w-1" style={{ background: card.gradient }} />
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        /* Original horizontal grid layout when there are NO photos */
+        <div 
+          className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-4 xl:grid-cols-4 animate-fade-in max-w-7xl mx-auto w-full"
+          style={{ marginBottom: '16px' }}
+        >
+          {cards.map((card) => (
+            <div
+              key={card.title}
+              className="group relative overflow-hidden rounded-2xl p-4 sm:p-6 md:p-8 transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl"
+              style={{
+                backgroundColor: 'var(--bg-card)',
+                border: '1px solid var(--border-color)',
+              }}
+            >
+              <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-10" style={{ background: card.gradient }} />
+              <div className="relative flex flex-col items-center justify-center h-24 sm:h-32 text-center gap-2 sm:gap-3">
+                <div className="rounded-none p-3 animate-pulse-slow" style={{ background: card.iconBg }}>
+                  <card.icon size={26} style={{ color: card.gradient.includes('#8b5cf6') ? '#8b5cf6' : card.gradient.includes('#f43f5e') ? '#f43f5e' : card.gradient.includes('#10b981') ? '#10b981' : '#f59e0b' }} />
+                </div>
+                <div className="w-full">
+                  <p className="text-xl sm:text-2xl md:text-3xl font-black leading-none" style={{ color: 'var(--text-primary)' }}>{card.value}</p>
+                  <p className="mt-1 sm:mt-2 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-wrap" style={{ color: 'var(--text-secondary)' }}>{card.title}</p>
+                </div>
+              </div>
+              <div className="absolute left-0 top-0 h-full w-1" style={{ background: card.gradient }} />
+            </div>
+          ))}
         </div>
       )}
 
-      {/* Summary Cards - LEVEMENTE ARREDONDADO */}
-      <div 
-        className="grid grid-cols-2 gap-4 sm:grid-cols-4 xl:grid-cols-4"
-        style={{ marginBottom: '32px' }}
-      >
-        {cards.map((card) => (
-          <div
-            key={card.title}
-            className="group relative overflow-hidden rounded-2xl p-6 sm:p-8 transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl"
-            style={{
-              backgroundColor: 'var(--bg-card)',
-              border: '1px solid var(--border-color)',
-            }}
-          >
-            <div className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-10" style={{ background: card.gradient }} />
-            <div className="relative flex flex-col items-center justify-center h-32 text-center gap-3">
-              <div className="rounded-none p-3 animate-pulse-slow" style={{ background: card.iconBg }}>
-                <card.icon size={26} style={{ color: card.gradient.includes('#8b5cf6') ? '#8b5cf6' : card.gradient.includes('#f43f5e') ? '#f43f5e' : card.gradient.includes('#10b981') ? '#10b981' : '#f59e0b' }} />
-              </div>
-              <div className="w-full">
-                <p className="text-2xl sm:text-3xl font-black leading-none" style={{ color: 'var(--text-primary)' }}>{card.value}</p>
-                <p className="mt-2 text-xs font-bold uppercase tracking-wider text-wrap" style={{ color: 'var(--text-secondary)' }}>{card.title}</p>
-              </div>
-            </div>
-            <div className="absolute left-0 top-0 h-full w-1" style={{ background: card.gradient }} />
-          </div>
-        ))}
-      </div>
-
       {/* Charts Section - SQUARE */}
       <div 
-        className="grid grid-cols-1 gap-6"
-        style={{ marginBottom: '32px' }}
+        className="grid grid-cols-1 gap-4 sm:gap-6 max-w-7xl mx-auto w-full"
+        style={{ marginTop: '8px', marginBottom: '24px' }}
       >
-        <div className="rounded-none p-8 sm:p-10 shadow-2xl" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+        <div className="rounded-none p-4 sm:p-8 md:p-10 shadow-2xl" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
           <h2 className="text-lg font-bold mb-6 flex items-center gap-3" style={{ color: 'var(--text-primary)' }}>
             <div className="p-2 rounded-none bg-purple-500/20">
               <TrendingUp size={20} className="text-purple-400" />
             </div>
-            Faturamento Mensal (Últimos 6 meses)
+            Faturamento Mensal (Últimos 12 meses)
           </h2>
-          <div className="h-[350px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data.monthlyChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" vertical={false} />
-                <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} dy={10} />
-                <YAxis stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(v) => `R$ ${v}`} />
-                <RechartsTooltip 
-                  cursor={{ fill: 'var(--border-color)', opacity: 0.4 }}
-                  contentStyle={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '0px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.5)' }}
-                  itemStyle={{ fontSize: '14px', fontWeight: 'bold' }}
-                />
-                <Bar dataKey="Entradas" fill="#10b981" radius={[0, 0, 0, 0]}>
-                  {data.monthlyChartData.map((entry: any, index: number) => (
-                    <Cell key={`cell-in-${index}`} fill="url(#colorEntradas)" />
-                  ))}
-                </Bar>
-                <Bar dataKey="Saídas" fill="#f43f5e" radius={[0, 0, 0, 0]}>
-                  {data.monthlyChartData.map((entry: any, index: number) => (
-                    <Cell key={`cell-out-${index}`} fill="url(#colorSaidas)" />
-                  ))}
-                </Bar>
-                <defs>
-                  <linearGradient id="colorEntradas" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#34d399" stopOpacity={0.9}/>
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0.6}/>
-                  </linearGradient>
-                  <linearGradient id="colorSaidas" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#fb7185" stopOpacity={0.9}/>
-                    <stop offset="95%" stopColor="#f43f5e" stopOpacity={0.6}/>
-                  </linearGradient>
-                </defs>
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="w-full overflow-x-auto pb-2 select-none scrollbar-thin">
+            <div className="h-[250px] sm:h-[350px] min-w-[600px] md:min-w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data.monthlyChartData} margin={{ top: 10, right: 5, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" vertical={false} />
+                  <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} dy={10} />
+                  <YAxis 
+                    stroke="var(--text-muted)" 
+                    fontSize={11} 
+                    tickLine={false} 
+                    axisLine={false} 
+                    tickFormatter={(v) => {
+                      if (v >= 1000) return `R$ ${(v / 1000).toFixed(0)}k`;
+                      return `R$ ${v}`;
+                    }} 
+                  />
+                  <RechartsTooltip 
+                    cursor={{ fill: 'var(--border-color)', opacity: 0.4 }}
+                    contentStyle={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '0px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.5)' }}
+                    itemStyle={{ fontSize: '14px', fontWeight: 'bold' }}
+                  />
+                  <Bar dataKey="Entradas" fill="#10b981" radius={[0, 0, 0, 0]}>
+                    {data.monthlyChartData.map((entry: any, index: number) => (
+                      <Cell key={`cell-in-${index}`} fill="url(#colorEntradas)" />
+                    ))}
+                  </Bar>
+                  <Bar dataKey="Saídas" fill="#f43f5e" radius={[0, 0, 0, 0]}>
+                    {data.monthlyChartData.map((entry: any, index: number) => (
+                      <Cell key={`cell-out-${index}`} fill="url(#colorSaidas)" />
+                    ))}
+                  </Bar>
+                  <defs>
+                    <linearGradient id="colorEntradas" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#34d399" stopOpacity={0.9}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0.6}/>
+                    </linearGradient>
+                    <linearGradient id="colorSaidas" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#fb7185" stopOpacity={0.9}/>
+                      <stop offset="95%" stopColor="#f43f5e" stopOpacity={0.6}/>
+                    </linearGradient>
+                  </defs>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Today's Flow Detail + Birthdays - SQUARE */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2 max-w-7xl mx-auto w-full">
         {/* Cash Flow Detail - SQUARE */}
         <div
-          className="rounded-none p-8 sm:p-10 border shadow-2xl"
+          className="rounded-none p-4 sm:p-8 md:p-10 border shadow-2xl"
           style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
         >
           <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
@@ -541,7 +590,7 @@ export default function Dashboard() {
 
         {/* Birthdays - SQUARE */}
         <div
-          className="rounded-none p-8 sm:p-10 border shadow-2xl"
+          className="rounded-none p-4 sm:p-8 md:p-10 border shadow-2xl"
           style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
         >
           <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>

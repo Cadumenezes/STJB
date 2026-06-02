@@ -107,10 +107,10 @@ export default function Auth() {
   }
 
   return (
-    <div className="min-h-screen w-full flex bg-[#06060c] text-white selection:bg-purple-500/30 font-sans overflow-hidden">
+    <div className="min-h-screen w-full flex flex-col md:flex-row bg-[#06060c] text-white selection:bg-purple-500/30 font-sans overflow-y-auto md:overflow-hidden">
       
       {/* Left Column: Compact Login Form (30% on large screens, full screen on mobile) */}
-      <div className="w-full md:w-[35%] lg:w-[30%] xl:w-[26%] flex flex-col justify-between p-6 sm:p-8 relative z-10 bg-[#0a0a0f] border-r border-white/5 shrink-0 overflow-y-auto">
+      <div className="w-full md:w-[35%] lg:w-[30%] xl:w-[26%] flex flex-col justify-between p-6 sm:p-8 relative z-10 bg-[#0a0a0f] border-b md:border-b-0 md:border-r border-white/5 shrink-0 md:overflow-y-auto">
         {/* Subtle Background Accent */}
         <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-purple-600/5 blur-[100px] pointer-events-none -z-10" />
 
@@ -410,15 +410,15 @@ export default function Auth() {
       </div>
 
       {/* Right Column: Visual Humanized Panel (SaaS Split-Screen Grid) */}
-      <div className="hidden md:flex md:w-[65%] lg:w-[70%] xl:w-[74%] flex-col justify-between p-8 bg-[#06060c] overflow-y-auto relative border-l border-white/5 shrink-0">
+      <div className="flex w-full md:w-[65%] lg:w-[70%] xl:w-[74%] flex-col justify-between p-6 sm:p-8 bg-[#06060c] relative md:border-l border-white/5 shrink-0">
         
         {/* Subtle Radial Glow */}
         <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-purple-600/10 blur-[130px] pointer-events-none -z-10" />
 
         {/* Gallery of multiple images (Fully visible, completely uncovered!) */}
-        <div className="flex-1 w-full grid grid-cols-1 lg:grid-cols-4 gap-4 min-h-[300px]">
+        <div className="flex-1 w-full grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 min-h-[250px] md:min-h-[300px]">
           {/* Photo 1 (Spans 2 columns to give the couple ample horizontal space so both are fully visible!) */}
-          <div className="lg:col-span-2 relative rounded-2xl overflow-hidden border border-white/5 shadow-xl group hover:border-purple-500/30 transition-all duration-300">
+          <div className="col-span-2 lg:col-span-2 aspect-[16/10] md:aspect-auto md:h-full relative rounded-2xl overflow-hidden border border-white/5 shadow-xl group hover:border-purple-500/30 transition-all duration-300">
             <img 
               src={loginBgImage} 
               alt="Casal de adolescentes negros fazendo dança urbana" 
@@ -427,7 +427,7 @@ export default function Auth() {
           </div>
 
           {/* Photo 2 */}
-          <div className="lg:col-span-1 relative rounded-2xl overflow-hidden border border-white/5 shadow-xl group hover:border-purple-500/30 transition-all duration-300">
+          <div className="col-span-1 lg:col-span-1 aspect-square md:aspect-auto md:h-full relative rounded-2xl overflow-hidden border border-white/5 shadow-xl group hover:border-purple-500/30 transition-all duration-300">
             <img 
               src={danceLoginJazz} 
               alt="Bailarina clássica contemporânea" 
@@ -436,7 +436,7 @@ export default function Auth() {
           </div>
 
           {/* Photo 3 */}
-          <div className="lg:col-span-1 relative rounded-2xl overflow-hidden border border-white/5 shadow-xl group hover:border-purple-500/30 transition-all duration-300">
+          <div className="col-span-1 lg:col-span-1 aspect-square md:aspect-auto md:h-full relative rounded-2xl overflow-hidden border border-white/5 shadow-xl group hover:border-purple-500/30 transition-all duration-300">
             <img 
               src={danceLoginKids} 
               alt="Dança urbana e coreografia moderna" 
