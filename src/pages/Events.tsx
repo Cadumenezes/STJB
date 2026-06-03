@@ -1251,6 +1251,51 @@ export default function Events() {
                                   <span className={`text-[10px] italic ${isSelected ? 'text-white/40' : 'text-white/20'}`}>Nenhum reservado</span>
                                 )}
                               </div>
+                              {isSelected && (
+                                <div className="flex flex-col gap-1.5 mt-2 pt-2 border-t border-white/10" onClick={(e) => e.stopPropagation()}>
+                                  <label className="text-[9px] font-black uppercase text-white/70">Editar Manualmente:</label>
+                                  <div className="flex gap-2">
+                                    <input 
+                                      type="text" 
+                                      defaultValue={(p.seats || []).join(', ')} 
+                                      onBlur={async (e) => {
+                                        const val = e.target.value
+                                        const newSeats = val.split(',')
+                                          .map(s => s.trim().toUpperCase())
+                                          .filter(Boolean)
+                                        
+                                        // Validate ticket quantity limit
+                                        if (newSeats.length > limit) {
+                                          alert(`Limite de ingressos atingido! ${student.name} comprou apenas ${limit} ingresso(s).`)
+                                          e.target.value = (p.seats || []).join(', ')
+                                          return
+                                        }
+                                        await handleUpdateSeats(p.id, newSeats)
+                                      }}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          (e.target as HTMLInputElement).blur()
+                                        }
+                                      }}
+                                      className="flex-1 bg-black/30 border border-white/10 rounded-lg px-2 py-1 text-xs text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-white"
+                                      placeholder="Ex: A1, A2"
+                                      key={p.seats?.join(', ')}
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={async (e) => {
+                                        e.stopPropagation()
+                                        if (confirm(`Deseja limpar todos os assentos de ${student.name}?`)) {
+                                          await handleUpdateSeats(p.id, [])
+                                        }
+                                      }}
+                                      className="px-2.5 py-1 bg-rose-500/20 text-rose-300 hover:bg-rose-500 hover:text-white rounded-lg text-[10px] font-bold transition-all border border-rose-500/30"
+                                    >
+                                      Limpar
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           )
                         })
