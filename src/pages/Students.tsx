@@ -1233,7 +1233,7 @@ export default function Students() {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm hidden md:table-cell" style={{ color: 'var(--text-secondary)' }}>
-                        {student.phone || '-'}
+                        {student.guardian_phone || '-'}
                       </td>
                       <td className="px-6 py-4 text-sm hidden sm:table-cell" style={{ color: 'var(--text-secondary)' }}>
                         {student.guardian_name || '-'}
