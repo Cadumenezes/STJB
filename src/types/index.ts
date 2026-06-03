@@ -184,6 +184,7 @@ export interface EventParticipant {
   choreography_count: number
   clothes_cost: number
   installments: Installment[]
+  seats?: string[] | null
   created_at: string
 }
 
