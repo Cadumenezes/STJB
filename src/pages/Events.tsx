@@ -1130,10 +1130,8 @@ export default function Events() {
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                   {/* LADO ESQUERDO: LISTA DE ALUNOS E ASSENTOS */}
                   <div className="lg:col-span-4 space-y-4 flex flex-col h-[600px]">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-black uppercase tracking-widest border-l-4 pl-3" style={{ borderLeftColor: 'var(--accent-color)', color: 'var(--accent-color)' }}>
-                        Alunos & Reservas
-                      </h3>
+                    <div className="w-full py-4 px-6 rounded-2xl shadow-xl text-center text-xs font-black uppercase tracking-widest text-white relative overflow-hidden" style={{ backgroundColor: 'var(--accent-color)', backgroundImage: 'linear-gradient(135deg, var(--accent-color), #000)' }}>
+                      Alunos & Reservas
                     </div>
                     
                     {/* Search Bar */}
@@ -1186,16 +1184,16 @@ export default function Events() {
                           let badgeText = 'Sem convite'
                           if (limit > 0) {
                             if (seatsCount === 0) {
-                              badgeBg = 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                              badgeBg = isSelected ? 'bg-black/35 text-rose-300 border border-white/10' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                               badgeText = `0 de ${limit} reservadas`
                             } else if (seatsCount < limit) {
-                              badgeBg = 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                              badgeBg = isSelected ? 'bg-black/35 text-amber-300 border border-white/10' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                               badgeText = `${seatsCount} de ${limit} reservadas`
                             } else if (seatsCount === limit) {
-                              badgeBg = 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                              badgeBg = isSelected ? 'bg-black/35 text-emerald-200 border border-white/10' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                               badgeText = `Completo (${limit}/${limit})`
                             } else {
-                              badgeBg = 'bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse'
+                              badgeBg = isSelected ? 'bg-black/35 text-rose-200 border border-white/10 animate-pulse' : 'bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse'
                               badgeText = `Excedido (${seatsCount}/${limit})`
                             }
                           }
@@ -1206,14 +1204,22 @@ export default function Events() {
                               onClick={() => setSelectedParticipantId(p.id)}
                               className={`p-4 rounded-2xl border transition-all cursor-pointer select-none flex flex-col gap-2 ${
                                 isSelected 
-                                  ? 'text-white' 
+                                  ? 'text-white border-white/20' 
                                   : 'bg-[var(--bg-card)] border-white/5 hover:border-white/10 hover:bg-white/[0.01]'
                               }`}
-                              style={isSelected ? {
-                                backgroundColor: 'color-mix(in srgb, var(--accent-color) 15%, transparent)',
-                                borderColor: 'var(--accent-color)',
-                                boxShadow: '0 4px 12px color-mix(in srgb, var(--accent-color) 20%, transparent)'
-                              } : {}}
+                              style={
+                                isSelected 
+                                  ? {
+                                      backgroundColor: 'var(--accent-color)',
+                                      boxShadow: '0 8px 24px -6px rgba(0, 0, 0, 0.4)'
+                                    } 
+                                  : seatsCount > 0 
+                                  ? {
+                                      backgroundColor: 'color-mix(in srgb, var(--accent-color) 8%, transparent)',
+                                      borderColor: 'color-mix(in srgb, var(--accent-color) 20%, transparent)',
+                                    }
+                                  : {}
+                              }
                             >
                               <div className="flex items-start justify-between gap-2">
                                 <span className="font-bold text-sm text-white truncate">{student.name}</span>
@@ -1222,19 +1228,27 @@ export default function Events() {
                                 </span>
                               </div>
                               <div className="flex flex-wrap gap-1 items-center mt-1">
-                                <span className="text-[10px] text-white/30 font-bold uppercase tracking-wider">Assentos:</span>
+                                <span className={`text-[10px] font-bold uppercase tracking-wider ${isSelected ? 'text-white/70' : 'text-white/30'}`}>Assentos:</span>
                                 {Array.isArray(p.seats) && p.seats.length > 0 ? (
                                   p.seats.map(seat => (
-                                    <span key={seat} className="text-[10px] font-black px-1.5 py-0.5 rounded border" style={{
-                                      backgroundColor: 'color-mix(in srgb, var(--accent-color) 15%, transparent)',
-                                      color: 'var(--accent-color)',
-                                      borderColor: 'color-mix(in srgb, var(--accent-color) 30%, transparent)'
-                                    }}>
+                                    <span key={seat} className="text-[10px] font-black px-1.5 py-0.5 rounded border" style={
+                                      isSelected 
+                                        ? {
+                                            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                                            color: '#ffffff',
+                                            borderColor: 'rgba(255, 255, 255, 0.3)'
+                                          }
+                                        : {
+                                            backgroundColor: 'color-mix(in srgb, var(--accent-color) 15%, transparent)',
+                                            color: 'var(--accent-color)',
+                                            borderColor: 'color-mix(in srgb, var(--accent-color) 30%, transparent)'
+                                          }
+                                    }>
                                       {seat}
                                     </span>
                                   ))
                                 ) : (
-                                  <span className="text-[10px] text-white/20 italic">Nenhum reservado</span>
+                                  <span className={`text-[10px] italic ${isSelected ? 'text-white/40' : 'text-white/20'}`}>Nenhum reservado</span>
                                 )}
                               </div>
                             </div>
@@ -1246,18 +1260,23 @@ export default function Events() {
 
                   {/* LADO DIREITO: MAPA INTERATIVO */}
                   <div className="lg:col-span-8 space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                      <div>
-                        <h3 className="text-sm font-black uppercase tracking-widest border-l-4 pl-3" style={{ borderLeftColor: 'var(--accent-color)', color: 'var(--accent-color)' }}>
-                          Mapa Seletor de Poltronas
-                        </h3>
-                        <p className="text-xs text-[var(--text-muted)] mt-1">
-                          {selectedParticipantId 
-                            ? `Selecionado: ${students.find(s => s.id === participants.find(p => p.id === selectedParticipantId)?.student_id)?.name}`
-                            : 'Selecione um aluno na coluna ao lado para alocar assentos.'}
-                        </p>
-                      </div>
+                    <div className="w-full py-4 px-6 rounded-2xl shadow-xl text-xs font-black uppercase tracking-widest text-white flex items-center justify-between gap-4" style={{ backgroundColor: 'var(--accent-color)', backgroundImage: 'linear-gradient(135deg, var(--accent-color), #000)' }}>
+                      <span>Mapa Seletor de Poltronas</span>
+                      {selectedParticipantId && (
+                        <span className="px-2 py-0.5 rounded bg-white/20 text-[9px] text-white">Configuração Ativa</span>
+                      )}
                     </div>
+
+                    {selectedParticipantId ? (
+                      <div className="p-4 rounded-xl flex items-center justify-between text-xs font-black uppercase tracking-widest shadow-md text-white transition-all border border-white/10" style={{ backgroundColor: 'var(--accent-color)', backgroundImage: 'linear-gradient(135deg, var(--accent-color), #0a0a0f)' }}>
+                        <span>Aluno Selecionado: {students.find(s => s.id === participants.find(p => p.id === selectedParticipantId)?.student_id)?.name}</span>
+                        <span className="px-2.5 py-1 rounded bg-black/40 text-[9px]">Selecione os assentos abaixo</span>
+                      </div>
+                    ) : (
+                      <div className="p-4 rounded-xl bg-black/20 border border-white/5 text-xs text-[var(--text-muted)] text-center font-bold">
+                        Selecione um aluno na coluna ao lado para alocar assentos no teatro.
+                      </div>
+                    )}
 
                     {!activeEvent.seating_map ? (
                       <div className="flex flex-col items-center justify-center py-24 bg-black/20 rounded-3xl border border-dashed border-white/10 text-center">
