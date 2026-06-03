@@ -203,7 +203,7 @@ export default function AttendancePage() {
                 paddingRight: 'clamp(16px, 4vw, 40px)'
               }}
             >
-              Chamada Diária
+              Chamada
             </h1>
             <br />
             <p 

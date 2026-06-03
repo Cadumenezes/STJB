@@ -107,7 +107,7 @@ export default function TrialClasses() {
               className="font-black tracking-tighter leading-tight inline-block py-3 sm:py-6 rounded-2xl shadow-2xl shadow-purple-500/30" 
               style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--title-size, 32px)', paddingLeft: 'clamp(16px, 4vw, 40px)', paddingRight: 'clamp(16px, 4vw, 40px)' }}
             >
-              Aulas Experimentais
+              Aulas experimentais
             </h1>
             <br />
             <p 
