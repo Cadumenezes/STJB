@@ -331,7 +331,7 @@ export default function Dashboard() {
                 paddingRight: 'clamp(16px, 4vw, 40px)'
               }}
             >
-              Dashboard
+              Visão geral
             </h1>
             <br />
             <p 

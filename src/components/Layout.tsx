@@ -36,7 +36,7 @@ import Events from '../pages/Events'
 
 
 const navItems = [
-  { path: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/', label: 'Visão geral', icon: LayoutDashboard },
   { path: '/students', label: 'Alunos', icon: Users },
   { path: '/trials', label: 'Experimentais', icon: Star },
   { path: '/financial', label: 'Financeiro', icon: DollarSign },
