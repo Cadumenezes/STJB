@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Plus, Edit, Trash2, Calendar, MapPin, DollarSign, Users, Download, PlusCircle, CheckCircle, CreditCard, Box, Search, Printer, Map } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { Event, EventParticipant, Student, Installment, Profile } from '../types'
+import { Event, EventParticipant, Student, Installment, Profile, EventSession, SeatingMapConfig, Theater } from '../types'
 import Modal from '../components/Modal'
 
 export default function Events() {
   const [events, setEvents] = useState<Event[]>([])
+  const [theaters, setTheaters] = useState<Theater[]>([])
   const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([])
   const [participants, setParticipants] = useState<EventParticipant[]>([])
   const [students, setStudents] = useState<Student[]>([])
@@ -28,6 +29,7 @@ export default function Events() {
   const [activeSubTab, setActiveSubTab] = useState<'spreadsheet' | 'seating_map'>('spreadsheet')
   const [selectedParticipantId, setSelectedParticipantId] = useState<string | null>(null)
   const [seatingSearchQuery, setSeatingSearchQuery] = useState('')
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
 
   // Cálculo do tamanho dinâmico das cadeiras para a visualização prévia
   const maxSeats = Math.max(
@@ -48,19 +50,14 @@ export default function Events() {
   function openSeatingMap() {
     const activeEvent = events.find(e => e.id === activeEventId)
     if (!activeEvent) return
-    
+
     let config = activeEvent.seating_map
     if (!config) {
       const localData = localStorage.getItem(`danceflow_event_seating_map_${activeEvent.id}`)
       if (localData) {
-        try {
-          config = JSON.parse(localData)
-        } catch (e) {
-          console.error(e)
-        }
+        try { config = JSON.parse(localData) } catch (e) { console.error(e) }
       }
     }
-    
     if (config) {
       setRowsCount(config.rows_count || 10)
       setSeatsPerRow(config.seats_per_row || 12)
@@ -78,7 +75,7 @@ export default function Events() {
     const activeEvent = events.find(e => e.id === activeEventId)
     if (!activeEvent) return
 
-    const config = {
+    const config: SeatingMapConfig = {
       rows_count: Number(rowsCount),
       seats_per_row: Number(seatsPerRow),
       exceptions: exceptions
@@ -92,32 +89,76 @@ export default function Events() {
     if (error) {
       console.warn('Erro ao salvar no banco. Salvando no localStorage...', error)
       localStorage.setItem(`danceflow_event_seating_map_${activeEvent.id}`, JSON.stringify(config))
-      alert('Configuração do mapa salva localmente com sucesso! (Para persistir no banco de dados para todos os administradores, execute a migração SQL).')
+      alert('Configuração do mapa salva localmente com sucesso!')
     } else {
       alert('Mapa de Teatro salvo com sucesso!')
     }
-
     setEvents(events.map(ev => ev.id === activeEvent.id ? { ...ev, seating_map: config } : ev))
     setShowMapModal(false)
   }
 
-  async function handleUpdateSeats(participantId: string, newSeats: string[]) {
-    // 1. Optimistic UI update
-    setParticipants(prev => prev.map(p => p.id === participantId ? { ...p, seats: newSeats } : p))
-    
-    // 2. Try Supabase update
-    const { error } = await supabase
-      .from('event_participants')
-      .update({ seats: newSeats })
-      .eq('id', participantId)
-      
-    if (error) {
-      console.warn('Erro ao salvar assentos no banco. Salvando no localStorage...', error)
-      localStorage.setItem(`danceflow_seats_alloc_${participantId}`, JSON.stringify(newSeats))
+  async function handleUpdateSeats(participantId: string, newSeats: string[], sessionId?: string | null) {
+    const activeEvent = events.find(e => e.id === activeEventId)
+    const hasSessions = activeEvent?.sessions && activeEvent.sessions.length > 0
+
+    if (hasSessions && sessionId) {
+      setParticipants(prev => prev.map(p => {
+        if (p.id !== participantId) return p
+        const updated = { ...(p.seats_by_session || {}) }
+        updated[sessionId] = newSeats
+        return { ...p, seats_by_session: updated }
+      }))
+
+      const participant = participants.find(p => p.id === participantId)
+      const updatedBySession = { ...(participant?.seats_by_session || {}) }
+      updatedBySession[sessionId] = newSeats
+
+      const { error } = await supabase
+        .from('event_participants')
+        .update({ seats_by_session: updatedBySession })
+        .eq('id', participantId)
+
+      if (error) {
+        console.warn('Erro ao salvar assentos no banco.', error)
+        localStorage.setItem(`danceflow_seats_session_${participantId}_${sessionId}`, JSON.stringify(newSeats))
+      } else {
+        localStorage.removeItem(`danceflow_seats_session_${participantId}_${sessionId}`)
+      }
     } else {
-      // Clean up localStorage if it was successfully saved to DB
-      localStorage.removeItem(`danceflow_seats_alloc_${participantId}`)
+      setParticipants(prev => prev.map(p => p.id === participantId ? { ...p, seats: newSeats } : p))
+
+      const { error } = await supabase
+        .from('event_participants')
+        .update({ seats: newSeats })
+        .eq('id', participantId)
+
+      if (error) {
+        console.warn('Erro ao salvar assentos no banco.', error)
+        localStorage.setItem(`danceflow_seats_alloc_${participantId}`, JSON.stringify(newSeats))
+      } else {
+        localStorage.removeItem(`danceflow_seats_alloc_${participantId}`)
+      }
     }
+  }
+
+  // Helper: get participant seats for current view (session-aware)
+  function getParticipantSeats(p: EventParticipant, sessionId?: string | null): string[] {
+    const activeEvent = events.find(e => e.id === activeEventId)
+    const hasSessions = activeEvent?.sessions && activeEvent.sessions.length > 0
+    if (hasSessions && sessionId) {
+      return p.seats_by_session?.[sessionId] || []
+    }
+    return p.seats || []
+  }
+
+  // Helper: get total seats across all sessions for a participant
+  function getTotalSeatsCount(p: EventParticipant): number {
+    const activeEvent = events.find(e => e.id === activeEventId)
+    const hasSessions = activeEvent?.sessions && activeEvent.sessions.length > 0
+    if (hasSessions && p.seats_by_session) {
+      return Object.values(p.seats_by_session).reduce((acc, seats) => acc + seats.length, 0)
+    }
+    return p.seats?.length || 0
   }
 
   function getDynamicFontSize(val: string | number) {
@@ -139,12 +180,32 @@ export default function Events() {
     base_clothes_cost: 0,
     has_kit: false,
     kit_price: 0,
-    photos: ''
+    photos: '',
+    sessions: [] as EventSession[],
+    theater_id: '' as string | null,
+    sessions_count: 0
   })
 
   useEffect(() => {
     loadData()
   }, [])
+
+  // Auto-select first session of the active event if it has sessions
+  useEffect(() => {
+    if (activeEventId) {
+      const activeEv = events.find(e => e.id === activeEventId)
+      if (activeEv && activeEv.sessions && activeEv.sessions.length > 0) {
+        const sessionExists = activeEv.sessions.some(s => s.id === selectedSessionId)
+        if (!sessionExists) {
+          setSelectedSessionId(activeEv.sessions[0].id)
+        }
+      } else {
+        setSelectedSessionId(null)
+      }
+    } else {
+      setSelectedSessionId(null)
+    }
+  }, [activeEventId, events, selectedSessionId])
 
   async function loadData() {
     setLoading(true)
@@ -156,6 +217,9 @@ export default function Events() {
 
     const { data: eventsData } = await supabase.from('events').select('*').order('date', { ascending: true })
     setEvents(eventsData || [])
+
+    const { data: theatersData } = await supabase.from('theaters').select('*').order('name')
+    setTheaters(theatersData || [])
     
     if (eventsData && eventsData.length > 0 && !activeEventId) {
       setActiveEventId(eventsData[0].id)
@@ -194,7 +258,14 @@ export default function Events() {
       }
       
       const finalSeats = Array.isArray(seats) ? seats.map(s => String(s)) : []
-      return { ...p, seats: finalSeats }
+      
+      // Parse seats_by_session
+      let seatsBySession = p.seats_by_session || {}
+      if (typeof seatsBySession === 'string') {
+        try { seatsBySession = JSON.parse(seatsBySession) } catch { seatsBySession = {} }
+      }
+      
+      return { ...p, seats: finalSeats, seats_by_session: seatsBySession }
     })
     setParticipants(formattedParts)
     
@@ -219,12 +290,39 @@ export default function Events() {
     setUploadedPhotos(prev => prev.filter((_, i) => i !== index))
   }
 
+  function handleSessionsCountChange(count: number) {
+    const val = Math.max(0, Math.min(100, count))
+    const currentSessions = [...eventFormData.sessions]
+    
+    let updatedSessions: EventSession[] = []
+    if (val > currentSessions.length) {
+      updatedSessions = [...currentSessions]
+      for (let i = currentSessions.length; i < val; i++) {
+        updatedSessions.push({
+          id: crypto.randomUUID(),
+          name: `Sessão ${i + 1}`,
+          datetime: ''
+        })
+      }
+    } else if (val < currentSessions.length) {
+      updatedSessions = currentSessions.slice(0, val)
+    } else {
+      updatedSessions = currentSessions
+    }
+
+    setEventFormData(prev => ({
+      ...prev,
+      sessions_count: val,
+      sessions: updatedSessions
+    }))
+  }
+
   async function handleEventSubmit(e: React.FormEvent) {
     e.preventDefault()
     
     const photoUrlsArray = uploadedPhotos
 
-    const payload = {
+    const payload: any = {
       name: eventFormData.name,
       date: eventFormData.date,
       location: eventFormData.location,
@@ -236,6 +334,22 @@ export default function Events() {
       has_kit: eventFormData.has_kit,
       kit_price: eventFormData.kit_price,
       photo_urls: photoUrlsArray
+    }
+    
+    if (eventFormData.sessions.length > 0) {
+      payload.sessions = eventFormData.sessions
+    }
+
+    const selectedTheater = theaters.find(t => t.id === eventFormData.theater_id)
+    if (selectedTheater) {
+      payload.seating_map = {
+        rows_count: selectedTheater.rows_count,
+        seats_per_row: selectedTheater.seats_per_row,
+        exceptions: selectedTheater.exceptions
+      }
+      payload.theater_id = selectedTheater.id
+    } else {
+      payload.theater_id = null
     }
 
     let error = null
@@ -267,7 +381,10 @@ export default function Events() {
         base_clothes_cost: 0,
         has_kit: false,
         kit_price: 0,
-        photos: ''
+        photos: '',
+        sessions: [] as EventSession[],
+        theater_id: '',
+        sessions_count: 0
       })
       loadData()
     }
@@ -304,7 +421,10 @@ export default function Events() {
       base_clothes_cost: ev.base_clothes_cost || 0,
       has_kit: ev.has_kit || false,
       kit_price: ev.kit_price || 0,
-      photos: ev.photo_urls ? ev.photo_urls.join(', ') : ''
+      photos: ev.photo_urls ? ev.photo_urls.join(', ') : '',
+      sessions: ev.sessions || [],
+      theater_id: ev.theater_id || '',
+      sessions_count: ev.sessions ? ev.sessions.length : 0
     })
     setShowEventModal(true)
   }
@@ -597,7 +717,7 @@ export default function Events() {
             {activeEvent && (
               <button
                 type="button"
-                onClick={openSeatingMap}
+                onClick={() => openSeatingMap()}
                 className="flex items-center gap-2 rounded-2xl px-8 py-4 text-sm font-bold text-white transition-all hover:scale-105 shadow-xl cursor-pointer"
                 style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}
               >
@@ -611,7 +731,7 @@ export default function Events() {
                 onClick={() => {
                   setEditEvent(null)
                   setUploadedPhotos([])
-                  setEventFormData({ name: '', date: new Date().toISOString().split('T')[0], location: '', description: '', ticket_price: 0, cost: 0, base_choreography_price: 0, base_clothes_cost: 0, has_kit: false, kit_price: 0, photos: '' })
+                  setEventFormData({ name: '', date: new Date().toISOString().split('T')[0], location: '', description: '', ticket_price: 0, cost: 0, base_choreography_price: 0, base_clothes_cost: 0, has_kit: false, kit_price: 0, photos: '', sessions: [], theater_id: '', sessions_count: 0 })
                   setShowEventModal(true)
                 }}
                 className="flex items-center gap-2 rounded-2xl px-8 py-4 text-sm font-bold text-white transition-all hover:scale-105 shadow-xl cursor-pointer"
@@ -802,19 +922,17 @@ export default function Events() {
               )}
 
               {/* Sub-tabs Selection */}
-              <div className="flex gap-4 p-2 bg-black/40 rounded-2xl border border-white/5 mb-8 w-fit">
+              <div className="flex gap-4 p-2 rounded-2xl border w-fit" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', marginBottom: '30px' }}>
                 <button
                   type="button"
                   onClick={() => setActiveSubTab('spreadsheet')}
-                  className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer ${
-                    activeSubTab === 'spreadsheet'
-                      ? 'text-white shadow-lg'
-                      : 'text-[var(--text-muted)] hover:text-white'
-                  }`}
+                  className="px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer"
                   style={{
-                    background: activeSubTab === 'spreadsheet' ? 'linear-gradient(135deg, var(--accent-color), #000)' : 'transparent',
-                    border: activeSubTab === 'spreadsheet' ? '1px solid rgba(255,255,255,0.1)' : '1px solid transparent',
-                    boxShadow: activeSubTab === 'spreadsheet' ? '0 4px 12px rgba(139, 92, 246, 0.2)' : 'none'
+                    backgroundColor: 'var(--bg-card)',
+                    color: 'var(--text-primary)',
+                    border: activeSubTab === 'spreadsheet' ? '2px solid var(--accent-color)' : '1px solid var(--border-color)',
+                    boxShadow: activeSubTab === 'spreadsheet' ? '0 0 10px var(--accent-color)' : 'none',
+                    opacity: activeSubTab === 'spreadsheet' ? 1 : 0.6
                   }}
                 >
                   Planilha de Vendas
@@ -822,15 +940,13 @@ export default function Events() {
                 <button
                   type="button"
                   onClick={() => setActiveSubTab('seating_map')}
-                  className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer ${
-                    activeSubTab === 'seating_map'
-                      ? 'text-white shadow-lg'
-                      : 'text-[var(--text-muted)] hover:text-white'
-                  }`}
+                  className="px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer"
                   style={{
-                    background: activeSubTab === 'seating_map' ? 'linear-gradient(135deg, var(--accent-color), #000)' : 'transparent',
-                    border: activeSubTab === 'seating_map' ? '1px solid rgba(255,255,255,0.1)' : '1px solid transparent',
-                    boxShadow: activeSubTab === 'seating_map' ? '0 4px 12px rgba(139, 92, 246, 0.2)' : 'none'
+                    backgroundColor: 'var(--bg-card)',
+                    color: 'var(--text-primary)',
+                    border: activeSubTab === 'seating_map' ? '2px solid var(--accent-color)' : '1px solid var(--border-color)',
+                    boxShadow: activeSubTab === 'seating_map' ? '0 0 10px var(--accent-color)' : 'none',
+                    opacity: activeSubTab === 'seating_map' ? 1 : 0.6
                   }}
                 >
                   Mapa de Assentos
@@ -1126,390 +1242,631 @@ export default function Events() {
                     </table>
                   </div>
                 </>
-              ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                  {/* LADO ESQUERDO: LISTA DE ALUNOS E ASSENTOS */}
-                  <div className="lg:col-span-4 space-y-4 flex flex-col h-[600px]">
-                    <div className="w-full py-4 px-6 rounded-2xl shadow-xl text-center text-xs font-black uppercase tracking-widest text-white relative overflow-hidden" style={{ backgroundColor: 'var(--accent-color)', backgroundImage: 'linear-gradient(135deg, var(--accent-color), #000)' }}>
-                      Alunos & Reservas
-                    </div>
-                    
-                    {/* Search Bar */}
-                    <div className="flex items-center gap-3 rounded-xl px-4 py-3 border" style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border-color)' }}>
-                      <Search className="text-white/30 shrink-0" size={18} />
-                      <input 
-                        type="text" 
-                        placeholder="Buscar aluno..." 
-                        value={seatingSearchQuery}
-                        onChange={(e) => setSeatingSearchQuery(e.target.value)}
-                        className="w-full bg-transparent text-sm text-white focus:outline-none placeholder:text-white/30"
-                      />
-                    </div>
+              ) : (() => {
+                const hasSessions = activeEvent.sessions && activeEvent.sessions.length > 0
+                const activeSession = hasSessions ? activeEvent.sessions!.find(s => s.id === selectedSessionId) : null
+                const displaySeatingMap = activeEvent.seating_map
 
-                    {/* Participant scroll list */}
-                    <div className="flex-1 overflow-y-auto pr-1 space-y-2 custom-scrollbar">
-                      {(() => {
-                        const filteredPartsForSeating = currentParticipants
-                          .filter(p => {
-                            const student = students.find(s => s.id === p.student_id)
-                            if (!student) return false
-                            if (seatingSearchQuery) {
-                              return student.name.toLowerCase().includes(seatingSearchQuery.toLowerCase())
-                            }
-                            return true
-                          })
-                          .sort((a, b) => {
-                            const studentA = students.find(s => s.id === a.student_id)?.name || ''
-                            const studentB = students.find(s => s.id === b.student_id)?.name || ''
-                            return studentA.localeCompare(studentB)
-                          })
+                return (
+                <div className="flex flex-col" style={{ gap: '22px' }}>
+                  {/* Session Selector */}
+                  {hasSessions && (
+                    <div className="flex flex-wrap gap-2 p-3 rounded-2xl border" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+                      <span className="flex items-center text-[10px] font-black uppercase tracking-widest px-3" style={{ color: 'var(--text-primary)', opacity: 0.5 }}>Sessão:</span>
+                      {activeEvent.sessions!.map(session => {
+                        const isActive = selectedSessionId === session.id
+                        // Count occupied seats for this session
+                        const sessionSeatsCount = currentParticipants.reduce((acc, p) => {
+                          return acc + (p.seats_by_session?.[session.id]?.length || 0)
+                        }, 0)
+                        const totalSeatsInSession = (() => {
+                          const map = activeEvent.seating_map
+                          if (!map) return 0
+                          let total = 0
+                          for (let i = 0; i < map.rows_count; i++) {
+                            const rowName = getRowLabel(i)
+                            total += map.exceptions?.[rowName] !== undefined ? map.exceptions[rowName] : map.seats_per_row
+                          }
+                          return total
+                        })()
+                        return (
+                          <button
+                            key={session.id}
+                            type="button"
+                            onClick={() => setSelectedSessionId(session.id)}
+                            className="px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2"
+                            style={{
+                              backgroundColor: 'var(--bg-card)',
+                              color: 'var(--text-primary)',
+                              border: isActive ? '2px solid var(--accent-color)' : '1px solid var(--border-color)',
+                              boxShadow: isActive ? '0 0 10px var(--accent-color)' : 'none',
+                              opacity: isActive ? 1 : 0.6
+                            }}
+                          >
+                            <span>{session.name}</span>
+                            {activeEvent.seating_map && (
+                              <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)', opacity: 0.8 }}>
+                                {sessionSeatsCount}/{totalSeatsInSession}
+                              </span>
+                            )}
+                            {session.datetime && (
+                              <span className="text-[9px]" style={{ color: 'var(--text-primary)', opacity: isActive ? 0.8 : 0.4 }}>
+                                {new Date(session.datetime).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+                              </span>
+                            )}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
 
-                        if (filteredPartsForSeating.length === 0) {
-                          return (
-                            <div className="text-center py-10 bg-black/10 rounded-2xl border border-dashed border-white/5">
-                              <p className="text-xs text-[var(--text-muted)]">Nenhum aluno encontrado.</p>
+                  {hasSessions && !selectedSessionId && (
+                    <div className="text-center py-16 bg-black/20 rounded-3xl border border-dashed border-white/10">
+                      <Map size={48} className="mx-auto text-white/20 mb-4" />
+                      <h4 className="text-base font-bold text-white mb-1">Selecione uma sessão</h4>
+                      <p className="text-xs text-[var(--text-muted)]">Escolha uma sessão acima para ver e gerenciar o mapa de assentos.</p>
+                    </div>
+                  )}
+
+                  {(!hasSessions || selectedSessionId) && (
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    {/* LADO ESQUERDO: LISTA DE ALUNOS E ASSENTOS */}
+                    <div className="lg:col-span-4 flex flex-col h-[350px] lg:h-[600px]" style={{ gap: '14px' }}>
+                      <div className="w-full py-4 px-6 rounded-2xl shadow-xl text-center text-xs font-black uppercase tracking-widest text-white relative overflow-hidden" style={{ backgroundColor: 'var(--accent-color)', backgroundImage: 'linear-gradient(135deg, var(--accent-color), #000)' }}>
+                        Alunos & Reservas {hasSessions && activeSession ? `• ${activeSession.name}` : ''}
+                      </div>
+                      
+                      {/* Search Bar */}
+                      <div className="flex items-center gap-3 rounded-xl px-4 py-3 border" style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border-color)' }}>
+                        <Search className="text-white/30 shrink-0" size={18} />
+                        <input 
+                          type="text" 
+                          placeholder="Buscar aluno..." 
+                          value={seatingSearchQuery}
+                          onChange={(e) => setSeatingSearchQuery(e.target.value)}
+                          className="w-full bg-transparent text-sm text-white focus:outline-none placeholder:text-white/30"
+                        />
+                      </div>
+
+                      {/* Participant scroll list */}
+                      <div className="flex-1 overflow-y-auto pr-1 flex flex-col custom-scrollbar" style={{ gap: '10px' }}>
+                        {/* Assento de Cortesia */}
+                        {activeEvent && (
+                          <div 
+                            className="p-3.5 rounded-xl border-2 transition-all cursor-pointer flex justify-between items-center shrink-0"
+                            style={{ 
+                              backgroundColor: selectedParticipantId === 'courtesy' ? 'color-mix(in srgb, #38bdf8 15%, var(--bg-card))' : 'var(--bg-card)', 
+                              borderColor: selectedParticipantId === 'courtesy' ? '#38bdf8' : 'var(--border-color)',
+                              boxShadow: selectedParticipantId === 'courtesy' ? '0 0 10px rgba(56, 189, 248, 0.2)' : 'none'
+                            }}
+                            onClick={() => setSelectedParticipantId(selectedParticipantId === 'courtesy' ? null : 'courtesy')}
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="text-xl">🎁</span>
+                              <div>
+                                <p className="text-xs font-black text-sky-400">Assento de Cortesia</p>
+                                <p className="text-[10px] text-[var(--text-muted)]">Reservar para convidados / cortesias</p>
+                              </div>
                             </div>
-                          )
-                        }
+                            {(() => {
+                              const map = activeEvent.seating_map
+                              const count = hasSessions && selectedSessionId
+                                ? map?.courtesies_by_session?.[selectedSessionId]?.length || 0
+                                : map?.courtesies?.length || 0
+                              return count > 0 && (
+                                <span className="text-[10px] px-2 py-0.5 rounded-full font-black text-white" style={{ backgroundColor: '#38bdf8' }}>
+                                  {count}
+                                </span>
+                              )
+                            })()}
+                          </div>
+                        )}
 
-                        return filteredPartsForSeating.map(p => {
-                          const student = students.find(s => s.id === p.student_id)
-                          if (!student) return null
-                          const isSelected = selectedParticipantId === p.id
-                          const seatsCount = p.seats?.length || 0
-                          const limit = p.ticket_quantity || 0
-                          
-                          // Badge color selection
-                          let badgeBg = 'bg-black/30 text-white/50 border border-white/5'
-                          let badgeText = 'Sem convite'
-                          if (limit > 0) {
-                            if (seatsCount === 0) {
-                              badgeBg = 'bg-black/35 text-rose-300 border border-white/10'
-                              badgeText = `0 de ${limit} reservadas`
-                            } else if (seatsCount < limit) {
-                              badgeBg = 'bg-black/35 text-amber-300 border border-white/10'
-                              badgeText = `${seatsCount} de ${limit} reservadas`
-                            } else if (seatsCount === limit) {
-                              badgeBg = 'bg-black/35 text-emerald-200 border border-white/10'
-                              badgeText = `Completo (${limit}/${limit})`
-                            } else {
-                              badgeBg = 'bg-black/35 text-rose-200 border border-white/10 animate-pulse'
-                              badgeText = `Excedido (${seatsCount}/${limit})`
-                            }
+                        {(() => {
+                          const filteredPartsForSeating = currentParticipants
+                            .filter(p => {
+                              const student = students.find(s => s.id === p.student_id)
+                              if (!student) return false
+                              if (seatingSearchQuery) {
+                                return student.name.toLowerCase().includes(seatingSearchQuery.toLowerCase())
+                              }
+                              return true
+                            })
+                            .sort((a, b) => {
+                              const studentA = students.find(s => s.id === a.student_id)?.name || ''
+                              const studentB = students.find(s => s.id === b.student_id)?.name || ''
+                              return studentA.localeCompare(studentB)
+                            })
+
+                          if (filteredPartsForSeating.length === 0) {
+                            return (
+                              <div className="text-center py-10 bg-black/10 rounded-2xl border border-dashed border-white/5">
+                                <p className="text-xs text-[var(--text-muted)]">Nenhum aluno encontrado.</p>
+                              </div>
+                            )
                           }
 
-                          return (
-                            <div 
-                              key={p.id}
-                              onClick={() => setSelectedParticipantId(p.id)}
-                              className={`p-4 rounded-2xl border transition-all cursor-pointer select-none flex flex-col gap-2 ${
-                                isSelected 
-                                  ? 'text-white border-white/30' 
-                                  : 'text-white/80 border-white/10 hover:border-white/20 hover:scale-[1.01]'
-                              }`}
-                              style={{
-                                backgroundColor: isSelected 
-                                  ? 'var(--accent-color)' 
-                                  : 'color-mix(in srgb, var(--accent-color) 40%, transparent)',
-                                borderColor: isSelected ? 'rgba(255,255,255,0.4)' : 'color-mix(in srgb, var(--accent-color) 20%, transparent)',
-                                boxShadow: isSelected ? '0 8px 24px -6px rgba(0, 0, 0, 0.4)' : 'none',
-                              }}
-                            >
-                              <div className="flex items-start justify-between gap-2">
-                                <span className="font-bold text-sm text-white truncate">{student.name}</span>
-                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-black uppercase shrink-0 ${badgeBg}`}>
-                                  {badgeText}
-                                </span>
-                              </div>
-                              <div className="flex flex-wrap gap-1 items-center mt-1">
-                                <span className={`text-[10px] font-bold uppercase tracking-wider ${isSelected ? 'text-white/70' : 'text-white/30'}`}>Assentos:</span>
-                                {Array.isArray(p.seats) && p.seats.length > 0 ? (
-                                  p.seats.map(seat => (
-                                    <span key={seat} className="text-[10px] font-black px-1.5 py-0.5 rounded border" style={{
-                                      backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                                      color: '#ffffff',
-                                      borderColor: 'rgba(255, 255, 255, 0.25)'
-                                    }}>
-                                      {seat}
-                                    </span>
-                                  ))
-                                ) : (
-                                  <span className={`text-[10px] italic ${isSelected ? 'text-white/40' : 'text-white/20'}`}>Nenhum reservado</span>
-                                )}
-                              </div>
-                              {isSelected && (
-                                <div className="flex flex-col gap-1.5 mt-2 pt-2 border-t border-white/10" onClick={(e) => e.stopPropagation()}>
-                                  <label className="text-[9px] font-black uppercase text-white/70">Editar Manualmente:</label>
-                                  <div className="flex gap-2">
-                                    <input 
-                                      type="text" 
-                                      defaultValue={(p.seats || []).join(', ')} 
-                                      onBlur={async (e) => {
-                                        const val = e.target.value
-                                        const newSeats = val.split(',')
-                                          .map(s => s.trim().toUpperCase())
-                                          .filter(Boolean)
-                                        
-                                        // Validate ticket quantity limit
-                                        if (newSeats.length > limit) {
-                                          alert(`Limite de ingressos atingido! ${student.name} comprou apenas ${limit} ingresso(s).`)
-                                          e.target.value = (p.seats || []).join(', ')
-                                          return
-                                        }
-                                        await handleUpdateSeats(p.id, newSeats)
-                                      }}
-                                      onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                          (e.target as HTMLInputElement).blur()
-                                        }
-                                      }}
-                                      className="flex-1 bg-black/30 border border-white/10 rounded-lg px-2 py-1 text-xs text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-white"
-                                      placeholder="Ex: A1, A2"
-                                      key={p.seats?.join(', ')}
-                                    />
-                                    <button
-                                      type="button"
-                                      onClick={async (e) => {
-                                        e.stopPropagation()
-                                        if (confirm(`Deseja limpar todos os assentos de ${student.name}?`)) {
-                                          await handleUpdateSeats(p.id, [])
-                                        }
-                                      }}
-                                      className="px-2.5 py-1 bg-rose-500/20 text-rose-300 hover:bg-rose-500 hover:text-white rounded-lg text-[10px] font-bold transition-all border border-rose-500/30"
-                                    >
-                                      Limpar
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          )
-                        })
-                      })()}
-                    </div>
-                  </div>
-
-                  {/* LADO DIREITO: MAPA INTERATIVO */}
-                  <div className="lg:col-span-8 space-y-4">
-                    <div className="w-full py-4 px-6 rounded-2xl shadow-xl text-xs font-black uppercase tracking-widest text-white flex items-center justify-between gap-4" style={{ backgroundColor: 'var(--accent-color)', backgroundImage: 'linear-gradient(135deg, var(--accent-color), #000)' }}>
-                      <span>Mapa Seletor de Poltronas</span>
-                      {selectedParticipantId && (
-                        <span className="px-2 py-0.5 rounded bg-white/20 text-[9px] text-white">Configuração Ativa</span>
-                      )}
-                    </div>
-
-                    {selectedParticipantId ? (
-                      <div className="p-4 rounded-xl flex items-center justify-between text-xs font-black uppercase tracking-widest shadow-md text-white transition-all border border-white/10" style={{ backgroundColor: 'var(--accent-color)', backgroundImage: 'linear-gradient(135deg, var(--accent-color), #0a0a0f)' }}>
-                        <span>Aluno Selecionado: {students.find(s => s.id === participants.find(p => p.id === selectedParticipantId)?.student_id)?.name}</span>
-                        <span className="px-2.5 py-1 rounded bg-black/40 text-[9px]">Selecione os assentos abaixo</span>
-                      </div>
-                    ) : (
-                      <div className="p-4 rounded-xl bg-black/20 border border-white/5 text-xs text-[var(--text-muted)] text-center font-bold">
-                        Selecione um aluno na coluna ao lado para alocar assentos no teatro.
-                      </div>
-                    )}
-
-                    {!activeEvent.seating_map ? (
-                      <div className="flex flex-col items-center justify-center py-24 bg-black/20 rounded-3xl border border-dashed border-white/10 text-center">
-                        <Map size={48} className="text-white/20 mb-4" />
-                        <h4 className="text-base font-bold text-white mb-1">Nenhum mapa configurado</h4>
-                        <p className="text-xs text-[var(--text-muted)] mb-6 max-w-sm">
-                          Para começar a reservar assentos, configure a quantidade de fileiras e poltronas deste evento.
-                        </p>
-                        <button
-                          type="button"
-                          onClick={openSeatingMap}
-                          className="px-6 py-3 rounded-xl text-white font-bold text-xs transition-all shadow-lg hover:scale-105 cursor-pointer"
-                          style={{
-                            background: 'linear-gradient(135deg, var(--accent-color), #000)',
-                            boxShadow: '0 4px 12px color-mix(in srgb, var(--accent-color) 20%, transparent)'
-                          }}
-                        >
-                          Configurar Agora
-                        </button>
-                      </div>
-                    ) : (
-                      <div 
-                        className="flex flex-col items-center justify-center p-8 rounded-3xl border border-white/5 relative overflow-hidden" 
-                        style={{ backgroundColor: 'var(--bg-card)' }}
-                      >
-                        {/* Legend */}
-                        <div className="flex flex-wrap justify-center gap-6 mb-8 text-[11px] font-bold uppercase tracking-wider text-white/50 border-b border-white/5 pb-4 w-full">
-                          <div className="flex items-center gap-2">
-                            <span className="w-3.5 h-3.5 rounded border" style={{ 
-                              backgroundColor: 'rgba(255,255,255,0.05)',
-                              borderColor: '#10b981'
-                            }} />
-                            <span>Livre</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="w-3.5 h-3.5 rounded border" style={{ 
-                              backgroundColor: 'color-mix(in srgb, var(--accent-color) 20%, transparent)',
-                              borderColor: '#ef4444'
-                            }} />
-                            <span>Reservado</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="w-3.5 h-3.5 rounded border" style={{ 
-                              backgroundColor: 'var(--accent-color)',
-                              borderColor: '#ef4444',
-                              boxShadow: '0 0 8px var(--accent-color)'
-                            }} />
-                            <span>Do Aluno Selecionado</span>
-                          </div>
-                        </div>
-
-                        {/* Stage */}
-                        <div 
-                          className="w-full max-w-md py-3 mb-10 rounded-b-2xl border-b-2 text-center text-xs font-black uppercase tracking-widest text-white/70 shadow-lg shrink-0 select-none"
-                          style={{ 
-                            background: 'linear-gradient(to bottom, color-mix(in srgb, var(--accent-color) 8%, transparent), color-mix(in srgb, var(--accent-color) 20%, transparent))',
-                            borderBottomColor: 'var(--accent-color)',
-                            boxShadow: '0 8px 20px -8px color-mix(in srgb, var(--accent-color) 30%, transparent)'
-                          }}
-                        >
-                          PALCO / TELA
-                        </div>
-
-                        {/* Seating Grid Wrapper with responsive container scaling */}
-                        <div className="w-full overflow-auto max-h-[450px] pr-2 py-2 custom-scrollbar flex flex-col gap-2.5 items-center">
-                          {(() => {
-                            const config = activeEvent.seating_map
-                            const rows = config.rows_count || 10
-                            const stdSeats = config.seats_per_row || 12
-                            const excs = config.exceptions || {}
+                          return filteredPartsForSeating.map(p => {
+                            const student = students.find(s => s.id === p.student_id)
+                            if (!student) return null
+                            const isSelected = selectedParticipantId === p.id
+                            const currentSessionSeats = getParticipantSeats(p, selectedSessionId)
+                            const totalSeatsGlobal = getTotalSeatsCount(p)
+                            const limit = p.ticket_quantity || 0
                             
-                            const maxSeatsInRow = Math.max(
-                              stdSeats,
-                              ...Object.values(excs),
-                              1
-                            )
-                            // Responsive size calculation
-                            const displaySeatSize = Math.max(12, Math.min(36, Math.floor((550 - (maxSeatsInRow - 1) * 4) / maxSeatsInRow)))
+                            // Badge based on global limit
+                            let badgeBg = 'bg-black/30 text-white/50 border border-white/5'
+                            let badgeText = 'Sem convite'
+                            if (limit > 0) {
+                              if (totalSeatsGlobal === 0) {
+                                badgeBg = 'bg-black/35 text-rose-300 border border-white/10'
+                                badgeText = `0 de ${limit} reservadas`
+                              } else if (totalSeatsGlobal < limit) {
+                                badgeBg = 'bg-black/35 text-amber-300 border border-white/10'
+                                badgeText = `${totalSeatsGlobal} de ${limit} reservadas`
+                              } else if (totalSeatsGlobal === limit) {
+                                badgeBg = 'bg-black/35 text-emerald-200 border border-white/10'
+                                badgeText = `Completo (${limit}/${limit})`
+                              } else {
+                                badgeBg = 'bg-black/35 text-rose-200 border border-white/10 animate-pulse'
+                                badgeText = `Excedido (${totalSeatsGlobal}/${limit})`
+                              }
+                            }
 
-                            let currentSeatCounter = 1;
-                            const rowStartNumbers = Array.from({ length: rows }).map((_, rIdx) => {
-                              const rowName = getRowLabel(rIdx)
-                              const count = excs[rowName] !== undefined ? excs[rowName] : stdSeats
-                              const startNum = currentSeatCounter
-                              currentSeatCounter += count
-                              return startNum
-                            })
+                            return (
+                              <div 
+                                key={p.id}
+                                onClick={() => setSelectedParticipantId(p.id)}
+                                className="p-4 rounded-2xl border transition-all cursor-pointer select-none flex flex-col gap-2 hover:scale-[1.01]"
+                                style={{
+                                  backgroundColor: 'var(--bg-card)',
+                                  color: 'var(--text-primary)',
+                                  border: isSelected ? '2px solid var(--accent-color)' : '1px solid var(--border-color)',
+                                  boxShadow: isSelected ? '0 0 12px var(--accent-color)' : 'none',
+                                }}
+                              >
+                                <div className="flex items-start justify-between gap-2">
+                                  <span className="font-bold text-sm truncate">{student.name}</span>
+                                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-black uppercase shrink-0 ${badgeBg}`}>
+                                    {badgeText}
+                                  </span>
+                                </div>
 
-                            return Array.from({ length: rows }).map((_, rIdx) => {
-                              const rowName = getRowLabel(rIdx)
-                              const count = excs[rowName] !== undefined ? excs[rowName] : stdSeats
-                              const rowStartNum = rowStartNumbers[rIdx]
-                              return (
-                                <div key={rowName} className="flex items-center gap-2 shrink-0">
-                                  {/* Left row label */}
-                                  <span className="text-[10px] font-black text-white/30 w-4 text-center shrink-0">{rowName}</span>
-                                  
-                                  {/* Seats list */}
-                                  <div className="flex gap-1.5 items-center">
-                                    {count === 0 ? (
-                                      <span className="text-[9px] text-rose-400 italic font-semibold">Sem cadeiras nesta fileira</span>
+                                {/* Per-session seats info */}
+                                {hasSessions && activeEvent.sessions!.length > 0 ? (
+                                  <div className="flex flex-col gap-1 mt-1">
+                                    {activeEvent.sessions!.map(session => {
+                                      const sessionSeats = p.seats_by_session?.[session.id] || []
+                                      const isCurrentSession = session.id === selectedSessionId
+                                      return (
+                                        <div key={session.id} className={`flex flex-wrap gap-1 items-center ${isCurrentSession ? '' : 'opacity-60'}`}>
+                                          <span className="text-[9px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-primary)', opacity: isSelected ? 0.7 : 0.4 }}>
+                                            {session.name}:
+                                          </span>
+                                          {sessionSeats.length > 0 ? (
+                                            sessionSeats.map(seat => (
+                                              <span key={seat} className="text-[9px] font-black px-1 py-0.5 rounded border" style={{
+                                                backgroundColor: 'var(--bg-input)',
+                                                color: 'var(--text-primary)',
+                                                borderColor: isCurrentSession ? 'var(--accent-color)' : 'var(--border-color)'
+                                              }}>
+                                                {seat}
+                                              </span>
+                                            ))
+                                          ) : (
+                                            <span className="text-[9px] italic" style={{ color: 'var(--text-primary)', opacity: isSelected ? 0.4 : 0.2 }}>—</span>
+                                          )}
+                                        </div>
+                                      )
+                                    })}
+                                  </div>
+                                ) : (
+                                  <div className="flex flex-wrap gap-1 items-center mt-1">
+                                    <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-primary)', opacity: isSelected ? 0.7 : 0.4 }}>Assentos:</span>
+                                    {Array.isArray(p.seats) && p.seats.length > 0 ? (
+                                      p.seats.map(seat => (
+                                        <span key={seat} className="text-[10px] font-black px-1.5 py-0.5 rounded border" style={{
+                                          backgroundColor: 'var(--bg-input)',
+                                          color: 'var(--text-primary)',
+                                          borderColor: 'var(--border-color)'
+                                        }}>
+                                          {seat}
+                                        </span>
+                                      ))
                                     ) : (
-                                      Array.from({ length: count }).map((_, sIdx) => {
-                                        const seatNum = rowStartNum + sIdx
-                                        const seatLabel = `${rowName}${seatNum}`
-                                        
-                                        // Find booking status
-                                        const occupiedBy = participants.find(p => p.event_id === activeEventId && p.seats?.includes(seatLabel))
-                                        const isSelected = selectedParticipantId && occupiedBy?.id === selectedParticipantId
-                                        
-                                        let style: React.CSSProperties = {
-                                          width: `${displaySeatSize}px`,
-                                          height: `${displaySeatSize}px`,
-                                          fontSize: `${Math.max(7, displaySeatSize * 0.45)}px`
-                                        }
-
-                                        let seatClass = "rounded-lg flex items-center justify-center font-bold border shrink-0 transition-all select-none cursor-pointer "
-                                        let tooltipText = `Poltrona ${seatLabel}`
-
-                                        if (occupiedBy) {
-                                          const occStudent = students.find(s => s.id === occupiedBy.student_id)
-                                          tooltipText += ` - Reservado para: ${occStudent?.name || 'Desconhecido'}`
-                                          if (isSelected) {
-                                            seatClass += "text-white hover:scale-110"
-                                            style.backgroundColor = 'var(--accent-color)'
-                                            style.boxShadow = '0 0 12px var(--accent-color)'
-                                            style.borderColor = '#ef4444'
-                                          } else {
-                                            seatClass += "hover:opacity-90"
-                                            style.backgroundColor = 'color-mix(in srgb, var(--accent-color) 20%, transparent)'
-                                            style.borderColor = '#ef4444'
-                                            style.color = 'var(--accent-color)'
-                                          }
-                                        } else {
-                                          tooltipText += " - Livre"
-                                          seatClass += "bg-zinc-800/80 text-zinc-400 hover:bg-zinc-700 hover:text-white hover:border-[#10b981] hover:scale-105"
-                                          style.borderColor = '#10b981'
-                                        }
-
-                                        const handleSeatClick = async () => {
-                                          if (!selectedParticipantId) {
-                                            alert('Por favor, selecione um aluno na lista ao lado primeiro para reservar assentos!')
-                                            return
-                                          }
-
-                                          const targetPart = participants.find(p => p.id === selectedParticipantId)
-                                          if (!targetPart) return
-
-                                          if (occupiedBy) {
-                                            if (occupiedBy.id === selectedParticipantId) {
-                                              // Remove seat from current student
-                                              const newSeats = (targetPart.seats || []).filter(s => s !== seatLabel)
-                                              await handleUpdateSeats(selectedParticipantId, newSeats)
-                                            } else {
-                                              // Belong to another student, prompt reassignment
-                                              const otherStud = students.find(s => s.id === occupiedBy.student_id)
-                                              if (confirm(`O assento ${seatLabel} já está reservado para ${otherStud?.name || 'outro aluno'}. Deseja desmarcar e liberar este assento?`)) {
-                                                const newSeatsOther = (occupiedBy.seats || []).filter(s => s !== seatLabel)
-                                                await handleUpdateSeats(occupiedBy.id, newSeatsOther)
-                                              }
-                                            }
-                                          } else {
-                                            // Seat is free. Add to selected student.
-                                            const limit = targetPart.ticket_quantity || 0
-                                            const currentCount = targetPart.seats?.length || 0
-                                            if (currentCount >= limit) {
-                                              const targetStud = students.find(s => s.id === targetPart.student_id)
-                                              alert(`Limite de ingressos atingido! ${targetStud?.name} comprou apenas ${limit} ingresso(s). Adicione mais convites na planilha se necessário.`)
-                                            } else {
-                                              const newSeats = [...(targetPart.seats || []), seatLabel]
-                                              await handleUpdateSeats(selectedParticipantId, newSeats)
-                                            }
-                                          }
-                                        }
-
-                                        return (
-                                          <div 
-                                            key={seatLabel}
-                                            className={seatClass}
-                                            style={style}
-                                            title={tooltipText}
-                                            onClick={handleSeatClick}
-                                          >
-                                            {displaySeatSize >= 15 ? seatNum : ''}
-                                          </div>
-                                        )
-                                      })
+                                      <span className="text-[10px] italic" style={{ color: 'var(--text-primary)', opacity: isSelected ? 0.4 : 0.2 }}>Nenhum reservado</span>
                                     )}
                                   </div>
+                                )}
 
-                                  {/* Right row label */}
-                                  <span className="text-[10px] font-black text-white/30 w-4 text-center shrink-0">{rowName}</span>
-                                </div>
-                              )
-                            })
-                          })()}
-                        </div>
+                                {isSelected && (
+                                  <div className="flex flex-col gap-1.5 mt-2 pt-2 border-t" style={{ borderColor: 'var(--border-color)' }} onClick={(e) => e.stopPropagation()}>
+                                    <label className="text-[9px] font-black uppercase" style={{ color: 'var(--text-primary)', opacity: 0.7 }}>Editar Manualmente{hasSessions && activeSession ? ` (${activeSession.name})` : ''}:</label>
+                                    <div className="flex gap-2">
+                                      <input 
+                                        type="text" 
+                                        defaultValue={currentSessionSeats.join(', ')} 
+                                        onBlur={async (ev) => {
+                                          const val = ev.target.value
+                                          const newSeats = val.split(',')
+                                            .map(s => s.trim().toUpperCase())
+                                            .filter(Boolean)
+                                          
+                                          // Validate global ticket limit
+                                          const otherSessionsCount = hasSessions
+                                            ? Object.entries(p.seats_by_session || {})
+                                                .filter(([sid]) => sid !== selectedSessionId)
+                                                .reduce((acc, [, seats]) => acc + seats.length, 0)
+                                            : 0
+                                          if (newSeats.length + otherSessionsCount > limit && limit > 0) {
+                                            alert(`Limite de ingressos atingido! ${student.name} comprou apenas ${limit} ingresso(s) no total.`)
+                                            ev.target.value = currentSessionSeats.join(', ')
+                                            return
+                                          }
+                                          await handleUpdateSeats(p.id, newSeats, selectedSessionId)
+                                        }}
+                                        onKeyDown={(ev) => {
+                                          if (ev.key === 'Enter') {
+                                            (ev.target as HTMLInputElement).blur()
+                                          }
+                                        }}
+                                        className="flex-1 bg-black/30 border border-white/10 rounded-lg px-2 py-1 text-xs text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-white"
+                                        placeholder="Ex: A1, A2"
+                                        key={currentSessionSeats.join(', ') + (selectedSessionId || '')}
+                                      />
+                                      <button
+                                        type="button"
+                                        onClick={async (ev) => {
+                                          ev.stopPropagation()
+                                          if (confirm(`Deseja limpar todos os assentos de ${student.name}${hasSessions && activeSession ? ` na ${activeSession.name}` : ''}?`)) {
+                                            await handleUpdateSeats(p.id, [], selectedSessionId)
+                                          }
+                                        }}
+                                        className="px-2.5 py-1 bg-rose-500/20 text-rose-300 hover:bg-rose-500 hover:text-white rounded-lg text-[10px] font-bold transition-all border border-rose-500/30"
+                                      >
+                                        Limpar
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })
+                        })()}
                       </div>
-                    )}
+                    </div>
+
+                    {/* LADO DIREITO: MAPA INTERATIVO */}
+                    <div className="lg:col-span-8 flex flex-col" style={{ gap: '14px' }}>
+                      <div className="w-full py-4 px-6 rounded-2xl shadow-xl text-xs font-black uppercase tracking-widest text-white flex items-center justify-between gap-4" style={{ backgroundColor: 'var(--accent-color)', backgroundImage: 'linear-gradient(135deg, var(--accent-color), #000)' }}>
+                        <span>Mapa Seletor de Poltronas {hasSessions && activeSession ? `• ${activeSession.name}` : ''}</span>
+                        {selectedParticipantId && (
+                          <span className="px-2 py-0.5 rounded bg-white/20 text-[9px] text-white">Configuração Ativa</span>
+                        )}
+                      </div>
+
+                      {selectedParticipantId ? (
+                        <div className="p-4 rounded-xl flex items-center justify-between text-xs font-black uppercase tracking-widest shadow-md text-white transition-all border border-white/10" style={{ backgroundColor: 'var(--accent-color)', backgroundImage: 'linear-gradient(135deg, var(--accent-color), #0a0a0f)' }}>
+                          <span>Aluno Selecionado: {students.find(s => s.id === participants.find(p => p.id === selectedParticipantId)?.student_id)?.name}</span>
+                          <span className="px-2.5 py-1 rounded bg-black/40 text-[9px]">Selecione os assentos abaixo</span>
+                        </div>
+                      ) : (
+                        <div className="p-4 rounded-xl bg-black/20 border border-white/5 text-xs text-[var(--text-muted)] text-center font-bold">
+                          Selecione um aluno na coluna ao lado para alocar assentos no teatro.
+                        </div>
+                      )}
+
+                      {!displaySeatingMap ? (
+                        <div className="flex flex-col items-center justify-center py-24 bg-black/20 rounded-3xl border border-dashed border-white/10 text-center">
+                          <Map size={48} className="text-white/20 mb-4" />
+                          <h4 className="text-base font-bold text-white mb-1">Nenhum mapa configurado</h4>
+                          <p className="text-xs text-[var(--text-muted)] mb-6 max-w-sm">
+                            Para começar a reservar assentos, configure a quantidade de fileiras e poltronas deste evento.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => openSeatingMap()}
+                            className="px-6 py-3 rounded-xl text-white font-bold text-xs transition-all shadow-lg hover:scale-105 cursor-pointer"
+                            style={{
+                              background: 'linear-gradient(135deg, var(--accent-color), #000)',
+                              boxShadow: '0 4px 12px color-mix(in srgb, var(--accent-color) 20%, transparent)'
+                            }}
+                          >
+                            Configurar Agora
+                          </button>
+                        </div>
+                      ) : (
+                        <div 
+                          className="flex flex-col items-center justify-center p-8 rounded-3xl border border-white/5 relative overflow-hidden" 
+                          style={{ backgroundColor: 'var(--bg-card)' }}
+                        >
+                          {/* Legend */}
+                          <div className="flex flex-wrap justify-center gap-6 mb-8 text-[11px] font-bold uppercase tracking-wider text-white/50 border-b border-white/5 pb-4 w-full">
+                            <div className="flex items-center gap-2">
+                              <span className="w-3.5 h-3.5 rounded border" style={{ 
+                                backgroundColor: 'rgba(255,255,255,0.05)',
+                                borderColor: '#10b981'
+                              }} />
+                              <span>Livre</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="w-3.5 h-3.5 rounded border" style={{ 
+                                backgroundColor: 'color-mix(in srgb, var(--accent-color) 20%, transparent)',
+                                borderColor: '#ef4444'
+                              }} />
+                              <span>Reservado</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="w-3.5 h-3.5 rounded border" style={{ 
+                                backgroundColor: 'var(--accent-color)',
+                                borderColor: '#ef4444',
+                                boxShadow: '0 0 8px var(--accent-color)'
+                              }} />
+                              <span>Do Aluno Selecionado</span>
+                            </div>
+                          </div>
+
+                          {/* Stage */}
+                          <div 
+                            className="w-full max-w-md py-3 mb-10 rounded-b-2xl border-b-2 text-center text-xs font-black uppercase tracking-widest text-white/70 shadow-lg shrink-0 select-none"
+                            style={{ 
+                              background: 'linear-gradient(to bottom, color-mix(in srgb, var(--accent-color) 8%, transparent), color-mix(in srgb, var(--accent-color) 20%, transparent))',
+                              borderBottomColor: 'var(--accent-color)',
+                              boxShadow: '0 8px 20px -8px color-mix(in srgb, var(--accent-color) 30%, transparent)'
+                            }}
+                          >
+                            PALCO / TELA
+                          </div>
+
+                          {/* Seating Grid */}
+                          <div className="w-full overflow-auto max-h-[450px] pr-2 py-2 custom-scrollbar flex flex-col items-center">
+                            <div className="flex flex-col gap-2.5 min-w-max py-2 pr-2">
+                              {(() => {
+                              const config = displaySeatingMap
+                              const rows = config.rows_count || 10
+                              const stdSeats = config.seats_per_row || 12
+                              const excs = config.exceptions || {}
+                              
+                              const maxSeatsInRow = Math.max(
+                                stdSeats,
+                                ...Object.values(excs),
+                                1
+                              )
+                              const displaySeatSize = Math.max(12, Math.min(36, Math.floor((550 - (maxSeatsInRow - 1) * 4) / maxSeatsInRow)))
+
+                              let currentSeatCounter = 1;
+                              const rowStartNumbers = Array.from({ length: rows }).map((_, rIdx) => {
+                                const rowName = getRowLabel(rIdx)
+                                const count = excs[rowName] !== undefined ? excs[rowName] : stdSeats
+                                const startNum = currentSeatCounter
+                                currentSeatCounter += count
+                                return startNum
+                              })
+
+                              return Array.from({ length: rows }).map((_, rIdx) => {
+                                const rowName = getRowLabel(rIdx)
+                                const count = excs[rowName] !== undefined ? excs[rowName] : stdSeats
+                                const rowStartNum = rowStartNumbers[rIdx]
+                                return (
+                                  <div key={rowName} className="flex items-center gap-2 shrink-0">
+                                    <span className="text-[10px] font-black text-white/30 w-4 text-center shrink-0">{rowName}</span>
+                                    
+                                    <div className="flex gap-1.5 items-center">
+                                      {count === 0 ? (
+                                        <span className="text-[9px] text-rose-400 italic font-semibold">Sem cadeiras nesta fileira</span>
+                                      ) : (
+                                        Array.from({ length: count }).map((_, sIdx) => {
+                                          const seatNum = rowStartNum + sIdx
+                                          const seatLabel = `${rowName}${seatNum}`
+                                          
+                                          // Find booking status for current session
+                                          const occupiedBy = participants.find(p => {
+                                            if (p.event_id !== activeEventId) return false
+                                            if (hasSessions && selectedSessionId) {
+                                              return p.seats_by_session?.[selectedSessionId]?.includes(seatLabel)
+                                            }
+                                            return p.seats?.includes(seatLabel)
+                                          })
+                                          const isSelectedSeat = selectedParticipantId && occupiedBy?.id === selectedParticipantId
+                                          
+                                          // Check if seat is a courtesy seat
+                                          const isCourtesy = (() => {
+                                            const map = activeEvent?.seating_map
+                                            if (!map) return false
+                                            if (hasSessions && selectedSessionId) {
+                                              return map.courtesies_by_session?.[selectedSessionId]?.includes(seatLabel) || false
+                                            }
+                                            return map.courtesies?.includes(seatLabel) || false
+                                          })()
+
+                                          let style: React.CSSProperties = {
+                                            width: `${displaySeatSize}px`,
+                                            height: `${displaySeatSize}px`,
+                                            fontSize: `${Math.max(7, displaySeatSize * 0.45)}px`
+                                          }
+
+                                          let seatClass = "rounded-lg flex items-center justify-center font-bold border shrink-0 transition-all select-none cursor-pointer "
+                                          let tooltipText = `Poltrona ${seatLabel}`
+
+                                          if (isCourtesy) {
+                                            tooltipText += " - Cortesia (Reservado)"
+                                            if (selectedParticipantId === 'courtesy') {
+                                              seatClass += "text-white hover:scale-110"
+                                              style.backgroundColor = '#38bdf8'
+                                              style.boxShadow = '0 0 12px #38bdf8'
+                                              style.borderColor = '#0284c7'
+                                            } else {
+                                              seatClass += "hover:opacity-90"
+                                              style.backgroundColor = 'rgba(56, 189, 248, 0.15)'
+                                              style.borderColor = '#38bdf8'
+                                              style.color = '#38bdf8'
+                                            }
+                                          } else if (occupiedBy) {
+                                            const occStudent = students.find(s => s.id === occupiedBy.student_id)
+                                            tooltipText += ` - Reservado para: ${occStudent?.name || 'Desconhecido'}`
+                                            if (isSelectedSeat) {
+                                              seatClass += "text-white hover:scale-110"
+                                              style.backgroundColor = 'var(--accent-color)'
+                                              style.boxShadow = '0 0 12px var(--accent-color)'
+                                              style.borderColor = '#ef4444'
+                                            } else {
+                                              seatClass += "hover:opacity-90"
+                                              style.backgroundColor = 'color-mix(in srgb, var(--accent-color) 20%, transparent)'
+                                              style.borderColor = '#ef4444'
+                                              style.color = 'var(--accent-color)'
+                                            }
+                                          } else {
+                                            tooltipText += " - Livre"
+                                            seatClass += "bg-zinc-800/80 text-zinc-400 hover:bg-zinc-700 hover:text-white hover:border-[#10b981] hover:scale-105"
+                                            style.borderColor = '#10b981'
+                                          }
+
+                                          const handleSeatClick = async () => {
+                                            if (!selectedParticipantId) {
+                                              alert('Por favor, selecione um aluno ou "Assento de Cortesia" na lista ao lado primeiro para reservar assentos!')
+                                              return
+                                            }
+
+                                            const map = activeEvent?.seating_map || { rows_count: 10, seats_per_row: 12, exceptions: {} }
+
+                                            if (selectedParticipantId === 'courtesy') {
+                                              let updatedCourtesies = [...(map.courtesies || [])]
+                                              let updatedCourtesiesBySession = { ...(map.courtesies_by_session || {}) }
+
+                                              if (hasSessions && selectedSessionId) {
+                                                let sessionCourtesies = [...(updatedCourtesiesBySession[selectedSessionId] || [])]
+                                                if (isCourtesy) {
+                                                  sessionCourtesies = sessionCourtesies.filter(s => s !== seatLabel)
+                                                } else {
+                                                  if (occupiedBy) {
+                                                    const otherSeats = getParticipantSeats(occupiedBy, selectedSessionId)
+                                                    await handleUpdateSeats(occupiedBy.id, otherSeats.filter(s => s !== seatLabel), selectedSessionId)
+                                                  }
+                                                  sessionCourtesies.push(seatLabel)
+                                                }
+                                                updatedCourtesiesBySession[selectedSessionId] = sessionCourtesies
+                                              } else {
+                                                if (isCourtesy) {
+                                                  updatedCourtesies = updatedCourtesies.filter(s => s !== seatLabel)
+                                                } else {
+                                                  if (occupiedBy) {
+                                                    const otherSeats = getParticipantSeats(occupiedBy, selectedSessionId)
+                                                    await handleUpdateSeats(occupiedBy.id, otherSeats.filter(s => s !== seatLabel), selectedSessionId)
+                                                  }
+                                                  updatedCourtesies.push(seatLabel)
+                                                }
+                                              }
+
+                                              const newSeatingMap = {
+                                                ...map,
+                                                courtesies: updatedCourtesies,
+                                                courtesies_by_session: updatedCourtesiesBySession
+                                              }
+
+                                              const { error } = await supabase
+                                                .from('events')
+                                                .update({ seating_map: newSeatingMap })
+                                                .eq('id', activeEventId)
+
+                                              if (error) {
+                                                alert('Erro ao atualizar cortesia: ' + error.message)
+                                              } else {
+                                                loadData()
+                                              }
+                                              return
+                                            }
+
+                                            const targetPart = participants.find(p => p.id === selectedParticipantId)
+                                            if (!targetPart) return
+
+                                            const currentSeats = getParticipantSeats(targetPart, selectedSessionId)
+
+                                            if (isCourtesy) {
+                                              const targetStud = students.find(s => s.id === targetPart.student_id)
+                                              if (confirm(`O assento ${seatLabel} é uma cortesia. Deseja liberar a cortesia e reservar para ${targetStud?.name || 'este aluno'}?`)) {
+                                                let updatedCourtesies = [...(map.courtesies || [])]
+                                                let updatedCourtesiesBySession = { ...(map.courtesies_by_session || {}) }
+
+                                                if (hasSessions && selectedSessionId) {
+                                                  updatedCourtesiesBySession[selectedSessionId] = (updatedCourtesiesBySession[selectedSessionId] || []).filter(s => s !== seatLabel)
+                                                } else {
+                                                  updatedCourtesies = updatedCourtesies.filter(s => s !== seatLabel)
+                                                }
+
+                                                const newSeatingMap = {
+                                                  ...map,
+                                                  courtesies: updatedCourtesies,
+                                                  courtesies_by_session: updatedCourtesiesBySession
+                                                }
+
+                                                await supabase
+                                                  .from('events')
+                                                  .update({ seating_map: newSeatingMap })
+                                                  .eq('id', activeEventId)
+
+                                                // Reserve for student
+                                                const newSeats = [...currentSeats, seatLabel]
+                                                await handleUpdateSeats(selectedParticipantId, newSeats, selectedSessionId)
+                                              }
+                                              return
+                                            }
+
+                                            if (occupiedBy) {
+                                              if (occupiedBy.id === selectedParticipantId) {
+                                                const newSeats = currentSeats.filter(s => s !== seatLabel)
+                                                await handleUpdateSeats(selectedParticipantId, newSeats, selectedSessionId)
+                                              } else {
+                                                const otherStud = students.find(s => s.id === occupiedBy.student_id)
+                                                if (confirm(`O assento ${seatLabel} já está reservado para ${otherStud?.name || 'outro aluno'}. Deseja desmarcar e liberar este assento?`)) {
+                                                  const otherSeats = getParticipantSeats(occupiedBy, selectedSessionId)
+                                                  const newSeatsOther = otherSeats.filter(s => s !== seatLabel)
+                                                  await handleUpdateSeats(occupiedBy.id, newSeatsOther, selectedSessionId)
+                                                }
+                                              }
+                                            } else {
+                                              // Check global limit
+                                              const globalCount = getTotalSeatsCount(targetPart)
+                                              const limit = targetPart.ticket_quantity || 0
+                                              if (limit > 0 && globalCount >= limit) {
+                                                const targetStud = students.find(s => s.id === targetPart.student_id)
+                                                alert(`Limite de ingressos atingido! ${targetStud?.name} comprou apenas ${limit} ingresso(s) no total entre todas as sessões.`)
+                                              } else {
+                                                const newSeats = [...currentSeats, seatLabel]
+                                                await handleUpdateSeats(selectedParticipantId, newSeats, selectedSessionId)
+                                              }
+                                            }
+                                          }
+
+                                          return (
+                                            <div 
+                                              key={seatLabel}
+                                              className={seatClass}
+                                              style={style}
+                                              title={tooltipText}
+                                              onClick={handleSeatClick}
+                                            >
+                                              {displaySeatSize >= 15 ? seatNum : ''}
+                                            </div>
+                                          )
+                                        })
+                                      )}
+                                    </div>
+
+                                    <span className="text-[10px] font-black text-white/30 w-4 text-center shrink-0">{rowName}</span>
+                                  </div>
+                                )
+                              })
+                            })()}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
+                  )}
                 </div>
-              )}
+                )
+              })()}
             </div>
           )}
         </>
@@ -1528,9 +1885,74 @@ export default function Events() {
               <input required type="date" value={eventFormData.date} onChange={e => setEventFormData({...eventFormData, date: e.target.value})} className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none" style={inputStyle} />
             </div>
             <div>
-              <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Local</label>
-              <input value={eventFormData.location} onChange={e => setEventFormData({...eventFormData, location: e.target.value})} className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none" style={inputStyle} />
+              <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Quantidade de Sessões</label>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                value={eventFormData.sessions_count || 0}
+                onChange={e => handleSessionsCountChange(parseInt(e.target.value) || 0)}
+                className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none"
+                style={inputStyle}
+              />
             </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Local (Teatro)</label>
+              <select
+                value={eventFormData.theater_id || ''}
+                onChange={e => {
+                  const val = e.target.value
+                  if (val === '') {
+                    setEventFormData({
+                      ...eventFormData,
+                      theater_id: '',
+                      location: ''
+                    })
+                  } else {
+                    const th = theaters.find(t => t.id === val)
+                    setEventFormData({
+                      ...eventFormData,
+                      theater_id: val,
+                      location: th ? th.name : ''
+                    })
+                  }
+                }}
+                className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none"
+                style={inputStyle}
+              >
+                <option value="" style={{ backgroundColor: 'var(--bg-card)' }}>Outro / Digitar Manualmente</option>
+                {theaters.map(t => (
+                  <option key={t.id} value={t.id} style={{ backgroundColor: 'var(--bg-card)' }}>
+                    {t.name} ({t.rows_count} F x {t.seats_per_row} C)
+                  </option>
+                ))}
+              </select>
+            </div>
+            {!eventFormData.theater_id ? (
+              <div>
+                <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Nome do Local *</label>
+                <input
+                  required
+                  value={eventFormData.location}
+                  onChange={e => setEventFormData({...eventFormData, location: e.target.value})}
+                  className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none"
+                  style={inputStyle}
+                  placeholder="Digite o nome do local"
+                />
+              </div>
+            ) : (
+              <div>
+                <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Local Selecionado</label>
+                <input
+                  disabled
+                  value={eventFormData.location}
+                  className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none opacity-60"
+                  style={inputStyle}
+                />
+              </div>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -1596,6 +2018,88 @@ export default function Events() {
               />
             </div>
           </div>
+
+          {/* Sessões do Evento */}
+          <div className="space-y-4 pt-2">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-bold block" style={{ color: 'var(--text-secondary)' }}>
+                Sessões do Evento
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  const newSession: EventSession = {
+                    id: crypto.randomUUID(),
+                    name: `Sessão ${eventFormData.sessions.length + 1}`,
+                    datetime: ''
+                  }
+                  setEventFormData({
+                    ...eventFormData,
+                    sessions: [...eventFormData.sessions, newSession]
+                  })
+                }}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[11px] font-bold text-white transition-all hover:scale-105 cursor-pointer"
+                style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}
+              >
+                <PlusCircle size={14} />
+                Adicionar Sessão
+              </button>
+            </div>
+            <p className="text-[10px] text-gray-500 leading-relaxed -mt-2">
+              Adicione sessões ao evento para ter mapas de assentos independentes por sessão. (Opcional)
+            </p>
+
+            {eventFormData.sessions.length > 0 && (
+              <div className="space-y-2 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+                {eventFormData.sessions.map((session, idx) => (
+                  <div
+                    key={session.id}
+                    className="flex items-center gap-3 p-3 rounded-xl border transition-all hover:border-purple-500/30"
+                    style={{ backgroundColor: 'rgba(255,255,255,0.03)', borderColor: 'var(--border-color)' }}
+                  >
+                    <span className="text-[10px] font-black text-purple-400 w-6 text-center shrink-0">{idx + 1}</span>
+                    <input
+                      type="text"
+                      value={session.name}
+                      onChange={e => {
+                        const updated = eventFormData.sessions.map(s =>
+                          s.id === session.id ? { ...s, name: e.target.value } : s
+                        )
+                        setEventFormData({ ...eventFormData, sessions: updated })
+                      }}
+                      placeholder="Nome da sessão"
+                      className="flex-1 rounded-xl px-3 py-2 text-xs focus:outline-none"
+                      style={inputStyle}
+                    />
+                    <input
+                      type="datetime-local"
+                      value={session.datetime || ''}
+                      onChange={e => {
+                        const updated = eventFormData.sessions.map(s =>
+                          s.id === session.id ? { ...s, datetime: e.target.value } : s
+                        )
+                        setEventFormData({ ...eventFormData, sessions: updated })
+                      }}
+                      className="w-44 rounded-xl px-3 py-2 text-xs focus:outline-none"
+                      style={inputStyle}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const updated = eventFormData.sessions.filter(s => s.id !== session.id)
+                        setEventFormData({ ...eventFormData, sessions: updated })
+                      }}
+                      className="p-1.5 text-rose-400/50 hover:text-rose-400 hover:bg-rose-400/10 rounded-lg transition-all cursor-pointer"
+                      title="Remover sessão"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           <div className="space-y-4">
             <label className="text-sm font-bold block mb-1" style={{ color: 'var(--text-secondary)' }}>
               Galeria de Fotos do Evento

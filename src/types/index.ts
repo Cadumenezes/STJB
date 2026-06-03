@@ -146,6 +146,24 @@ export interface SeatingMapConfig {
   rows_count: number;
   seats_per_row: number;
   exceptions: Record<string, number>;
+  courtesies?: string[];
+  courtesies_by_session?: Record<string, string[]>;
+}
+
+export interface EventSession {
+  id: string;
+  name: string;
+  datetime?: string;
+}
+
+export interface Theater {
+  id: string;
+  name: string;
+  rows_count: number;
+  seats_per_row: number;
+  exceptions: Record<string, number>;
+  user_id?: string;
+  created_at?: string;
 }
 
 export interface Event {
@@ -162,6 +180,8 @@ export interface Event {
   kit_price?: number
   photo_urls?: string[] | null
   seating_map?: SeatingMapConfig | null
+  sessions?: EventSession[] | null
+  theater_id?: string | null
   created_at: string
 }
 
@@ -185,6 +205,7 @@ export interface EventParticipant {
   clothes_cost: number
   installments: Installment[]
   seats?: string[] | null
+  seats_by_session?: Record<string, string[]> | null
   created_at: string
 }
 

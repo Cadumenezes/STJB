@@ -23,6 +23,7 @@ import {
   Play,
   Pause,
   Volume2,
+  Map,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
@@ -44,6 +45,7 @@ const navItems = [
   { path: '/attendance', label: 'Chamada', icon: ClipboardCheck },
   { path: '/schedule', label: 'Agenda', icon: CalendarDays },
   { path: '/events', label: 'Eventos', icon: Calendar },
+  { path: '/theaters', label: 'Teatros', icon: Map },
   { path: '/shop', label: 'Loja', icon: ShoppingBag },
   { path: '/inventory', label: 'Estoque', icon: Package },
   { path: '/team', label: 'Equipe', icon: UserCog },

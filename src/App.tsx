@@ -12,6 +12,7 @@ import AttendancePage from './pages/Attendance'
 import Inventory from './pages/Inventory'
 import Team from './pages/Team'
 import Events from './pages/Events'
+import Theaters from './pages/Theaters'
 import SettingsPage from './pages/Settings'
 import AiConsultant from './pages/AiConsultant'
 import Auth from './pages/Auth'
@@ -134,6 +135,7 @@ export default function App() {
         <Route path="financial" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Financial />} />
         <Route path="classes" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Classes />} />
         <Route path="events" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Events />} />
+        <Route path="theaters" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Theaters />} />
         <Route path="attendance" element={<AttendancePage />} />
         <Route path="schedule" element={<Schedule />} />
         <Route path="inventory" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : (profile?.role === 'secretary' ? <Navigate to="/" /> : <Inventory />)} />
