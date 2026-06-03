@@ -167,17 +167,34 @@ export default function Events() {
     const { data: partsData } = await supabase.from('event_participants').select('*')
     const formattedParts = (partsData || []).map(p => {
       let seats = p.seats
-      if (!seats || seats.length === 0) {
+      
+      // Normalize string array format from Postgres or legacy text fields
+      if (typeof seats === 'string') {
+        try {
+          seats = JSON.parse(seats)
+        } catch (e) {
+          seats = seats.split(',').map((s: string) => s.trim()).filter(Boolean)
+        }
+      }
+      
+      if (!Array.isArray(seats) || seats.length === 0) {
         const local = localStorage.getItem(`danceflow_seats_alloc_${p.id}`)
         if (local) {
           try {
-            seats = JSON.parse(local)
+            const parsed = JSON.parse(local)
+            if (Array.isArray(parsed)) {
+              seats = parsed
+            } else if (typeof parsed === 'string') {
+              seats = parsed.split(',').map((s: string) => s.trim()).filter(Boolean)
+            }
           } catch (e) {
             console.error(e)
           }
         }
       }
-      return { ...p, seats: seats || [] }
+      
+      const finalSeats = Array.isArray(seats) ? seats.map(s => String(s)) : []
+      return { ...p, seats: finalSeats }
     })
     setParticipants(formattedParts)
     
@@ -1049,7 +1066,7 @@ export default function Events() {
                                       onChange={(e) => handleUpdateParticipant(p.id, 'ticket_quantity', parseInt(e.target.value) || 0)}
                                       className={`w-16 text-center bg-transparent border border-white/10 rounded-lg px-2 py-1 font-black transition-all ${p.ticket_quantity > 0 ? 'text-purple-400' : 'text-white/30'}`}
                                     />
-                                    {p.seats && p.seats.length > 0 && (
+                                    {Array.isArray(p.seats) && p.seats.length > 0 && (
                                       <span className="text-[9px] font-bold text-purple-400/80 max-w-[80px] truncate" title={p.seats.join(', ')}>
                                         {p.seats.join(', ')}
                                       </span>
@@ -1187,7 +1204,7 @@ export default function Events() {
                               </div>
                               <div className="flex flex-wrap gap-1 items-center mt-1">
                                 <span className="text-[10px] text-white/30 font-bold uppercase tracking-wider">Assentos:</span>
-                                {p.seats && p.seats.length > 0 ? (
+                                {Array.isArray(p.seats) && p.seats.length > 0 ? (
                                   p.seats.map(seat => (
                                     <span key={seat} className="text-[10px] font-black px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">
                                       {seat}
