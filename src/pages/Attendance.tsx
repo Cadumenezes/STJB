@@ -65,7 +65,7 @@ export default function AttendancePage() {
             .from('team_members')
             .select('user_id')
             .eq('email', profile.email)
-            .eq('role', 'instructor')
+            .or('role.eq.instructor,role.eq.Professor')
             .eq('status', 'active')
             .maybeSingle()
 

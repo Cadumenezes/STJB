@@ -33,7 +33,7 @@ export default function Classes() {
     const { data: classesData } = await supabase.from('dance_classes').select('*').order('name')
     setClasses(classesData || [])
 
-    const { data: instructorsData } = await supabase.from('team_members').select('*').eq('role', 'instructor').order('name')
+    const { data: instructorsData } = await supabase.from('team_members').select('*').or('role.eq.instructor,role.eq.Professor').order('name')
     setInstructors(instructorsData || [])
 
     const { data: studentsData } = await supabase.from('students').select('*').order('name')

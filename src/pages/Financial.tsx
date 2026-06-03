@@ -93,7 +93,7 @@ export default function Financial() {
         const { data: participantsData } = await supabase.from('event_participants').select('*')
         setEventParticipants(participantsData || [])
       } else if (activeTab === 'payroll') {
-        const { data: members } = await supabase.from('team_members').select('*').eq('role', 'instructor').eq('status', 'active')
+        const { data: members } = await supabase.from('team_members').select('*').or('role.eq.instructor,role.eq.Professor').eq('status', 'active')
         const { data: att } = await supabase.from('attendance').select('*').eq('type', 'instructor').eq('status', 'present')
         
         const currentMonth = new Date().toISOString().slice(0, 7)
