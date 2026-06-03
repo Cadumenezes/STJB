@@ -1352,19 +1352,23 @@ export default function Events() {
                         {/* Legend */}
                         <div className="flex flex-wrap justify-center gap-6 mb-8 text-[11px] font-bold uppercase tracking-wider text-white/50 border-b border-white/5 pb-4 w-full">
                           <div className="flex items-center gap-2">
-                            <span className="w-3.5 h-3.5 rounded border border-zinc-700/60" style={{ backgroundColor: 'rgba(255,255,255,0.05)' }} />
+                            <span className="w-3.5 h-3.5 rounded border" style={{ 
+                              backgroundColor: 'rgba(255,255,255,0.05)',
+                              borderColor: '#10b981'
+                            }} />
                             <span>Livre</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <span className="w-3.5 h-3.5 rounded border" style={{ 
                               backgroundColor: 'color-mix(in srgb, var(--accent-color) 20%, transparent)',
-                              borderColor: 'color-mix(in srgb, var(--accent-color) 40%, transparent)'
+                              borderColor: '#ef4444'
                             }} />
                             <span>Reservado</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="w-3.5 h-3.5 rounded border border-white" style={{ 
+                            <span className="w-3.5 h-3.5 rounded border" style={{ 
                               backgroundColor: 'var(--accent-color)',
+                              borderColor: '#ef4444',
                               boxShadow: '0 0 8px var(--accent-color)'
                             }} />
                             <span>Do Aluno Selecionado</span>
@@ -1433,18 +1437,20 @@ export default function Events() {
                                           const occStudent = students.find(s => s.id === occupiedBy.student_id)
                                           tooltipText += ` - Reservado para: ${occStudent?.name || 'Desconhecido'}`
                                           if (isSelected) {
-                                            seatClass += "text-white border-white hover:scale-110"
+                                            seatClass += "text-white hover:scale-110"
                                             style.backgroundColor = 'var(--accent-color)'
                                             style.boxShadow = '0 0 12px var(--accent-color)'
+                                            style.borderColor = '#ef4444'
                                           } else {
                                             seatClass += "hover:opacity-90"
                                             style.backgroundColor = 'color-mix(in srgb, var(--accent-color) 20%, transparent)'
-                                            style.borderColor = 'color-mix(in srgb, var(--accent-color) 40%, transparent)'
+                                            style.borderColor = '#ef4444'
                                             style.color = 'var(--accent-color)'
                                           }
                                         } else {
                                           tooltipText += " - Livre"
-                                          seatClass += "bg-zinc-800/80 border-zinc-700/60 text-zinc-400 hover:bg-zinc-700 hover:text-white hover:border-zinc-500 hover:scale-105"
+                                          seatClass += "bg-zinc-800/80 text-zinc-400 hover:bg-zinc-700 hover:text-white hover:border-[#10b981] hover:scale-105"
+                                          style.borderColor = '#10b981'
                                         }
 
                                         const handleSeatClick = async () => {
