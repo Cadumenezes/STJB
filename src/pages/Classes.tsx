@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Plus, Edit, Trash2, Users, Music, UserCheck, Clock } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { DanceClass, TeamMember, Student } from '../types'
+import { DanceClass, TeamMember, Student, Profile } from '../types'
 import Modal from '../components/Modal'
 
 export default function Classes() {
@@ -11,6 +11,8 @@ export default function Classes() {
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editClass, setEditClass] = useState<DanceClass | null>(null)
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
   
   const [formData, setFormData] = useState({
     name: '',
@@ -19,6 +21,8 @@ export default function Classes() {
     max_students: 20,
     style: '',
     instructor_id: '',
+    age_group: '',
+    display_order: 0,
   })
   
   const [selectedDays, setSelectedDays] = useState<string[]>([])
@@ -26,12 +30,26 @@ export default function Classes() {
 
   useEffect(() => {
     loadData()
+    loadProfile()
   }, [])
+
+  async function loadProfile() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+      setProfile(data || null)
+    }
+  }
 
   async function loadData() {
     setLoading(true)
-    const { data: classesData } = await supabase.from('dance_classes').select('*').order('name')
-    setClasses(classesData || [])
+    
+    // Resilient load sorting by display_order, fallback to name
+    let res = await supabase.from('dance_classes').select('*').order('display_order', { ascending: true })
+    if (res.error) {
+      res = await supabase.from('dance_classes').select('*').order('name', { ascending: true })
+    }
+    setClasses(res.data || [])
 
     const { data: instructorsData } = await supabase.from('team_members').select('*').or('role.eq.instructor,role.eq.Professor').order('name')
     setInstructors(instructorsData || [])
@@ -40,6 +58,46 @@ export default function Classes() {
     setStudents(studentsData || [])
     
     setLoading(false)
+  }
+
+  function handleDragStart(e: React.DragEvent, index: number) {
+    setDraggedIndex(index)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  function handleDragOver(e: React.DragEvent, index: number) {
+    e.preventDefault()
+  }
+
+  async function handleDrop(e: React.DragEvent, targetIndex: number) {
+    e.preventDefault()
+    if (draggedIndex === null || draggedIndex === targetIndex) return
+
+    const reordered = [...classes]
+    const [draggedItem] = reordered.splice(draggedIndex, 1)
+    reordered.splice(targetIndex, 0, draggedItem)
+
+    setClasses(reordered) // Instant UI update
+
+    // Save display_order sequentially in database
+    const updates = reordered.map((cls, idx) => {
+      return supabase
+        .from('dance_classes')
+        .update({ display_order: idx })
+        .eq('id', cls.id)
+    })
+
+    const results = await Promise.all(updates)
+    const errors = results.map(r => r.error).filter(Boolean)
+
+    if (errors.length > 0) {
+      console.error('Erro ao salvar reordenação:', errors)
+      alert('Erro ao salvar a nova ordem das turmas no banco de dados.')
+    } else {
+      loadData()
+    }
+
+    setDraggedIndex(null)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -52,16 +110,29 @@ export default function Classes() {
     const payload = {
       ...formData,
       schedule: finalSchedule,
-      instructor_id: formData.instructor_id || null
+      instructor_id: formData.instructor_id || null,
+      display_order: Number(formData.display_order) || 0
     }
 
     let error = null
-    if (editClass) {
-      const res = await supabase.from('dance_classes').update(payload).eq('id', editClass.id)
-      error = res.error
-    } else {
-      const res = await supabase.from('dance_classes').insert([payload])
-      error = res.error
+    const res = editClass 
+      ? await supabase.from('dance_classes').update(payload).eq('id', editClass.id)
+      : await supabase.from('dance_classes').insert([payload])
+    error = res.error
+    
+    if (error && (error.message.includes('column') || error.code === 'PGRST204' || error.message.includes('não existe'))) {
+      // Fallback: strip new columns and save
+      const strippedPayload: any = { ...payload }
+      delete strippedPayload.age_group
+      delete strippedPayload.display_order
+      
+      const retryRes = editClass
+        ? await supabase.from('dance_classes').update(strippedPayload).eq('id', editClass.id)
+        : await supabase.from('dance_classes').insert([strippedPayload])
+      error = retryRes.error
+      if (!error) {
+        alert('Turma salva com sucesso! (Nota: as novas colunas de Faixa Etária e Ordenação não foram salvas no banco de dados. Por favor, execute o script SQL de migração).')
+      }
     }
     
     if (error) {
@@ -90,6 +161,8 @@ export default function Classes() {
       max_students: cls.max_students || 20,
       style: cls.style || '',
       instructor_id: cls.instructor_id || '',
+      age_group: cls.age_group || '',
+      display_order: cls.display_order || 0,
     })
 
     const sched = cls.schedule || ''
@@ -112,7 +185,8 @@ export default function Classes() {
   function resetForm() {
     setFormData({ 
       name: '', description: '', schedule: '', 
-      max_students: 20, style: '', instructor_id: '' 
+      max_students: 20, style: '', instructor_id: '',
+      age_group: '', display_order: 0
     })
     setSelectedDays([])
     setClassTime('')
@@ -179,12 +253,22 @@ export default function Classes() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-        {classes.map((cls) => {
+        {classes.map((cls, idx) => {
           const instructor = instructors.find(i => i.id === cls.instructor_id)
+          const isDraggable = ((profile?.role as any) === 'admin' || (profile?.role as any) === 'Diretor' || (profile?.role as any) === 'user')
+          
           return (
             <div
               key={cls.id}
-              className="group rounded-2xl p-8 sm:p-10 transition-all duration-300 hover:scale-[1.05] hover:shadow-2xl border border-white/5"
+              draggable={isDraggable}
+              onDragStart={(e) => handleDragStart(e, idx)}
+              onDragOver={(e) => handleDragOver(e, idx)}
+              onDrop={(e) => handleDrop(e, idx)}
+              className={`group rounded-2xl p-8 sm:p-10 transition-all duration-300 border border-white/5 ${
+                draggedIndex === idx ? 'opacity-40 scale-95 border-purple-500/50' : 'hover:scale-[1.03] hover:shadow-2xl'
+              } ${
+                isDraggable ? 'cursor-grab active:cursor-grabbing' : ''
+              }`}
               style={{ backgroundColor: 'var(--bg-card)' }}
             >
               <div className="flex items-start justify-between">
@@ -194,7 +278,14 @@ export default function Classes() {
                   </div>
                   <div>
                     <h3 className="font-bold text-xl" style={{ color: 'var(--text-primary)' }}>{cls.name}</h3>
-                    <p className="text-xs font-black uppercase tracking-widest text-purple-400">{cls.style}</p>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      <p className="text-xs font-black uppercase tracking-widest text-purple-400">{cls.style}</p>
+                      {cls.age_group && (
+                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-gray-300">
+                          {cls.age_group}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -243,10 +334,10 @@ export default function Classes() {
               </div>
 
               <div className="mt-6 flex justify-end gap-2" style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
-                <button onClick={() => openEdit(cls)} className="p-2.5 rounded-2xl hover:opacity-70 transition-all hover:bg-blue-500/10" style={{ color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.1)' }}>
+                <button onClick={() => openEdit(cls)} className="p-2.5 rounded-2xl hover:opacity-70 transition-all hover:bg-blue-500/10 cursor-pointer" style={{ color: '#3b82f6', border: '1px solid rgba(59, 130, 246, 0.1)' }}>
                   <Edit size={18} />
                 </button>
-                <button onClick={() => handleDelete(cls.id)} className="p-2.5 rounded-2xl hover:opacity-70 transition-all hover:bg-rose-500/10" style={{ color: '#f43f5e', border: '1px solid rgba(244, 63, 94, 0.1)' }}>
+                <button onClick={() => handleDelete(cls.id)} className="p-2.5 rounded-2xl hover:opacity-70 transition-all hover:bg-rose-500/10 cursor-pointer" style={{ color: '#f43f5e', border: '1px solid rgba(244, 63, 94, 0.1)' }}>
                   <Trash2 size={18} />
                 </button>
               </div>
@@ -263,7 +354,7 @@ export default function Classes() {
               <input required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50" style={inputStyle} />
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Professor Responsável</label>
                 <select 
@@ -281,6 +372,10 @@ export default function Classes() {
               <div>
                 <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Estilo (Ex: Ballet, Jazz)</label>
                 <input value={formData.style} onChange={(e) => setFormData({ ...formData, style: e.target.value })} className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50" style={inputStyle} />
+              </div>
+              <div>
+                <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Faixa Etária</label>
+                <input placeholder="Ex: Infantil, Adulto, 7-10 anos" value={formData.age_group} onChange={(e) => setFormData({ ...formData, age_group: e.target.value })} className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50" style={inputStyle} />
               </div>
             </div>
 

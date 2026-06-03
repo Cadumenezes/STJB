@@ -43,6 +43,8 @@ export interface DanceClass {
   schedule: string
   max_students: number
   style: string
+  age_group?: string | null
+  display_order?: number | null
   created_at: string
 }
 

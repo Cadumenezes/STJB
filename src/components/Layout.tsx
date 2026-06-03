@@ -975,7 +975,9 @@ export default function Layout() {
 
         {/* Page content */}
         <main className="flex-1 overflow-y-auto p-4 pt-6 sm:p-6 sm:pt-8 md:p-8 md:pt-10 lg:p-12 lg:pt-12 xl:p-16 xl:pt-16" style={{ backgroundColor: 'var(--bg-primary)' }}>
-          <Outlet />
+          <div className="max-w-7xl mx-auto w-full">
+            <Outlet />
+          </div>
         </main>
       </div>
 
