@@ -223,8 +223,14 @@ export default function TrialClasses() {
 
         {filteredTrials.length === 0 && (
           <div className="col-span-full py-20 text-center">
-            <Star size={48} className="mx-auto mb-4 opacity-20" style={{ color: 'var(--text-primary)' }} />
-            <p className="text-lg font-medium" style={{ color: 'var(--text-muted)' }}>Nenhuma aula experimental agendada.</p>
+            <Star size={48} className="mx-auto mb-6 opacity-40 animate-pulse" style={{ color: 'var(--accent-color)' }} />
+            <br />
+            <p 
+              className="font-bold inline-block py-3 px-8 rounded-2xl shadow-xl border border-white/10" 
+              style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)' }}
+            >
+              Nenhuma aula experimental agendada.
+            </p>
           </div>
         )}
       </div>
