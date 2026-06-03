@@ -1180,20 +1180,20 @@ export default function Events() {
                           const limit = p.ticket_quantity || 0
                           
                           // Badge color selection
-                          let badgeBg = 'bg-white/5 text-white/40 border border-white/5'
+                          let badgeBg = 'bg-black/30 text-white/50 border border-white/5'
                           let badgeText = 'Sem convite'
                           if (limit > 0) {
                             if (seatsCount === 0) {
-                              badgeBg = isSelected ? 'bg-black/35 text-rose-300 border border-white/10' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                              badgeBg = 'bg-black/35 text-rose-300 border border-white/10'
                               badgeText = `0 de ${limit} reservadas`
                             } else if (seatsCount < limit) {
-                              badgeBg = isSelected ? 'bg-black/35 text-amber-300 border border-white/10' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                              badgeBg = 'bg-black/35 text-amber-300 border border-white/10'
                               badgeText = `${seatsCount} de ${limit} reservadas`
                             } else if (seatsCount === limit) {
-                              badgeBg = isSelected ? 'bg-black/35 text-emerald-200 border border-white/10' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                              badgeBg = 'bg-black/35 text-emerald-200 border border-white/10'
                               badgeText = `Completo (${limit}/${limit})`
                             } else {
-                              badgeBg = isSelected ? 'bg-black/35 text-rose-200 border border-white/10 animate-pulse' : 'bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse'
+                              badgeBg = 'bg-black/35 text-rose-200 border border-white/10 animate-pulse'
                               badgeText = `Excedido (${seatsCount}/${limit})`
                             }
                           }
@@ -1204,22 +1204,16 @@ export default function Events() {
                               onClick={() => setSelectedParticipantId(p.id)}
                               className={`p-4 rounded-2xl border transition-all cursor-pointer select-none flex flex-col gap-2 ${
                                 isSelected 
-                                  ? 'text-white border-white/20' 
-                                  : 'bg-[var(--bg-card)] border-white/5 hover:border-white/10 hover:bg-white/[0.01]'
+                                  ? 'text-white border-white/30' 
+                                  : 'text-white/80 border-white/10 hover:border-white/20 hover:scale-[1.01]'
                               }`}
-                              style={
-                                isSelected 
-                                  ? {
-                                      backgroundColor: 'var(--accent-color)',
-                                      boxShadow: '0 8px 24px -6px rgba(0, 0, 0, 0.4)'
-                                    } 
-                                  : seatsCount > 0 
-                                  ? {
-                                      backgroundColor: 'color-mix(in srgb, var(--accent-color) 8%, transparent)',
-                                      borderColor: 'color-mix(in srgb, var(--accent-color) 20%, transparent)',
-                                    }
-                                  : {}
-                              }
+                              style={{
+                                backgroundColor: isSelected 
+                                  ? 'var(--accent-color)' 
+                                  : 'color-mix(in srgb, var(--accent-color) 40%, transparent)',
+                                borderColor: isSelected ? 'rgba(255,255,255,0.4)' : 'color-mix(in srgb, var(--accent-color) 20%, transparent)',
+                                boxShadow: isSelected ? '0 8px 24px -6px rgba(0, 0, 0, 0.4)' : 'none',
+                              }}
                             >
                               <div className="flex items-start justify-between gap-2">
                                 <span className="font-bold text-sm text-white truncate">{student.name}</span>
@@ -1231,19 +1225,11 @@ export default function Events() {
                                 <span className={`text-[10px] font-bold uppercase tracking-wider ${isSelected ? 'text-white/70' : 'text-white/30'}`}>Assentos:</span>
                                 {Array.isArray(p.seats) && p.seats.length > 0 ? (
                                   p.seats.map(seat => (
-                                    <span key={seat} className="text-[10px] font-black px-1.5 py-0.5 rounded border" style={
-                                      isSelected 
-                                        ? {
-                                            backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                                            color: '#ffffff',
-                                            borderColor: 'rgba(255, 255, 255, 0.3)'
-                                          }
-                                        : {
-                                            backgroundColor: 'color-mix(in srgb, var(--accent-color) 15%, transparent)',
-                                            color: 'var(--accent-color)',
-                                            borderColor: 'color-mix(in srgb, var(--accent-color) 30%, transparent)'
-                                          }
-                                    }>
+                                    <span key={seat} className="text-[10px] font-black px-1.5 py-0.5 rounded border" style={{
+                                      backgroundColor: 'rgba(255, 255, 255, 0.15)',
+                                      color: '#ffffff',
+                                      borderColor: 'rgba(255, 255, 255, 0.25)'
+                                    }}>
                                       {seat}
                                     </span>
                                   ))
@@ -1403,9 +1389,19 @@ export default function Events() {
                             // Responsive size calculation
                             const displaySeatSize = Math.max(12, Math.min(36, Math.floor((550 - (maxSeatsInRow - 1) * 4) / maxSeatsInRow)))
 
+                            let currentSeatCounter = 1;
+                            const rowStartNumbers = Array.from({ length: rows }).map((_, rIdx) => {
+                              const rowName = getRowLabel(rIdx)
+                              const count = excs[rowName] !== undefined ? excs[rowName] : stdSeats
+                              const startNum = currentSeatCounter
+                              currentSeatCounter += count
+                              return startNum
+                            })
+
                             return Array.from({ length: rows }).map((_, rIdx) => {
                               const rowName = getRowLabel(rIdx)
                               const count = excs[rowName] !== undefined ? excs[rowName] : stdSeats
+                              const rowStartNum = rowStartNumbers[rIdx]
                               return (
                                 <div key={rowName} className="flex items-center gap-2 shrink-0">
                                   {/* Left row label */}
@@ -1417,7 +1413,7 @@ export default function Events() {
                                       <span className="text-[9px] text-rose-400 italic font-semibold">Sem cadeiras nesta fileira</span>
                                     ) : (
                                       Array.from({ length: count }).map((_, sIdx) => {
-                                        const seatNum = sIdx + 1
+                                        const seatNum = rowStartNum + sIdx
                                         const seatLabel = `${rowName}${seatNum}`
                                         
                                         // Find booking status
@@ -1932,48 +1928,60 @@ export default function Events() {
 
                 {/* Seating Grid Wrapper */}
                 <div className="w-full overflow-auto max-h-80 pr-1 py-1 custom-scrollbar flex flex-col gap-2 items-center">
-                  {Array.from({ length: rowsCount }).map((_, rIdx) => {
-                    const rowName = getRowLabel(rIdx)
-                    const count = exceptions[rowName] !== undefined ? exceptions[rowName] : seatsPerRow
-                    return (
-                      <div key={rowName} className="flex items-center gap-1.5 shrink-0">
-                        {/* Left row label */}
-                        <span className="text-[10px] font-black text-gray-500 w-4 text-center shrink-0">{rowName}</span>
-                        
-                        {/* Seats list */}
-                        <div className="flex gap-1 items-center">
-                          {count === 0 ? (
-                            <span className="text-[9px] text-rose-400 italic font-semibold">Sem cadeiras nesta fileira</span>
-                          ) : (
-                            Array.from({ length: count }).map((_, sIdx) => {
-                              const seatNum = sIdx + 1
-                              const seatLabel = `${rowName}${seatNum}`
-                              return (
-                                <div 
-                                  key={seatLabel}
-                                  className="rounded-md flex items-center justify-center font-bold border shrink-0 transition-all select-none hover:scale-110 cursor-help"
-                                  style={{ 
-                                    width: `${seatSize}px`,
-                                    height: `${seatSize}px`,
-                                    fontSize: `${Math.max(6, seatSize * 0.45)}px`,
-                                    backgroundColor: 'rgba(139, 92, 246, 0.15)',
-                                    borderColor: 'rgba(139, 92, 246, 0.3)',
-                                    color: '#c084fc'
-                                  }}
-                                  title={`Poltrona ${seatLabel}`}
-                                >
-                                  {seatSize >= 15 ? seatNum : ''}
-                                </div>
-                              )
-                            })
-                          )}
-                        </div>
+                  {(() => {
+                    let previewSeatCounter = 1;
+                    const previewStartNumbers = Array.from({ length: rowsCount }).map((_, rIdx) => {
+                      const rowName = getRowLabel(rIdx)
+                      const count = exceptions[rowName] !== undefined ? exceptions[rowName] : seatsPerRow
+                      const startNum = previewSeatCounter
+                      previewSeatCounter += count
+                      return startNum
+                    })
 
-                        {/* Right row label */}
-                        <span className="text-[10px] font-black text-gray-500 w-4 text-center shrink-0">{rowName}</span>
-                      </div>
-                    )
-                  })}
+                    return Array.from({ length: rowsCount }).map((_, rIdx) => {
+                      const rowName = getRowLabel(rIdx)
+                      const count = exceptions[rowName] !== undefined ? exceptions[rowName] : seatsPerRow
+                      const rowStartNum = previewStartNumbers[rIdx]
+                      return (
+                        <div key={rowName} className="flex items-center gap-1.5 shrink-0">
+                          {/* Left row label */}
+                          <span className="text-[10px] font-black text-gray-500 w-4 text-center shrink-0">{rowName}</span>
+                          
+                          {/* Seats list */}
+                          <div className="flex gap-1 items-center">
+                            {count === 0 ? (
+                              <span className="text-[9px] text-rose-400 italic font-semibold">Sem cadeiras nesta fileira</span>
+                            ) : (
+                              Array.from({ length: count }).map((_, sIdx) => {
+                                const seatNum = rowStartNum + sIdx
+                                const seatLabel = `${rowName}${seatNum}`
+                                return (
+                                  <div 
+                                    key={seatLabel}
+                                    className="rounded-md flex items-center justify-center font-bold border shrink-0 transition-all select-none hover:scale-110 cursor-help"
+                                    style={{ 
+                                      width: `${seatSize}px`,
+                                      height: `${seatSize}px`,
+                                      fontSize: `${Math.max(6, seatSize * 0.45)}px`,
+                                      backgroundColor: 'rgba(139, 92, 246, 0.15)',
+                                      borderColor: 'rgba(139, 92, 246, 0.3)',
+                                      color: '#c084fc'
+                                    }}
+                                    title={`Poltrona ${seatLabel}`}
+                                  >
+                                    {seatSize >= 15 ? seatNum : ''}
+                                  </div>
+                                )
+                              })
+                            )}
+                          </div>
+
+                          {/* Right row label */}
+                          <span className="text-[10px] font-black text-gray-500 w-4 text-center shrink-0">{rowName}</span>
+                        </div>
+                      )
+                    })
+                  })()}
                 </div>
               </div>
             </div>
