@@ -207,7 +207,7 @@ export default function Classes() {
   }
 
   return (
-    <div className="flex flex-col pb-10">
+    <div className="flex flex-col pb-10 px-4 sm:px-8 lg:px-12">
       {/* Header Section with Dynamic Style */}
       <div 
         className="p-5 sm:p-8 md:p-10 pb-10 sm:pb-16 rounded-2xl border border-white/5 shadow-2xl mb-8 sm:mb-12 relative overflow-hidden"
