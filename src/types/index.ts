@@ -142,6 +142,12 @@ export interface FixedBillMonth {
   created_at: string
 }
 
+export interface SeatingMapConfig {
+  rows_count: number;
+  seats_per_row: number;
+  exceptions: Record<string, number>;
+}
+
 export interface Event {
   id: string
   name: string
@@ -155,6 +161,7 @@ export interface Event {
   has_kit?: boolean
   kit_price?: number
   photo_urls?: string[] | null
+  seating_map?: SeatingMapConfig | null
   created_at: string
 }
 

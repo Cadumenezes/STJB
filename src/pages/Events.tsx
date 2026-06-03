@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Plus, Edit, Trash2, Calendar, MapPin, DollarSign, Users, Download, PlusCircle, CheckCircle, CreditCard, Box, Search, Printer } from 'lucide-react'
+import { Plus, Edit, Trash2, Calendar, MapPin, DollarSign, Users, Download, PlusCircle, CheckCircle, CreditCard, Box, Search, Printer, Map } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { Event, EventParticipant, Student, Installment, Profile } from '../types'
 import Modal from '../components/Modal'
@@ -17,6 +17,76 @@ export default function Events() {
   const [searchQuery, setSearchQuery] = useState('')
   const [profile, setProfile] = useState<Profile | null>(null)
   const [reportSchoolData, setReportSchoolData] = useState<any | null>(null)
+
+  // Estados e Funções para Mapa de Teatro
+  const [showMapModal, setShowMapModal] = useState(false)
+  const [rowsCount, setRowsCount] = useState(10)
+  const [seatsPerRow, setSeatsPerRow] = useState(12)
+  const [exceptions, setExceptions] = useState<Record<string, number>>({})
+
+  function getRowLabel(index: number): string {
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    if (index < alphabet.length) {
+      return alphabet[index]
+    }
+    return `Fileira ${index + 1}`
+  }
+
+  function openSeatingMap() {
+    const activeEvent = events.find(e => e.id === activeEventId)
+    if (!activeEvent) return
+    
+    let config = activeEvent.seating_map
+    if (!config) {
+      const localData = localStorage.getItem(`danceflow_event_seating_map_${activeEvent.id}`)
+      if (localData) {
+        try {
+          config = JSON.parse(localData)
+        } catch (e) {
+          console.error(e)
+        }
+      }
+    }
+    
+    if (config) {
+      setRowsCount(config.rows_count || 10)
+      setSeatsPerRow(config.seats_per_row || 12)
+      setExceptions(config.exceptions || {})
+    } else {
+      setRowsCount(10)
+      setSeatsPerRow(12)
+      setExceptions({})
+    }
+    setShowMapModal(true)
+  }
+
+  async function handleSaveSeatingMap(e: React.FormEvent) {
+    e.preventDefault()
+    const activeEvent = events.find(e => e.id === activeEventId)
+    if (!activeEvent) return
+
+    const config = {
+      rows_count: Number(rowsCount),
+      seats_per_row: Number(seatsPerRow),
+      exceptions: exceptions
+    }
+
+    const { error } = await supabase
+      .from('events')
+      .update({ seating_map: config })
+      .eq('id', activeEvent.id)
+
+    if (error) {
+      console.warn('Erro ao salvar no banco. Salvando no localStorage...', error)
+      localStorage.setItem(`danceflow_event_seating_map_${activeEvent.id}`, JSON.stringify(config))
+      alert('Configuração do mapa salva localmente com sucesso! (Para persistir no banco de dados para todos os administradores, execute a migração SQL).')
+    } else {
+      alert('Mapa de Teatro salvo com sucesso!')
+    }
+
+    setEvents(events.map(ev => ev.id === activeEvent.id ? { ...ev, seating_map: config } : ev))
+    setShowMapModal(false)
+  }
 
   function getDynamicFontSize(val: string | number) {
     const len = val.toString().length
@@ -693,18 +763,21 @@ export default function Events() {
                   </div>
                 </div>
                  {profile?.role !== 'secretary' && (
-                   <div className="flex gap-2">
-                     <button onClick={handlePrintReport} className="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm transition-all flex items-center gap-2 shadow-lg shadow-emerald-600/20 hover:scale-[1.03] active:scale-95 cursor-pointer">
-                       <Printer size={16} /> Imprimir Relatório
-                     </button>
-                     <button onClick={() => openEventEdit(activeEvent)} className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all flex items-center gap-2 shadow-lg shadow-blue-600/20 hover:scale-[1.03] active:scale-95 cursor-pointer">
-                       <Edit size={16} /> Detalhes do Evento
-                     </button>
-                     <button onClick={() => handleDeleteEvent(activeEvent.id)} className="px-6 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm transition-all flex items-center gap-2 shadow-lg shadow-rose-600/20 hover:scale-[1.03] active:scale-95 cursor-pointer">
-                       <Trash2 size={16} /> Excluir Evento
-                     </button>
-                   </div>
-                 )}
+                    <div className="flex gap-2">
+                      <button onClick={handlePrintReport} className="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm transition-all flex items-center gap-2 shadow-lg shadow-emerald-600/20 hover:scale-[1.03] active:scale-95 cursor-pointer">
+                        <Printer size={16} /> Imprimir Relatório
+                      </button>
+                      <button onClick={openSeatingMap} className="px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm transition-all flex items-center gap-2 shadow-lg shadow-purple-600/20 hover:scale-[1.03] active:scale-95 cursor-pointer">
+                        <Map size={16} /> Mapa de Teatro
+                      </button>
+                      <button onClick={() => openEventEdit(activeEvent)} className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all flex items-center gap-2 shadow-lg shadow-blue-600/20 hover:scale-[1.03] active:scale-95 cursor-pointer">
+                        <Edit size={16} /> Detalhes do Evento
+                      </button>
+                      <button onClick={() => handleDeleteEvent(activeEvent.id)} className="px-6 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm transition-all flex items-center gap-2 shadow-lg shadow-rose-600/20 hover:scale-[1.03] active:scale-95 cursor-pointer">
+                        <Trash2 size={16} /> Excluir Evento
+                      </button>
+                    </div>
+                  )}
               </div>
 
               {/* Spreadsheet Table */}
@@ -1212,6 +1285,195 @@ export default function Events() {
           </div>
         </div>
       )}
+
+      {/* Modal Mapa de Teatro */}
+      <Modal isOpen={showMapModal} onClose={() => setShowMapModal(false)} title="Configurar Mapa de Teatro">
+        <form onSubmit={handleSaveSeatingMap} className="space-y-6 max-h-[85vh] overflow-y-auto pr-2 custom-scrollbar">
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* LADO ESQUERDO: CONTROLES */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-black uppercase text-purple-400 border-b border-white/5 pb-2">Parâmetros do Mapa</h3>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Fileiras (Total) *</label>
+                  <input 
+                    required 
+                    type="number" 
+                    min="1" 
+                    max="50" 
+                    value={rowsCount} 
+                    onChange={e => {
+                      const val = Math.max(1, Math.min(50, parseInt(e.target.value) || 1))
+                      setRowsCount(val)
+                    }} 
+                    className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none" 
+                    style={inputStyle} 
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Cadeiras por Fileira *</label>
+                  <input 
+                    required 
+                    type="number" 
+                    min="1" 
+                    max="100" 
+                    value={seatsPerRow} 
+                    onChange={e => {
+                      const val = Math.max(1, Math.min(100, parseInt(e.target.value) || 1))
+                      setSeatsPerRow(val)
+                    }} 
+                    className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none" 
+                    style={inputStyle} 
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <h4 className="text-xs font-bold uppercase text-gray-400">Exceções de Fileira</h4>
+                  {Object.keys(exceptions).length > 0 && (
+                    <button 
+                      type="button" 
+                      onClick={() => setExceptions({})} 
+                      className="text-[10px] text-rose-400 hover:text-rose-300 font-bold uppercase tracking-widest cursor-pointer"
+                    >
+                      Limpar Tudo
+                    </button>
+                  )}
+                </div>
+                <p className="text-[11px] text-gray-500 leading-relaxed">
+                  Caso alguma fileira tenha mais ou menos cadeiras que o padrão ({seatsPerRow}), altere seu valor na lista abaixo:
+                </p>
+
+                {/* Exceções rolagem */}
+                <div className="max-h-56 overflow-y-auto pr-1 space-y-2 border border-white/5 p-3 rounded-2xl bg-black/10 custom-scrollbar">
+                  {Array.from({ length: rowsCount }).map((_, idx) => {
+                    const rowName = getRowLabel(idx)
+                    const val = exceptions[rowName] !== undefined ? exceptions[rowName] : seatsPerRow
+                    return (
+                      <div key={rowName} className="flex items-center justify-between py-1.5 px-3 rounded-xl bg-white/5 border border-white/5 hover:border-purple-500/20 transition-all">
+                        <span className="text-xs font-bold">Fileira {rowName}</span>
+                        <div className="flex items-center gap-2">
+                          <input 
+                            type="number" 
+                            min="0" 
+                            max="120"
+                            value={val}
+                            onChange={(e) => {
+                              const v = Math.max(0, Math.min(120, parseInt(e.target.value) || 0))
+                              if (v === seatsPerRow) {
+                                const newExc = { ...exceptions }
+                                delete newExc[rowName]
+                                setExceptions(newExc)
+                              } else {
+                                setExceptions({
+                                  ...exceptions,
+                                  [rowName]: v
+                                })
+                              }
+                            }}
+                            className="w-16 px-2.5 py-1 rounded-xl bg-black/40 border border-white/10 text-center text-xs text-white"
+                          />
+                          {exceptions[rowName] !== undefined && (
+                            <button 
+                              type="button" 
+                              onClick={() => {
+                                const newExc = { ...exceptions }
+                                delete newExc[rowName]
+                                setExceptions(newExc)
+                              }}
+                              className="text-[10px] text-rose-400 hover:text-rose-300 font-bold ml-1 cursor-pointer"
+                            >
+                              Reset
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* LADO DIREITO: INTERACTIVE VISUALIZER */}
+            <div className="space-y-4 flex flex-col h-full">
+              <h3 className="text-sm font-black uppercase text-purple-400 border-b border-white/5 pb-2">Visualização Prévia</h3>
+              
+              {/* Palco glow layout */}
+              <div className="flex-1 flex flex-col items-center justify-center p-6 rounded-3xl border border-white/5 relative overflow-hidden" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                {/* Stage */}
+                <div 
+                  className="w-full max-w-xs py-2 mb-8 rounded-b-xl border-b-2 text-center text-[10px] font-black uppercase tracking-widest text-white/70 shadow-lg"
+                  style={{ 
+                    background: 'linear-gradient(to bottom, rgba(139,92,246,0.1), rgba(139,92,246,0.25))',
+                    borderBottomColor: 'var(--accent-color)',
+                    boxShadow: '0 5px 15px -5px rgba(139,92,246,0.3)'
+                  }}
+                >
+                  PALCO / TELA
+                </div>
+
+                {/* Seating Grid Wrapper */}
+                <div className="w-full overflow-auto max-h-80 pr-1 py-1 custom-scrollbar flex flex-col gap-2 items-center">
+                  {Array.from({ length: rowsCount }).map((_, rIdx) => {
+                    const rowName = getRowLabel(rIdx)
+                    const count = exceptions[rowName] !== undefined ? exceptions[rowName] : seatsPerRow
+                    return (
+                      <div key={rowName} className="flex items-center gap-1.5 shrink-0">
+                        {/* Left row label */}
+                        <span className="text-[10px] font-black text-gray-500 w-4 text-center shrink-0">{rowName}</span>
+                        
+                        {/* Seats list */}
+                        <div className="flex gap-1 items-center">
+                          {count === 0 ? (
+                            <span className="text-[9px] text-rose-400 italic font-semibold">Sem cadeiras nesta fileira</span>
+                          ) : (
+                            Array.from({ length: count }).map((_, sIdx) => {
+                              const seatNum = sIdx + 1
+                              const seatLabel = `${rowName}${seatNum}`
+                              return (
+                                <div 
+                                  key={seatLabel}
+                                  className="h-5 w-5 rounded-md flex items-center justify-center text-[7px] font-bold border shrink-0 transition-all select-none hover:scale-110 cursor-help"
+                                  style={{ 
+                                    backgroundColor: 'rgba(139, 92, 246, 0.15)',
+                                    borderColor: 'rgba(139, 92, 246, 0.3)',
+                                    color: '#c084fc'
+                                  }}
+                                  title={`Poltrona ${seatLabel}`}
+                                >
+                                  {seatNum}
+                                </div>
+                              )
+                            })
+                          )}
+                        </div>
+
+                        {/* Right row label */}
+                        <span className="text-[10px] font-black text-gray-500 w-4 text-center shrink-0">{rowName}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+            <button type="button" onClick={() => setShowMapModal(false)} className="rounded-2xl px-6 py-3 text-sm font-bold transition-all hover:bg-white/5" style={{ color: 'var(--text-secondary)' }}>Cancelar</button>
+            <button 
+              type="submit" 
+              className="rounded-2xl px-8 py-3 text-sm font-bold text-white transition-all hover:scale-105 shadow-lg shadow-purple-500/20" 
+              style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}
+            >
+              Salvar Mapa de Teatro
+            </button>
+          </div>
+
+        </form>
+      </Modal>
 
     </div>
   )

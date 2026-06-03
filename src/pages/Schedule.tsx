@@ -519,7 +519,7 @@ export default function Schedule() {
                 paddingRight: 'clamp(16px, 4vw, 40px)'
               }}
             >
-              Agenda Escolar
+              Agenda escolar
             </h1>
             <br />
             <p 
