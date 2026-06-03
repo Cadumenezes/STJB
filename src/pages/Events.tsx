@@ -594,7 +594,7 @@ export default function Events() {
             </p>
           </div>
           <div className="flex gap-4">
-            {activeEvent && profile?.role !== 'secretary' && (
+            {activeEvent && (
               <button
                 type="button"
                 onClick={openSeatingMap}
@@ -1316,19 +1316,17 @@ export default function Events() {
                         <p className="text-xs text-[var(--text-muted)] mb-6 max-w-sm">
                           Para começar a reservar assentos, configure a quantidade de fileiras e poltronas deste evento.
                         </p>
-                        {profile?.role !== 'secretary' && (
-                          <button
-                            type="button"
-                            onClick={openSeatingMap}
-                            className="px-6 py-3 rounded-xl text-white font-bold text-xs transition-all shadow-lg hover:scale-105 cursor-pointer"
-                            style={{
-                              background: 'linear-gradient(135deg, var(--accent-color), #000)',
-                              boxShadow: '0 4px 12px color-mix(in srgb, var(--accent-color) 20%, transparent)'
-                            }}
-                          >
-                            Configurar Agora
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={openSeatingMap}
+                          className="px-6 py-3 rounded-xl text-white font-bold text-xs transition-all shadow-lg hover:scale-105 cursor-pointer"
+                          style={{
+                            background: 'linear-gradient(135deg, var(--accent-color), #000)',
+                            boxShadow: '0 4px 12px color-mix(in srgb, var(--accent-color) 20%, transparent)'
+                          }}
+                        >
+                          Configurar Agora
+                        </button>
                       </div>
                     ) : (
                       <div 
