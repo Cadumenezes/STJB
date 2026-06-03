@@ -39,6 +39,11 @@ export default function Auth() {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
       } else {
+        const cleanPhone = phone.replace(/\D/g, '')
+        if (cleanPhone.length < 10 || cleanPhone.length > 11) {
+          throw new Error('Por favor, insira um número de telefone com DDD válido (10 ou 11 dígitos).')
+        }
+
         const { error } = await supabase.auth.signUp({
           email,
           password,
