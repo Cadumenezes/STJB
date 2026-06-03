@@ -24,6 +24,14 @@ export default function Events() {
   const [seatsPerRow, setSeatsPerRow] = useState(12)
   const [exceptions, setExceptions] = useState<Record<string, number>>({})
 
+  // Cálculo do tamanho dinâmico das cadeiras para a visualização prévia
+  const maxSeats = Math.max(
+    seatsPerRow,
+    ...Object.values(exceptions),
+    1
+  )
+  const seatSize = Math.max(8, Math.min(28, Math.floor((480 - (maxSeats - 1) * 3) / maxSeats)))
+
   function getRowLabel(index: number): string {
     const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
     if (index < alphabet.length) {
@@ -1287,7 +1295,7 @@ export default function Events() {
       )}
 
       {/* Modal Mapa de Teatro */}
-      <Modal isOpen={showMapModal} onClose={() => setShowMapModal(false)} title="Configurar Mapa de Teatro">
+      <Modal isOpen={showMapModal} onClose={() => setShowMapModal(false)} title="Configurar Mapa de Teatro" size="2xl">
         <form onSubmit={handleSaveSeatingMap} className="space-y-6 max-h-[85vh] overflow-y-auto pr-2 custom-scrollbar">
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1436,15 +1444,18 @@ export default function Events() {
                               return (
                                 <div 
                                   key={seatLabel}
-                                  className="h-5 w-5 rounded-md flex items-center justify-center text-[7px] font-bold border shrink-0 transition-all select-none hover:scale-110 cursor-help"
+                                  className="rounded-md flex items-center justify-center font-bold border shrink-0 transition-all select-none hover:scale-110 cursor-help"
                                   style={{ 
+                                    width: `${seatSize}px`,
+                                    height: `${seatSize}px`,
+                                    fontSize: `${Math.max(6, seatSize * 0.45)}px`,
                                     backgroundColor: 'rgba(139, 92, 246, 0.15)',
                                     borderColor: 'rgba(139, 92, 246, 0.3)',
                                     color: '#c084fc'
                                   }}
                                   title={`Poltrona ${seatLabel}`}
                                 >
-                                  {seatNum}
+                                  {seatSize >= 15 ? seatNum : ''}
                                 </div>
                               )
                             })
