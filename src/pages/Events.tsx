@@ -802,24 +802,36 @@ export default function Events() {
               )}
 
               {/* Sub-tabs Selection */}
-              <div className="flex border-b border-white/10 mb-6 gap-6">
+              <div className="flex gap-4 p-2 bg-black/40 rounded-2xl border border-white/5 mb-8 w-fit">
                 <button
+                  type="button"
                   onClick={() => setActiveSubTab('spreadsheet')}
-                  className={`pb-4 text-xs font-bold uppercase tracking-widest transition-all border-b-2 cursor-pointer ${
+                  className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer ${
                     activeSubTab === 'spreadsheet'
-                      ? 'border-purple-500 text-purple-400 font-black'
-                      : 'border-transparent text-[var(--text-muted)] hover:text-white'
+                      ? 'text-white shadow-lg'
+                      : 'text-[var(--text-muted)] hover:text-white'
                   }`}
+                  style={{
+                    background: activeSubTab === 'spreadsheet' ? 'linear-gradient(135deg, var(--accent-color), #000)' : 'transparent',
+                    border: activeSubTab === 'spreadsheet' ? '1px solid rgba(255,255,255,0.1)' : '1px solid transparent',
+                    boxShadow: activeSubTab === 'spreadsheet' ? '0 4px 12px rgba(139, 92, 246, 0.2)' : 'none'
+                  }}
                 >
                   Planilha de Vendas
                 </button>
                 <button
+                  type="button"
                   onClick={() => setActiveSubTab('seating_map')}
-                  className={`pb-4 text-xs font-bold uppercase tracking-widest transition-all border-b-2 cursor-pointer ${
+                  className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer ${
                     activeSubTab === 'seating_map'
-                      ? 'border-purple-500 text-purple-400 font-black'
-                      : 'border-transparent text-[var(--text-muted)] hover:text-white'
+                      ? 'text-white shadow-lg'
+                      : 'text-[var(--text-muted)] hover:text-white'
                   }`}
+                  style={{
+                    background: activeSubTab === 'seating_map' ? 'linear-gradient(135deg, var(--accent-color), #000)' : 'transparent',
+                    border: activeSubTab === 'seating_map' ? '1px solid rgba(255,255,255,0.1)' : '1px solid transparent',
+                    boxShadow: activeSubTab === 'seating_map' ? '0 4px 12px rgba(139, 92, 246, 0.2)' : 'none'
+                  }}
                 >
                   Mapa de Assentos
                 </button>
@@ -1067,7 +1079,7 @@ export default function Events() {
                                       className={`w-16 text-center bg-transparent border border-white/10 rounded-lg px-2 py-1 font-black transition-all ${p.ticket_quantity > 0 ? 'text-purple-400' : 'text-white/30'}`}
                                     />
                                     {Array.isArray(p.seats) && p.seats.length > 0 && (
-                                      <span className="text-[9px] font-bold text-purple-400/80 max-w-[80px] truncate" title={p.seats.join(', ')}>
+                                      <span className="text-[9px] font-bold max-w-[80px] truncate" style={{ color: 'var(--accent-color)' }} title={p.seats.join(', ')}>
                                         {p.seats.join(', ')}
                                       </span>
                                     )}
@@ -1119,7 +1131,9 @@ export default function Events() {
                   {/* LADO ESQUERDO: LISTA DE ALUNOS E ASSENTOS */}
                   <div className="lg:col-span-4 space-y-4 flex flex-col h-[600px]">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-sm font-black uppercase text-purple-400 tracking-widest">Alunos & Reservas</h3>
+                      <h3 className="text-sm font-black uppercase tracking-widest border-l-4 pl-3" style={{ borderLeftColor: 'var(--accent-color)', color: 'var(--accent-color)' }}>
+                        Alunos & Reservas
+                      </h3>
                     </div>
                     
                     {/* Search Bar */}
@@ -1192,9 +1206,14 @@ export default function Events() {
                               onClick={() => setSelectedParticipantId(p.id)}
                               className={`p-4 rounded-2xl border transition-all cursor-pointer select-none flex flex-col gap-2 ${
                                 isSelected 
-                                  ? 'bg-purple-900/20 border-purple-500 shadow-md shadow-purple-500/10' 
+                                  ? 'text-white' 
                                   : 'bg-[var(--bg-card)] border-white/5 hover:border-white/10 hover:bg-white/[0.01]'
                               }`}
+                              style={isSelected ? {
+                                backgroundColor: 'color-mix(in srgb, var(--accent-color) 15%, transparent)',
+                                borderColor: 'var(--accent-color)',
+                                boxShadow: '0 4px 12px color-mix(in srgb, var(--accent-color) 20%, transparent)'
+                              } : {}}
                             >
                               <div className="flex items-start justify-between gap-2">
                                 <span className="font-bold text-sm text-white truncate">{student.name}</span>
@@ -1206,7 +1225,11 @@ export default function Events() {
                                 <span className="text-[10px] text-white/30 font-bold uppercase tracking-wider">Assentos:</span>
                                 {Array.isArray(p.seats) && p.seats.length > 0 ? (
                                   p.seats.map(seat => (
-                                    <span key={seat} className="text-[10px] font-black px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                                    <span key={seat} className="text-[10px] font-black px-1.5 py-0.5 rounded border" style={{
+                                      backgroundColor: 'color-mix(in srgb, var(--accent-color) 15%, transparent)',
+                                      color: 'var(--accent-color)',
+                                      borderColor: 'color-mix(in srgb, var(--accent-color) 30%, transparent)'
+                                    }}>
                                       {seat}
                                     </span>
                                   ))
@@ -1225,7 +1248,9 @@ export default function Events() {
                   <div className="lg:col-span-8 space-y-4">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                       <div>
-                        <h3 className="text-sm font-black uppercase text-purple-400 tracking-widest">Mapa Seletor de Poltronas</h3>
+                        <h3 className="text-sm font-black uppercase tracking-widest border-l-4 pl-3" style={{ borderLeftColor: 'var(--accent-color)', color: 'var(--accent-color)' }}>
+                          Mapa Seletor de Poltronas
+                        </h3>
                         <p className="text-xs text-[var(--text-muted)] mt-1">
                           {selectedParticipantId 
                             ? `Selecionado: ${students.find(s => s.id === participants.find(p => p.id === selectedParticipantId)?.student_id)?.name}`
@@ -1245,7 +1270,11 @@ export default function Events() {
                           <button
                             type="button"
                             onClick={openSeatingMap}
-                            className="px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs transition-all shadow-lg shadow-purple-600/20 hover:scale-105"
+                            className="px-6 py-3 rounded-xl text-white font-bold text-xs transition-all shadow-lg hover:scale-105 cursor-pointer"
+                            style={{
+                              background: 'linear-gradient(135deg, var(--accent-color), #000)',
+                              boxShadow: '0 4px 12px color-mix(in srgb, var(--accent-color) 20%, transparent)'
+                            }}
                           >
                             Configurar Agora
                           </button>
@@ -1263,11 +1292,17 @@ export default function Events() {
                             <span>Livre</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="w-3.5 h-3.5 rounded border border-purple-500/40" style={{ backgroundColor: 'rgba(139, 92, 246, 0.2)' }} />
+                            <span className="w-3.5 h-3.5 rounded border" style={{ 
+                              backgroundColor: 'color-mix(in srgb, var(--accent-color) 20%, transparent)',
+                              borderColor: 'color-mix(in srgb, var(--accent-color) 40%, transparent)'
+                            }} />
                             <span>Reservado</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="w-3.5 h-3.5 rounded border border-white shadow-[0_0_8px_rgba(168,85,247,0.5)]" style={{ backgroundColor: 'var(--accent-color)' }} />
+                            <span className="w-3.5 h-3.5 rounded border border-white" style={{ 
+                              backgroundColor: 'var(--accent-color)',
+                              boxShadow: '0 0 8px var(--accent-color)'
+                            }} />
                             <span>Do Aluno Selecionado</span>
                           </div>
                         </div>
@@ -1276,9 +1311,9 @@ export default function Events() {
                         <div 
                           className="w-full max-w-md py-3 mb-10 rounded-b-2xl border-b-2 text-center text-xs font-black uppercase tracking-widest text-white/70 shadow-lg shrink-0 select-none"
                           style={{ 
-                            background: 'linear-gradient(to bottom, rgba(139,92,246,0.08), rgba(139,92,246,0.2))',
+                            background: 'linear-gradient(to bottom, color-mix(in srgb, var(--accent-color) 8%, transparent), color-mix(in srgb, var(--accent-color) 20%, transparent))',
                             borderBottomColor: 'var(--accent-color)',
-                            boxShadow: '0 8px 20px -8px rgba(139,92,246,0.3)'
+                            boxShadow: '0 8px 20px -8px color-mix(in srgb, var(--accent-color) 30%, transparent)'
                           }}
                         >
                           PALCO / TELA
@@ -1334,9 +1369,14 @@ export default function Events() {
                                           const occStudent = students.find(s => s.id === occupiedBy.student_id)
                                           tooltipText += ` - Reservado para: ${occStudent?.name || 'Desconhecido'}`
                                           if (isSelected) {
-                                            seatClass += "bg-purple-500 border-white text-white shadow-[0_0_12px_rgba(168,85,247,0.6)] hover:scale-110"
+                                            seatClass += "text-white border-white hover:scale-110"
+                                            style.backgroundColor = 'var(--accent-color)'
+                                            style.boxShadow = '0 0 12px var(--accent-color)'
                                           } else {
-                                            seatClass += "bg-purple-600/20 border-purple-500/40 text-purple-300 hover:bg-purple-600/30"
+                                            seatClass += "hover:opacity-90"
+                                            style.backgroundColor = 'color-mix(in srgb, var(--accent-color) 20%, transparent)'
+                                            style.borderColor = 'color-mix(in srgb, var(--accent-color) 40%, transparent)'
+                                            style.color = 'var(--accent-color)'
                                           }
                                         } else {
                                           tooltipText += " - Livre"
