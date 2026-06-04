@@ -64,6 +64,76 @@ export default function Students() {
     photo_url: '',
   })
 
+  function dbDateToUi(dateStr: string | null | undefined): string {
+    if (!dateStr) return ''
+    const parts = dateStr.split('-')
+    if (parts.length !== 3) return dateStr
+    const [y, m, d] = parts
+    return `${d}/${m}/${y}`
+  }
+
+  function parseUIDateToDb(dateStr: string): string | null {
+    if (!dateStr) return null
+    const clean = dateStr.trim()
+    const parts = clean.split('/')
+    if (parts.length !== 3) return null
+    
+    let [dayStr, monthStr, yearStr] = parts
+    let day = parseInt(dayStr, 10)
+    let month = parseInt(monthStr, 10)
+    let year = parseInt(yearStr, 10)
+    
+    if (isNaN(day) || isNaN(month) || isNaN(year)) return null
+    
+    if (yearStr.length === 2) {
+      const currentYearLastTwo = new Date().getFullYear() % 100
+      if (year <= currentYearLastTwo) {
+        year += 2000
+      } else {
+        year += 1900
+      }
+    }
+    
+    if (month < 1 || month > 12) return null
+    if (day < 1 || day > 31) return null
+    
+    return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`
+  }
+
+  function handleBirthDateChange(val: string) {
+    let clean = val.replace(/\D/g, '')
+    if (clean.length > 8) clean = clean.slice(0, 8)
+    
+    let formatted = ''
+    if (clean.length > 0) {
+      formatted += clean.slice(0, 2)
+    }
+    if (clean.length > 2) {
+      formatted += '/' + clean.slice(2, 4)
+    }
+    if (clean.length > 4) {
+      formatted += '/' + clean.slice(4, 8)
+    }
+    setFormData(prev => ({ ...prev, birth_date: formatted }))
+  }
+
+  function handleBirthDateBlur() {
+    const val = formData.birth_date
+    if (!val) return
+    const parts = val.split('/')
+    if (parts.length === 3) {
+      let [d, m, y] = parts
+      if (y.length === 2) {
+        const year = parseInt(y, 10)
+        const currentYearLastTwo = new Date().getFullYear() % 100
+        const fullYear = year <= currentYearLastTwo ? 2000 + year : 1900 + year
+        setFormData(prev => ({ ...prev, birth_date: `${d.padStart(2, '0')}/${m.padStart(2, '0')}/${fullYear}` }))
+      } else if (y.length === 4) {
+        setFormData(prev => ({ ...prev, birth_date: `${d.padStart(2, '0')}/${m.padStart(2, '0')}/${y}` }))
+      }
+    }
+  }
+
   useEffect(() => {
     const init = async () => {
       await checkAndGenerateMonthlyPayments()
@@ -205,9 +275,14 @@ export default function Students() {
 
   async function handleAddStudent(e: React.FormEvent) {
     e.preventDefault()
+    const dbBirthDate = parseUIDateToDb(formData.birth_date)
+    if (formData.birth_date && !dbBirthDate) {
+      alert('Por favor, insira uma data de nascimento válida no formato DD/MM/AAAA.')
+      return
+    }
     const payload = {
       ...formData,
-      birth_date: formData.birth_date || null,
+      birth_date: dbBirthDate,
       monthly_fee: parseFloat(formData.monthly_fee) || 0,
       discount_monthly_fee: parseFloat(formData.discount_monthly_fee) || 0,
       enrollment_fee: parseFloat(formData.enrollment_fee) || 0,
@@ -228,9 +303,14 @@ export default function Students() {
   async function handleEditStudent(e: React.FormEvent) {
     e.preventDefault()
     if (!selectedStudent) return
+    const dbBirthDate = parseUIDateToDb(formData.birth_date)
+    if (formData.birth_date && !dbBirthDate) {
+      alert('Por favor, insira uma data de nascimento válida no formato DD/MM/AAAA.')
+      return
+    }
     const payload = {
       ...formData,
-      birth_date: formData.birth_date || null,
+      birth_date: dbBirthDate,
       monthly_fee: parseFloat(formData.monthly_fee) || 0,
       discount_monthly_fee: parseFloat(formData.discount_monthly_fee) || 0,
       enrollment_fee: parseFloat(formData.enrollment_fee) || 0,
@@ -338,7 +418,7 @@ export default function Students() {
       name: student.name,
       email: student.email,
       phone: student.phone,
-      birth_date: student.birth_date || '',
+      birth_date: dbDateToUi(student.birth_date),
       cpf: student.cpf || '',
       address: student.address || '',
       guardian_name: student.guardian_name || '',
@@ -718,7 +798,11 @@ export default function Students() {
             <label className="text-sm font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>Data de Nascimento *</label>
             <input
               required
-              type="date" value={formData.birth_date} onChange={(e) => setFormData({ ...formData, birth_date: e.target.value })}
+              type="text"
+              placeholder="DD/MM/AAAA"
+              value={formData.birth_date}
+              onChange={(e) => handleBirthDateChange(e.target.value)}
+              onBlur={handleBirthDateBlur}
               className="w-full rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
               style={inputStyle}
             />
