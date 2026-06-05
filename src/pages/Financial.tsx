@@ -25,6 +25,13 @@ export default function Financial() {
   const [entries, setEntries] = useState<FinancialEntry[]>([])
   const [fixedBills, setFixedBills] = useState<FixedBill[]>([])
   const [payrollData, setPayrollData] = useState<any[]>([])
+  const [payrollSubTab, setPayrollSubTab] = useState<'summary' | 'annual'>('summary')
+  const [selectedInstructorId, setSelectedInstructorId] = useState<string>('')
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
+  const [viewMode, setViewMode] = useState<'projected' | 'realized'>('projected')
+  const [annualAttendance, setAnnualAttendance] = useState<any[]>([])
+  const [instructorClasses, setInstructorClasses] = useState<any[]>([])
+  const [instructors, setInstructors] = useState<any[]>([])
   const [events, setEvents] = useState<any[]>([])
   const [eventParticipants, setEventParticipants] = useState<any[]>([])
   
@@ -67,6 +74,36 @@ export default function Financial() {
     loadData()
   }, [activeTab])
 
+  useEffect(() => {
+    if (selectedInstructorId) {
+      loadAnnualData(selectedInstructorId, selectedYear)
+    }
+  }, [selectedInstructorId, selectedYear])
+
+  async function loadAnnualData(instructorId: string, year: number) {
+    try {
+      const { data: attData } = await supabase
+        .from('attendance')
+        .select('*')
+        .eq('instructor_id', instructorId)
+        .eq('type', 'instructor')
+        .eq('status', 'present')
+        .gte('date', `${year}-01-01`)
+        .lte('date', `${year}-12-31`)
+      
+      setAnnualAttendance(attData || [])
+
+      const { data: classesData } = await supabase
+        .from('dance_classes')
+        .select('*')
+        .eq('instructor_id', instructorId)
+      
+      setInstructorClasses(classesData || [])
+    } catch (error) {
+      console.error('Erro ao carregar dados anuais do professor:', error)
+    }
+  }
+
   async function loadData() {
     setLoading(true)
     try {
@@ -97,19 +134,24 @@ export default function Financial() {
       const { data: allStudents } = await supabase.from('students').select('*')
       setStudents(allStudents || [])
 
+      const { data: membersList } = await supabase.from('team_members').select('*').or('role.eq.instructor,role.eq.Professor').eq('status', 'active')
+      setInstructors(membersList || [])
+      if (membersList && membersList.length > 0) {
+        setSelectedInstructorId(prev => prev || membersList[0].id)
+      }
+
       if (activeTab === 'events') {
         const { data: eventsData } = await supabase.from('events').select('*').order('date', { ascending: true })
         setEvents(eventsData || [])
         const { data: participantsData } = await supabase.from('event_participants').select('*')
         setEventParticipants(participantsData || [])
       } else if (activeTab === 'payroll') {
-        const { data: members } = await supabase.from('team_members').select('*').or('role.eq.instructor,role.eq.Professor').eq('status', 'active')
         const { data: att } = await supabase.from('attendance').select('*').eq('type', 'instructor').eq('status', 'present')
         
         const currentMonth = new Date().toISOString().slice(0, 7)
         const monthAtt = (att || []).filter(a => a.date.startsWith(currentMonth))
 
-        const calculated = (members || []).map(m => {
+        const calculated = (membersList || []).map(m => {
           const teacherAtt = monthAtt.filter(a => a.instructor_id === m.id)
           const classesCount = teacherAtt.length
           const uniqueDays = new Set(teacherAtt.map(a => a.date)).size
@@ -141,13 +183,12 @@ export default function Financial() {
         setFixedBillMonths(monthsData || [])
 
         // Fetch payroll data for Expense Forecast calculation
-        const { data: members } = await supabase.from('team_members').select('*').or('role.eq.instructor,role.eq.Professor').eq('status', 'active')
         const { data: att } = await supabase.from('attendance').select('*').eq('type', 'instructor').eq('status', 'present')
         
         const currentMonth = new Date().toISOString().slice(0, 7)
         const monthAtt = (att || []).filter(a => a.date.startsWith(currentMonth))
 
-        const calculated = (members || []).map(m => {
+        const calculated = (membersList || []).map(m => {
           const teacherAtt = monthAtt.filter(a => a.instructor_id === m.id)
           const classesCount = teacherAtt.length
           const uniqueDays = new Set(teacherAtt.map(a => a.date)).size
@@ -837,6 +878,103 @@ export default function Financial() {
     }
   }
 
+  // Calculations for Annual Report
+  const selectedInstructor = instructors.find(i => i.id === selectedInstructorId)
+  const hourlyRate = selectedInstructor?.hourly_rate || 0
+  const dailyTransport = selectedInstructor?.daily_transport || 0
+  
+  // Weekdays tracking for schedule summary and calendar calculation
+  const weekdays = ['segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado', 'domingo']
+  const weeklyClassCounts: Record<string, number> = {}
+  weekdays.forEach(d => { weeklyClassCounts[d] = 0 })
+  
+  instructorClasses.forEach(c => {
+    const sched = (c.schedule || '').toLowerCase()
+    weekdays.forEach(day => {
+      if (sched.includes(day)) {
+        weeklyClassCounts[day] += 1
+      }
+    })
+  })
+
+  const scheduleSummary = weekdays
+    .filter(day => weeklyClassCounts[day] > 0)
+    .map(day => `${day} ${weeklyClassCounts[day]} ${weeklyClassCounts[day] === 1 ? 'aula' : 'aulas'}`)
+    .join(' | ') || 'Sem aulas configuradas'
+
+  function getMonthDaysAndClasses(year: number, monthIdx: number, dayCounts: Record<string, number>) {
+    let uniqueDaysCount = 0
+    let totalClassesCount = 0
+    
+    const numDays = new Date(year, monthIdx + 1, 0).getDate()
+    const workedDates = new Set<number>()
+
+    const dayMap: Record<number, string> = {
+      0: 'domingo',
+      1: 'segunda',
+      2: 'terça',
+      3: 'quarta',
+      4: 'quinta',
+      5: 'sexta',
+      6: 'sábado'
+    }
+
+    for (let d = 1; d <= numDays; d++) {
+      const date = new Date(year, monthIdx, d, 12, 0, 0)
+      const dayOfWeek = date.getDay()
+      const dayName = dayMap[dayOfWeek]
+      
+      if (dayCounts[dayName] > 0) {
+        workedDates.add(d)
+        totalClassesCount += dayCounts[dayName]
+      }
+    }
+
+    uniqueDaysCount = workedDates.size
+    return {
+      days: uniqueDaysCount,
+      classes: totalClassesCount
+    }
+  }
+
+  const monthNames = [
+    'JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO',
+    'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO'
+  ]
+
+  const annualTableData = monthNames.map((monthName, idx) => {
+    let dias = 0
+    let horas = 0
+
+    if (viewMode === 'realized') {
+      const monthPrefix = `${selectedYear}-${(idx + 1).toString().padStart(2, '0')}`
+      const monthAtt = annualAttendance.filter(a => a.date.startsWith(monthPrefix))
+      
+      dias = new Set(monthAtt.map(a => a.date)).size
+      horas = monthAtt.length
+    } else {
+      const proj = getMonthDaysAndClasses(selectedYear, idx, weeklyClassCounts)
+      dias = proj.days
+      horas = proj.classes
+    }
+
+    const salario = horas * hourlyRate
+    const passagem = dias * dailyTransport
+
+    return {
+      name: monthName,
+      dias,
+      horas,
+      salario,
+      passagem
+    }
+  })
+
+  const totalAnnualDays = annualTableData.reduce((sum, m) => sum + m.dias, 0)
+  const totalAnnualHours = annualTableData.reduce((sum, m) => sum + m.horas, 0)
+  const totalAnnualSalary = annualTableData.reduce((sum, m) => sum + m.salario, 0)
+  const totalAnnualTransport = annualTableData.reduce((sum, m) => sum + m.passagem, 0)
+
   return (
     <div className="flex flex-col pb-10">
       {/* Header Section with Dynamic Style */}
@@ -1295,80 +1433,225 @@ export default function Financial() {
 
       {activeTab === 'payroll' && (
         <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-black uppercase tracking-tighter" style={{ color: 'var(--accent-color)' }}>Resumo de Pagamentos - {new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</h2>
+          {/* Sub-abas */}
+          <div className="flex gap-3 border-b border-white/5 pb-4">
+            <button
+              onClick={() => setPayrollSubTab('summary')}
+              className={`px-6 py-2 text-xs font-bold transition-all rounded-xl border ${
+                payrollSubTab === 'summary'
+                  ? 'bg-purple-500/10 border-purple-500/30 text-purple-400 font-black'
+                  : 'border-transparent text-[var(--text-secondary)] hover:text-white'
+              }`}
+            >
+              Resumo Mensal (Atual)
+            </button>
+            <button
+              onClick={() => setPayrollSubTab('annual')}
+              className={`px-6 py-2 text-xs font-bold transition-all rounded-xl border ${
+                payrollSubTab === 'annual'
+                  ? 'bg-purple-500/10 border-purple-500/30 text-purple-400 font-black'
+                  : 'border-transparent text-[var(--text-secondary)] hover:text-white'
+              }`}
+            >
+              Histórico Anual / Simulador (Novo)
+            </button>
           </div>
 
-          <div className="grid grid-cols-1 gap-6">
-            {payrollData.length === 0 ? (
-              <div className="py-20 text-center bg-black/20 rounded-3xl border border-dashed border-white/10">
-                <p className="text-[var(--text-muted)]">Nenhum professor com aulas registradas este mês.</p>
+          {payrollSubTab === 'summary' ? (
+            <>
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-black uppercase tracking-tighter" style={{ color: 'var(--accent-color)' }}>Resumo de Pagamentos - {new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}</h2>
               </div>
-            ) : (
-              payrollData.map(teacher => (
-                <div 
-                  key={teacher.id} 
-                  className="p-8 rounded-none border border-white/5 shadow-2xl relative overflow-hidden group transition-all hover:scale-[1.01]"
-                  style={{ backgroundColor: 'var(--bg-card)' }}
-                >
-                  <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
-                    <Users size={80} />
+
+              <div className="grid grid-cols-1 gap-6">
+                {payrollData.length === 0 ? (
+                  <div className="py-20 text-center bg-black/20 rounded-3xl border border-dashed border-white/10">
+                    <p className="text-[var(--text-muted)]">Nenhum professor com aulas registradas este mês.</p>
                   </div>
-                  
-                  <div className="flex flex-col lg:flex-row gap-8 items-center lg:items-start relative z-10">
-                    <div className="flex-1">
-                      <h3 className="text-2xl font-black text-white mb-1">{teacher.name}</h3>
-                      <p className="text-sm font-bold text-purple-400 uppercase tracking-widest mb-6">{teacher.specialty || 'Professor'}</p>
+                ) : (
+                  payrollData.map(teacher => (
+                    <div 
+                      key={teacher.id} 
+                      className="p-8 rounded-none border border-white/5 shadow-2xl relative overflow-hidden group transition-all hover:scale-[1.01]"
+                      style={{ backgroundColor: 'var(--bg-card)' }}
+                    >
+                      <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                        <Users size={80} />
+                      </div>
                       
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                        <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1">Aulas Dadas</p>
-                          <p className="text-xl font-black text-white">{teacher.classesCount}</p>
+                      <div className="flex flex-col lg:flex-row gap-8 items-center lg:items-start relative z-10">
+                        <div className="flex-1">
+                          <h3 className="text-2xl font-black text-white mb-1">{teacher.name}</h3>
+                          <p className="text-sm font-bold text-purple-400 uppercase tracking-widest mb-6">{teacher.specialty || 'Professor'}</p>
+                          
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                            <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
+                              <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1">Aulas Dadas</p>
+                              <p className="text-xl font-black text-white">{teacher.classesCount}</p>
+                            </div>
+                            <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
+                              <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1">Dias Trabalhados</p>
+                              <p className="text-xl font-black text-white">{teacher.uniqueDays}</p>
+                            </div>
+                            <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
+                              <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1">Total Hora Aula</p>
+                              <p className="text-xl font-black text-emerald-400">R$ {teacher.hourlyTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                            </div>
+                            <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
+                              <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1">Total Passagem</p>
+                              <p className="text-xl font-black text-blue-400">R$ {teacher.transportTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                            </div>
+                          </div>
                         </div>
-                        <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1">Dias Trabalhados</p>
-                          <p className="text-xl font-black text-white">{teacher.uniqueDays}</p>
-                        </div>
-                        <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1">Total Hora Aula</p>
-                          <p className="text-xl font-black text-emerald-400">R$ {teacher.hourlyTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                        </div>
-                        <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1">Total Passagem</p>
-                          <p className="text-xl font-black text-blue-400">R$ {teacher.transportTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+
+                        <div className="w-full lg:w-72 p-8 sm:p-10 rounded-2xl bg-black/40 border border-white/10 flex flex-col justify-center items-center text-center">
+                          <p className="text-xs font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Total Acumulado</p>
+                          <p className="text-3xl font-black text-white mb-4">R$ {teacher.totalToPay.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                          <button 
+                            onClick={async () => {
+                              const payload = {
+                                type: 'expense',
+                                category: 'Salários',
+                                description: `Pagamento Professor: ${teacher.name}`,
+                                amount: teacher.totalToPay,
+                                date: new Date().toISOString().split('T')[0],
+                              }
+                              const { error } = await supabase.from('financial_entries').insert([payload])
+                              if (error) alert('Erro ao registrar pagamento')
+                              else {
+                                alert('Pagamento registrado no fluxo de caixa!')
+                                setActiveTab('flow')
+                              }
+                            }}
+                            className="w-full py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-emerald-500/20"
+                          >
+                            Registrar Pagamento
+                          </button>
                         </div>
                       </div>
                     </div>
+                  ))
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Seletor de Modo de Visualização e Custo */}
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-black/10 p-4 rounded-3xl border border-white/5 mb-6">
+                <div className="flex gap-2 p-1 bg-black/20 rounded-2xl border border-white/5 w-fit">
+                  <button
+                    onClick={() => setViewMode('projected')}
+                    className={`px-6 py-2.5 text-xs font-bold transition-all rounded-xl ${
+                      viewMode === 'projected' ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20' : 'text-[var(--text-secondary)] hover:text-white'
+                    }`}
+                  >
+                    Visualizar Projeção (Previsão)
+                  </button>
+                  <button
+                    onClick={() => setViewMode('realized')}
+                    className={`px-6 py-2.5 text-xs font-bold transition-all rounded-xl ${
+                      viewMode === 'realized' ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20' : 'text-[var(--text-secondary)] hover:text-white'
+                    }`}
+                  >
+                    Visualizar Realizado (Frequência)
+                  </button>
+                </div>
+                
+                <div className="text-right">
+                  <span className="text-[10px] uppercase font-bold tracking-widest text-[var(--text-muted)] block">
+                    Custo Total {viewMode === 'projected' ? 'Projetado' : 'Realizado'} (Ano)
+                  </span>
+                  <span className="text-xl font-black text-white">
+                    R$ {(totalAnnualSalary + totalAnnualTransport).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+              </div>
 
-                    <div className="w-full lg:w-72 p-8 sm:p-10 rounded-2xl bg-black/40 border border-white/10 flex flex-col justify-center items-center text-center">
-                      <p className="text-xs font-black uppercase tracking-widest text-[var(--text-muted)] mb-2">Total Acumulado</p>
-                      <p className="text-3xl font-black text-white mb-4">R$ {teacher.totalToPay.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                      <button 
-                        onClick={async () => {
-                          const payload = {
-                            type: 'expense',
-                            category: 'Salários',
-                            description: `Pagamento Professor: ${teacher.name}`,
-                            amount: teacher.totalToPay,
-                            date: new Date().toISOString().split('T')[0],
-                          }
-                          const { error } = await supabase.from('financial_entries').insert([payload])
-                          if (error) alert('Erro ao registrar pagamento')
-                          else {
-                            alert('Pagamento registrado no fluxo de caixa!')
-                            setActiveTab('flow')
-                          }
-                        }}
-                        className="w-full py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-emerald-500/20"
-                      >
-                        Registrar Pagamento
-                      </button>
-                    </div>
+              {/* Cabeçalho da Planilha de Referência */}
+              <div className="rounded-3xl border border-white/10 overflow-hidden mb-8" style={{ backgroundColor: 'var(--bg-card)' }}>
+                {/* Linha 1 */}
+                <div className="grid grid-cols-5 text-center text-xs font-bold divide-x divide-white/10 bg-white/5 border-b border-white/10">
+                  <div className="py-4 uppercase text-[var(--text-muted)] tracking-wider">Hora Aula</div>
+                  <div className="py-4 text-emerald-400 text-sm font-black">R$ {hourlyRate.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                  <div className="py-4 text-purple-400 text-sm font-black uppercase tracking-wider">{selectedInstructor?.name || '-'}</div>
+                  <div className="py-4 uppercase text-[var(--text-muted)] tracking-wider">Passagem</div>
+                  <div className="py-4 text-blue-400 text-sm font-black">R$ {dailyTransport.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+                </div>
+                
+                {/* Linha 2 */}
+                <div className="grid grid-cols-5 text-center text-xs divide-x divide-white/10 bg-purple-900/10 items-center border-b border-white/10">
+                  <div className="col-span-2 py-4 px-4 flex items-center justify-center gap-3">
+                    <select
+                      value={selectedInstructorId}
+                      onChange={(e) => setSelectedInstructorId(e.target.value)}
+                      className="rounded-xl px-4 py-2 text-xs bg-[#1a1a2e] border border-white/10 text-white focus:outline-none focus:ring-1 focus:ring-purple-500/30 font-bold cursor-pointer"
+                    >
+                      <option value="" disabled>-- Selecionar Professor --</option>
+                      {instructors.map(inst => (
+                        <option key={inst.id} value={inst.id}>{inst.name}</option>
+                      ))}
+                    </select>
+                    
+                    <select
+                      value={selectedYear}
+                      onChange={(e) => setSelectedYear(Number(e.target.value))}
+                      className="rounded-xl px-4 py-2 text-xs bg-[#1a1a2e] border border-white/10 text-white focus:outline-none focus:ring-1 focus:ring-purple-500/30 font-bold cursor-pointer"
+                    >
+                      {[2025, 2026, 2027, 2028].map(y => (
+                        <option key={y} value={y}>{y}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="py-4 text-white/20">-</div>
+                  <div className="col-span-2 py-4 text-purple-300 font-bold text-xs truncate px-4" title={scheduleSummary}>
+                    📅 {scheduleSummary}
                   </div>
                 </div>
-              ))
-            )}
-          </div>
+
+                {/* Tabela de 12 Meses */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="bg-black/40 text-[10px] uppercase tracking-wider text-[var(--text-secondary)] border-b border-white/10">
+                        <th className="py-3 px-6">Mês</th>
+                        <th className="py-3 px-6 text-center">Dias</th>
+                        <th className="py-3 px-6 text-center">Horas</th>
+                        <th className="py-3 px-6 text-right">Salário</th>
+                        <th className="py-3 px-6 text-right">Passagem</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 text-sm font-semibold">
+                      {annualTableData.map((row) => (
+                        <tr key={row.name} className="transition-colors hover:bg-white/[0.02]">
+                          <td className="py-4 px-6 text-white font-black">{row.name}</td>
+                          <td className="py-4 px-6 text-center text-[var(--text-secondary)]">{row.dias}</td>
+                          <td className="py-4 px-6 text-center text-[var(--text-secondary)]">{row.horas}</td>
+                          <td className="py-4 px-6 text-right text-emerald-400 font-bold">
+                            R$ {row.salario.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="py-4 px-6 text-right text-blue-400 font-bold">
+                            R$ {row.passagem.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </td>
+                        </tr>
+                      ))}
+                      {/* Totais do Rodapé */}
+                      <tr className="bg-white/5 text-sm font-black border-t border-white/20">
+                        <td className="py-4 px-6 text-purple-400 uppercase tracking-widest text-xs">Total Geral</td>
+                        <td className="py-4 px-6 text-center text-white">{totalAnnualDays}</td>
+                        <td className="py-4 px-6 text-center text-white">{totalAnnualHours}</td>
+                        <td className="py-4 px-6 text-right text-emerald-400">
+                          R$ {totalAnnualSalary.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="py-4 px-6 text-right text-blue-400">
+                          R$ {totalAnnualTransport.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       )}
 
