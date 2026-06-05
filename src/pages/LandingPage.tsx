@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ArrowRight, CheckCircle2, Shield, Sparkles, Award } from 'lucide-react'
+import { ArrowRight, CheckCircle2, Shield, Sparkles, Award, User } from 'lucide-react'
 import heroImage from '../assets/dance_hero_trio.png'
 import feature1Image from '../assets/dance_black_ballerina.png'
 import feature2Image from '../assets/dance_esmeralda_ballerina.png'
@@ -87,7 +87,7 @@ export default function LandingPage() {
             <p className="text-gray-400 text-sm sm:text-base leading-relaxed max-w-xl">Foque no que você faz de melhor: ensinar a arte da dança. O DanceFlow cuida de todo o resto.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
             {[
               { 
                 icon: Sparkles, 
@@ -106,6 +106,13 @@ export default function LandingPage() {
                 desc: <>Acesso 100% restrito e seguro para professores realizarem a chamada das turmas direto pelo celular na sala de aula.</>,
                 color: 'text-pink-400',
                 bg: 'bg-pink-500/10'
+              },
+              { 
+                icon: User, 
+                title: 'Área do Secretário', 
+                desc: <>Painel seguro com acesso delegado para secretários gerenciarem alunos, chamadas, turmas e fluxo financeiro diário.</>,
+                color: 'text-yellow-400',
+                bg: 'bg-yellow-500/10'
               },
               { 
                 icon: Shield, 
