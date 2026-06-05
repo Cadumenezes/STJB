@@ -85,8 +85,11 @@ export default function Schedule() {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDayEvents, setSelectedDayEvents] = useState<Appointment[]>([])
   const [selectedDateStr, setSelectedDateStr] = useState('')
-  
-  // Modal states
+  const [schoolAdminId, setSchoolAdminId] = useState<string | null>(null)
+  const [customHolidays, setCustomHolidays] = useState<any[]>([])
+  const [showHolidayModal, setShowHolidayModal] = useState(false)
+  const [addingHoliday, setAddingHoliday] = useState(false)
+  const [holidayForm, setHolidayForm] = useState({ name: '', date: '' })
   const [showAddModal, setShowAddModal] = useState(false)
   const [editingEvent, setEditingEvent] = useState<Appointment | null>(null)
   const [formData, setFormData] = useState({
@@ -98,17 +101,144 @@ export default function Schedule() {
     description: '',
     teacherEmail: ''
   })
+  
+  // Easter algorithm
+  function getEaster(year: number) {
+    const a = year % 19
+    const b = Math.floor(year / 100)
+    const c = year % 100
+    const d = Math.floor(b / 4)
+    const e = b % 4
+    const f = Math.floor((b + 8) / 25)
+    const g = Math.floor((b - f + 1) / 3)
+    const h = (19 * a + b - d - g + 15) % 30
+    const i = Math.floor(c / 4)
+    const k = c % 4
+    const L = (32 + 2 * e + 2 * i - h - k) % 7
+    const m = Math.floor((a + 11 * h + 22 * L) / 451)
+    const monthIdx = Math.floor((h + L - 7 * m + 114) / 31) - 1
+    const day = ((h + L - 7 * m + 114) % 31) + 1
+    return new Date(year, monthIdx, day, 12, 0, 0)
+  }
+
+  function getHolidaysForYear(year: number, customList: any[] = []): Map<string, string> {
+    const holidays = new Map<string, string>()
+    
+    // Fixed national holidays in Brazil
+    const fixed = [
+      { date: '01-01', name: 'Confraternização Universal' },
+      { date: '04-21', name: 'Tiradentes' },
+      { date: '05-01', name: 'Dia do Trabalhador' },
+      { date: '09-07', name: 'Independência do Brasil' },
+      { date: '10-12', name: 'Nossa Senhora Aparecida' },
+      { date: '11-02', name: 'Finados' },
+      { date: '11-15', name: 'Proclamação da República' },
+      { date: '11-20', name: 'Dia da Consciência Negra' },
+      { date: '12-25', name: 'Natal' }
+    ]
+    fixed.forEach(f => holidays.set(`${year}-${f.date}`, f.name))
+
+    const easter = getEaster(year)
+    const addDays = (d: Date, days: number) => {
+      const res = new Date(d)
+      res.setDate(res.getDate() + days)
+      return res.toISOString().slice(0, 10)
+    }
+
+    holidays.set(addDays(easter, -47), 'Carnaval')
+    holidays.set(addDays(easter, -2), 'Sexta-feira Santa')
+    holidays.set(addDays(easter, 60), 'Corpus Christi')
+
+    // Add custom holidays
+    customList.forEach(ch => {
+      if (ch.date && ch.date.startsWith(`${year}-`)) {
+        holidays.set(ch.date, ch.name)
+      }
+    })
+
+    return holidays
+  }
 
   useEffect(() => {
     loadProfile()
     loadAppointments()
+    loadCustomHolidays()
   }, [])
+
+  async function loadCustomHolidays() {
+    try {
+      const { data, error } = await supabase.from('school_holidays').select('*').order('date', { ascending: true })
+      if (data) {
+        setCustomHolidays(data)
+      }
+    } catch (e) {
+      console.error('Erro ao buscar feriados:', e)
+    }
+  }
+
+  async function handleAddHoliday(e: React.FormEvent) {
+    e.preventDefault()
+    if (isTeacher) return
+    setAddingHoliday(true)
+    try {
+      const payload: any = {
+        name: holidayForm.name,
+        date: holidayForm.date
+      }
+      if (profile?.role === 'secretary' && schoolAdminId) {
+        payload.user_id = schoolAdminId
+      }
+      const { error } = await supabase.from('school_holidays').insert([payload])
+      if (error) {
+        alert('Erro ao salvar feriado: ' + error.message)
+      } else {
+        setHolidayForm({ name: '', date: '' })
+        loadCustomHolidays()
+      }
+    } catch (err: any) {
+      console.error(err)
+      alert('Erro ao salvar feriado.')
+    } finally {
+      setAddingHoliday(false)
+    }
+  }
+
+  async function handleDeleteHoliday(id: string) {
+    if (isTeacher) return
+    if (!confirm('Deseja realmente remover este feriado?')) return
+    try {
+      const { error } = await supabase.from('school_holidays').delete().eq('id', id)
+      if (error) {
+        alert('Erro ao remover feriado: ' + error.message)
+      } else {
+        loadCustomHolidays()
+      }
+    } catch (err: any) {
+      console.error(err)
+      alert('Erro ao remover feriado.')
+    }
+  }
 
   async function loadProfile() {
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
-      const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-      if (data) setProfile(data)
+      const { data: profileData } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+      if (profileData) {
+        setProfile(profileData)
+        
+        let adminId = user.id
+        if (profileData.role === 'secretary') {
+          const { data: teamData } = await supabase
+            .from('team_members')
+            .select('user_id')
+            .eq('email', user.email)
+            .maybeSingle()
+          if (teamData) {
+            adminId = teamData.user_id
+          }
+        }
+        setSchoolAdminId(adminId)
+      }
     }
     const { data: settings } = await supabase.from('school_settings').select('school_name').limit(1).single()
     if (settings?.school_name) {
@@ -250,6 +380,7 @@ export default function Schedule() {
   // Render Monthly Calendar Grid
   const renderMonthlyGrid = () => {
     const cells = []
+    const holidaysMap = getHolidaysForYear(year, customHolidays)
     
     // Empty cells before the 1st day of the month
     for (let i = 0; i < firstDayIndex; i++) {
@@ -262,6 +393,7 @@ export default function Schedule() {
       const dayEvents = appointments.filter(a => a.date === dateString)
       const isSelected = selectedDateStr === dateString
       const isToday = getFormattedDateStr(new Date()) === dateString
+      const holidayName = holidaysMap.get(dateString)
 
       cells.push(
         <div 
@@ -284,6 +416,14 @@ export default function Schedule() {
 
           {/* Dots/Event Tags */}
           <div className="space-y-1 overflow-y-auto max-h-[48px] sm:max-h-[64px] custom-scrollbar z-10">
+            {holidayName && (
+              <div 
+                className="hidden sm:block text-[9px] px-2 py-0.5 rounded font-black truncate text-[#ef4444] border border-[#ef4444]/30 bg-[#ef4444]/10"
+                title={`Feriado: ${holidayName}`}
+              >
+                🎉 {holidayName}
+              </div>
+            )}
             {dayEvents.map(event => (
               <div 
                 key={event.id}
@@ -296,6 +436,12 @@ export default function Schedule() {
             ))}
             {/* Dots on mobile screen */}
             <div className="flex sm:hidden gap-1 flex-wrap">
+              {holidayName && (
+                <span 
+                  className="h-1.5 w-1.5 rounded-full bg-[#ef4444] animate-pulse"
+                  title={`Feriado: ${holidayName}`}
+                />
+              )}
               {dayEvents.map(event => (
                 <span 
                   key={event.id} 
@@ -333,11 +479,32 @@ export default function Schedule() {
       const curMonth = tempDate.getMonth()
       const curMonthName = monthNames[curMonth]
 
-      // Filter events in this month
-      const monthEvents = appointments.filter(a => {
-        const eventDate = new Date(a.date + 'T00:00:00')
-        return eventDate.getFullYear() === curYear && eventDate.getMonth() === curMonth
-      }).sort((a, b) => a.date.localeCompare(b.date))
+      // Filter events and holidays in this month
+      const monthHolidays: any[] = []
+      const holidaysMap = getHolidaysForYear(curYear, customHolidays)
+      holidaysMap.forEach((name, dateStr) => {
+        const hDate = new Date(dateStr + 'T12:00:00')
+        if (hDate.getFullYear() === curYear && hDate.getMonth() === curMonth) {
+          monthHolidays.push({
+            id: `holiday-${dateStr}`,
+            title: `🎉 Feriado: ${name}`,
+            date: dateStr,
+            time: '--:--',
+            category: 'Feriado',
+            color: '#ef4444',
+            description: 'Feriado nacional ou customizado da escola.',
+            isHoliday: true
+          })
+        }
+      })
+
+      const monthEvents = [
+        ...appointments.filter(a => {
+          const eventDate = new Date(a.date + 'T00:00:00')
+          return eventDate.getFullYear() === curYear && eventDate.getMonth() === curMonth
+        }),
+        ...monthHolidays
+      ].sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time))
 
       semestralMonths.push(
         <div key={`sem-${i}`} className="p-6 rounded-none shadow-xl space-y-4" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
@@ -346,13 +513,13 @@ export default function Schedule() {
               {curMonthName} <span className="text-gray-500 text-xs">({curYear})</span>
             </h3>
             <span className="text-[10px] font-black uppercase bg-purple-500/10 text-purple-400 px-2 py-0.5 rounded-full border border-purple-500/20">
-              {monthEvents.length} {monthEvents.length === 1 ? 'Compromisso' : 'Compromissos'}
+              {monthEvents.length} {monthEvents.length === 1 ? 'Item' : 'Itens'}
             </span>
           </div>
 
           <div className="space-y-3">
             {monthEvents.length === 0 ? (
-              <p className="text-xs text-gray-500 italic p-2">Nenhum compromisso agendado para este mês.</p>
+              <p className="text-xs text-gray-500 italic p-2">Nenhum compromisso ou feriado para este mês.</p>
             ) : (
               monthEvents.map(event => (
                 <div 
@@ -374,7 +541,7 @@ export default function Schedule() {
                       {event.teacherEmail && <span className="flex items-center gap-1"><Mail size={11} /> {event.teacherEmail}</span>}
                     </div>
                   </div>
-                  {!isTeacher && (
+                  {!isTeacher && !event.isHoliday && (
                     <div className="flex flex-col gap-1.5 justify-center pl-2 border-l border-white/5">
                       <button onClick={() => openEditModal(event)} className="text-[10px] text-purple-400 hover:text-purple-300 font-bold uppercase tracking-wider">Editar</button>
                       <button onClick={() => deleteAppointment(event.id)} className="text-[10px] text-rose-500 hover:text-rose-400 font-bold uppercase tracking-wider">Excluir</button>
@@ -399,10 +566,32 @@ export default function Schedule() {
     const curYear = new Date().getFullYear()
 
     for (let m = 0; m < 12; m++) {
-      const monthEvents = appointments.filter(a => {
-        const eventDate = new Date(a.date + 'T00:00:00')
-        return eventDate.getFullYear() === curYear && eventDate.getMonth() === m
+      // Combine appointments and holidays for this month
+      const monthHolidays: any[] = []
+      const holidaysMap = getHolidaysForYear(curYear, customHolidays)
+      holidaysMap.forEach((name, dateStr) => {
+        const hDate = new Date(dateStr + 'T12:00:00')
+        if (hDate.getFullYear() === curYear && hDate.getMonth() === m) {
+          monthHolidays.push({
+            id: `holiday-${dateStr}`,
+            title: name,
+            date: dateStr,
+            time: '00:00',
+            category: 'Feriado',
+            color: '#ef4444',
+            description: 'Feriado',
+            isHoliday: true
+          })
+        }
       })
+
+      const monthEvents = [
+        ...appointments.filter(a => {
+          const eventDate = new Date(a.date + 'T00:00:00')
+          return eventDate.getFullYear() === curYear && eventDate.getMonth() === m
+        }),
+        ...monthHolidays
+      ].sort((a, b) => a.date.localeCompare(b.date))
 
       annualMonths.push(
         <div 
@@ -544,14 +733,23 @@ export default function Schedule() {
               </div>
             )}
             {!isTeacher && (
-              <button
-                onClick={() => openCreateModal()}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-xs font-black uppercase tracking-widest text-white hover:scale-105 active:scale-95 shadow-xl shadow-purple-500/10 transition-all cursor-pointer"
-                style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}
-              >
-                <Plus size={16} />
-                Novo Compromisso
-              </button>
+              <>
+                <button
+                  onClick={() => setShowHolidayModal(true)}
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-xs font-black uppercase tracking-widest text-purple-300 hover:text-white border border-purple-500/30 hover:bg-purple-600/10 hover:scale-105 active:scale-95 transition-all cursor-pointer bg-black/20"
+                >
+                  <CalendarIcon size={16} />
+                  Gerenciar Feriados
+                </button>
+                <button
+                  onClick={() => openCreateModal()}
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-xs font-black uppercase tracking-widest text-white hover:scale-105 active:scale-95 shadow-xl shadow-purple-500/10 transition-all cursor-pointer"
+                  style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}
+                >
+                  <Plus size={16} />
+                  Novo Compromisso
+                </button>
+              </>
             )}
           </div>
         </div>
@@ -646,6 +844,25 @@ export default function Schedule() {
                   })}
                 </h3>
               </div>
+
+              {(() => {
+                if (!selectedDateStr) return null;
+                const selYear = new Date(selectedDateStr + 'T12:00:00').getFullYear()
+                const holidaysMap = getHolidaysForYear(selYear, customHolidays)
+                const selectedHoliday = holidaysMap.get(selectedDateStr)
+                if (selectedHoliday) {
+                  return (
+                    <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-200 text-xs font-bold flex items-center gap-2">
+                      <span className="text-base">🎉</span>
+                      <div>
+                        <p className="font-extrabold uppercase text-[10px] text-red-400 tracking-wider">Feriado Escolar</p>
+                        <p>{selectedHoliday}</p>
+                      </div>
+                    </div>
+                  )
+                }
+                return null
+              })()}
 
               {/* Day Events List */}
               <div className="space-y-4 max-h-[300px] sm:max-h-[400px] overflow-y-auto pr-1 custom-scrollbar">
@@ -813,6 +1030,77 @@ export default function Schedule() {
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* Modal de Gerenciamento de Feriados */}
+      <Modal
+        isOpen={showHolidayModal}
+        onClose={() => setShowHolidayModal(false)}
+        title="Gerenciar Feriados Municipais / Customizados"
+      >
+        <div className="space-y-6">
+          {/* Formulário de Cadastro */}
+          <form onSubmit={handleAddHoliday} className="p-4 rounded-xl border border-white/5 bg-black/20 space-y-4">
+            <h4 className="text-xs font-black uppercase tracking-wider text-purple-400">Cadastrar Novo Feriado</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-bold block mb-1.5 text-gray-400 uppercase tracking-wider">Nome do Feriado *</label>
+                <input
+                  required
+                  type="text"
+                  placeholder="Ex: Padroeiro da Cidade"
+                  value={holidayForm.name}
+                  onChange={e => setHolidayForm({ ...holidayForm, name: e.target.value })}
+                  className="w-full rounded-xl px-4 py-2.5 text-xs text-white bg-black/20 border border-white/10 focus:outline-none focus:border-purple-500 transition-all"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold block mb-1.5 text-gray-400 uppercase tracking-wider">Data *</label>
+                <input
+                  required
+                  type="date"
+                  value={holidayForm.date}
+                  onChange={e => setHolidayForm({ ...holidayForm, date: e.target.value })}
+                  className="w-full rounded-xl px-4 py-2.5 text-xs text-white bg-black/20 border border-white/10 focus:outline-none focus:border-purple-500 transition-all [color-scheme:dark]"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end pt-2">
+              <button
+                type="submit"
+                disabled={addingHoliday}
+                className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-black uppercase tracking-widest text-white hover:scale-105 active:scale-95 shadow-md transition-all cursor-pointer bg-purple-600 disabled:opacity-50"
+              >
+                {addingHoliday ? 'Adicionando...' : 'Adicionar Feriado'}
+              </button>
+            </div>
+          </form>
+
+          {/* Listagem de Feriados Cadastrados */}
+          <div className="space-y-3">
+            <h4 className="text-xs font-black uppercase tracking-wider text-purple-400">Feriados Customizados Cadastrados</h4>
+            {customHolidays.length === 0 ? (
+              <p className="text-xs text-gray-500 italic text-center py-4">Nenhum feriado municipal/customizado cadastrado.</p>
+            ) : (
+              <div className="max-h-[250px] overflow-y-auto pr-1 custom-scrollbar space-y-2">
+                {customHolidays.map(h => (
+                  <div key={h.id} className="p-3 rounded-lg bg-black/30 border border-white/5 flex items-center justify-between hover:border-white/10 transition-all">
+                    <div>
+                      <p className="text-xs font-bold text-white">{h.name}</p>
+                      <p className="text-[10px] text-gray-500 font-semibold">{new Date(h.date + 'T12:00:00').toLocaleDateString('pt-BR')}</p>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteHoliday(h.id)}
+                      className="text-[10px] text-rose-500 hover:text-rose-400 font-black uppercase tracking-wider pl-2"
+                    >
+                      Remover
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
       </Modal>
 
     </div>

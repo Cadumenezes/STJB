@@ -40,6 +40,7 @@ export default function Financial() {
   const [discountDueDay, setDiscountDueDay] = useState(10)
   const [payOnHolidays, setPayOnHolidays] = useState(true)
   const [openOnHolidays, setOpenOnHolidays] = useState(false)
+  const [customHolidays, setCustomHolidays] = useState<any[]>([])
   const [pendingPayments, setPendingPayments] = useState<MonthlyPayment[]>([])
   const [reconciliationFile, setReconciliationFile] = useState<File | null>(null)
   const [reconciledItems, setReconciledItems] = useState<any[]>([])
@@ -125,8 +126,8 @@ export default function Financial() {
     return new Date(year, monthIdx, day, 12, 0, 0)
   }
 
-  // Retorna os feriados nacionais do Brasil no ano
-  function getHolidaysForYear(year: number): Set<string> {
+  // Retorna os feriados nacionais do Brasil no ano + customizados
+  function getHolidaysForYear(year: number, customList?: any[]): Set<string> {
     const holidays = new Set<string>()
     const fixed = [
       '01-01', '04-21', '05-01', '09-07', '10-12', '11-02', '11-15', '11-20', '12-25'
@@ -143,6 +144,13 @@ export default function Financial() {
     holidays.add(addDays(easter, -47)) // Carnaval (Terça)
     holidays.add(addDays(easter, -2))  // Sexta-feira Santa
     holidays.add(addDays(easter, 60))  // Corpus Christi
+
+    const list = customList !== undefined ? customList : customHolidays
+    list.forEach(ch => {
+      if (ch.date && ch.date.startsWith(`${year}-`)) {
+        holidays.add(ch.date)
+      }
+    })
 
     return holidays
   }
@@ -180,6 +188,12 @@ export default function Financial() {
         setPayOnHolidays(payHolidaysVal)
         setOpenOnHolidays(openHolidaysVal)
       }
+
+      // Fetch custom holidays
+      const { data: customHolidaysData } = await supabase.from('school_holidays').select('*')
+      const fetchedCustomHolidays = customHolidaysData || []
+      setCustomHolidays(fetchedCustomHolidays)
+
       const { data: allStudents } = await supabase.from('students').select('*')
       setStudents(allStudents || [])
 
@@ -229,7 +243,7 @@ export default function Financial() {
 
           // Add holiday compensation if configured
           if (payHolidaysVal && !openHolidaysVal) {
-            const holidays = getHolidaysForYear(new Date().getFullYear())
+            const holidays = getHolidaysForYear(new Date().getFullYear(), fetchedCustomHolidays)
             const numDays = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()
             const dayMap: Record<number, string> = {
               0: 'domingo', 1: 'segunda', 2: 'terça', 3: 'quarta', 4: 'quinta', 5: 'sexta', 6: 'sábado'
@@ -309,7 +323,7 @@ export default function Financial() {
 
           // Add holiday compensation if configured
           if (payHolidaysVal && !openHolidaysVal) {
-            const holidays = getHolidaysForYear(new Date().getFullYear())
+            const holidays = getHolidaysForYear(new Date().getFullYear(), fetchedCustomHolidays)
             const numDays = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()
             const dayMap: Record<number, string> = {
               0: 'domingo', 1: 'segunda', 2: 'terça', 3: 'quarta', 4: 'quinta', 5: 'sexta', 6: 'sábado'
