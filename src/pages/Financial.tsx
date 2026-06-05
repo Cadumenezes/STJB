@@ -888,11 +888,21 @@ export default function Financial() {
   const weeklyClassCounts: Record<string, number> = {}
   weekdays.forEach(d => { weeklyClassCounts[d] = 0 })
   
+  const dayAbbrMap: Record<string, string> = {
+    'seg': 'segunda',
+    'ter': 'terça',
+    'qua': 'quarta',
+    'qui': 'quinta',
+    'sex': 'sexta',
+    'sáb': 'sábado',
+    'dom': 'domingo'
+  }
+
   instructorClasses.forEach(c => {
     const sched = (c.schedule || '').toLowerCase()
-    weekdays.forEach(day => {
-      if (sched.includes(day)) {
-        weeklyClassCounts[day] += 1
+    Object.entries(dayAbbrMap).forEach(([abbr, fullName]) => {
+      if (sched.includes(abbr)) {
+        weeklyClassCounts[fullName] += 1
       }
     })
   })
