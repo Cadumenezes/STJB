@@ -5,6 +5,7 @@ import feature1Image from '../assets/dance_black_ballerina.png'
 import feature2Image from '../assets/dance_esmeralda_ballerina.png'
 import carolinaImg from '../assets/director_carolina.png'
 import ricardoImg from '../assets/director_ricardo.png'
+import hybridForecastImg from '../assets/hybrid_forecast_mockup.png'
 
 export default function LandingPage() {
   return (
@@ -216,6 +217,39 @@ export default function LandingPage() {
               <img 
                 src={feature1Image} 
                 alt="Perfil Completo do Aluno DanceFlow" 
+                className="w-full h-auto rounded-2xl object-cover object-center shadow-lg"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Premium Spotlight Section 4: Holidays & Hybrid Payroll Forecast */}
+      <section className="relative z-10 py-36 border-t border-white/5 bg-black/10 w-full flex justify-center">
+        <div className="w-full max-w-6xl mx-auto px-6 flex flex-col md:flex-row-reverse items-center gap-16">
+          <div className="flex-1 space-y-6 text-center md:text-left flex flex-col items-center md:items-start">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 font-bold text-xs uppercase tracking-wider">
+              🎉 Feriados & Previsão Inteligente
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-black tracking-tight leading-tight">
+              Previsão Híbrida de Gastos com Feriados Integrados
+            </h2>
+            <p className="text-gray-400 text-base leading-relaxed">
+              Saiba exatamente quanto vai pagar à sua equipe com antecedência! O DanceFlow calcula de forma automática os feriados nacionais e permite cadastrar feriados municipais diretamente na agenda escolar. O nosso inovador motor de <strong>Previsão Híbrida</strong> projeta os gastos de aulas futuras enquanto se autoajusta instantaneamente baseando-se nas faltas reais e chamadas já registradas dos professores no mês, prevenindo qualquer tipo de marcação indevida e mantendo o fluxo de caixa sempre preciso.
+            </p>
+            <div className="pt-2">
+              <Link to="/auth" className="inline-flex items-center gap-3 px-6 py-3.5 bg-white/5 border border-white/10 hover:border-white/20 text-white font-bold rounded-xl transition-all hover:-translate-y-0.5 group text-sm">
+                Conhecer Previsão de Gastos
+                <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+          </div>
+          <div className="flex-1 w-full max-w-md md:max-w-none relative flex justify-center items-center">
+            <div className="absolute w-[80%] h-[80%] rounded-full bg-yellow-500/5 blur-[100px]" />
+            <div className="relative z-10 w-full overflow-hidden rounded-3xl border border-white/5 bg-white/5 backdrop-blur-3xl p-4 shadow-2xl hover:border-white/10 transition-all hover:scale-[1.01] group">
+              <img 
+                src={hybridForecastImg} 
+                alt="Previsão de Gastos Inteligente DanceFlow" 
                 className="w-full h-auto rounded-2xl object-cover object-center shadow-lg"
               />
             </div>
