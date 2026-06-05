@@ -73,9 +73,17 @@ export default function App() {
   useEffect(() => {
     // Fetch profile function
     const fetchProfile = async (userId: string) => {
-      const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
-      setProfile(data)
-      setLoading(false)
+      try {
+        const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single()
+        if (error) {
+          console.error('Error fetching profile:', error)
+        }
+        setProfile(data || null)
+      } catch (err) {
+        console.error('Exception during fetchProfile:', err)
+      } finally {
+        setLoading(false)
+      }
     }
 
     const checkMfa = async () => {
