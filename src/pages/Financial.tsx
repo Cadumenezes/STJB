@@ -291,11 +291,14 @@ export default function Financial() {
         const { data: monthsData } = await supabase.from('fixed_bill_months').select('*').order('month')
         setFixedBillMonths(monthsData || [])
 
-        // Fetch payroll data for Expense Forecast calculation
-        const { data: att } = await supabase.from('attendance').select('*').eq('type', 'instructor').eq('status', 'present')
-        
-        const currentMonth = new Date().toISOString().slice(0, 7)
-        const monthAtt = (att || []).filter(a => a.date.startsWith(currentMonth))
+        // Calculate projected payroll data for the current month for Expense Forecast calculation
+        const currentYear = new Date().getFullYear()
+        const currentMonthIdx = new Date().getMonth()
+        const holidays = getHolidaysForYear(currentYear, fetchedCustomHolidays)
+        const numDays = new Date(currentYear, currentMonthIdx + 1, 0).getDate()
+        const dayMap: Record<number, string> = {
+          0: 'domingo', 1: 'segunda', 2: 'terça', 3: 'quarta', 4: 'quinta', 5: 'sexta', 6: 'sábado'
+        }
 
         const calculated = (membersList || []).map(m => {
           // Parse teacher class schedule
@@ -317,33 +320,37 @@ export default function Financial() {
             })
           })
 
-          const teacherAtt = monthAtt.filter(a => a.instructor_id === m.id)
-          let classesCount = teacherAtt.length
-          let uniqueDays = new Set(teacherAtt.map(a => a.date)).size
+          // Calculate projection of days and classes for the current month
+          let uniqueDays = 0
+          let classesCount = 0
+          const workedDates = new Set<number>()
 
-          // Add holiday compensation if configured
-          if (payHolidaysVal && !openHolidaysVal) {
-            const holidays = getHolidaysForYear(new Date().getFullYear(), fetchedCustomHolidays)
-            const numDays = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()
-            const dayMap: Record<number, string> = {
-              0: 'domingo', 1: 'segunda', 2: 'terça', 3: 'quarta', 4: 'quinta', 5: 'sexta', 6: 'sábado'
-            }
-            const currentYear = new Date().getFullYear()
-            const currentMonthIdx = new Date().getMonth()
+          for (let d = 1; d <= numDays; d++) {
+            const dateStr = `${currentYear}-${(currentMonthIdx + 1).toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`
+            const isHoliday = holidays.has(dateStr)
+
+            const date = new Date(currentYear, currentMonthIdx, d, 12, 0, 0)
+            const dayOfWeek = date.getDay()
+            const dayName = dayMap[dayOfWeek]
             
-            for (let d = 1; d <= numDays; d++) {
-              const dateStr = `${currentYear}-${(currentMonthIdx + 1).toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`
-              if (holidays.has(dateStr)) {
-                const date = new Date(currentYear, currentMonthIdx, d, 12, 0, 0)
-                const dayOfWeek = date.getDay()
-                const dayName = dayMap[dayOfWeek]
-                
-                if (weeklyCounts[dayName] > 0) {
+            if (weeklyCounts[dayName] > 0) {
+              if (isHoliday) {
+                if (openHolidaysVal) {
+                  workedDates.add(d)
                   classesCount += weeklyCounts[dayName]
+                } else {
+                  if (payHolidaysVal) {
+                    classesCount += weeklyCounts[dayName]
+                  }
                 }
+              } else {
+                workedDates.add(d)
+                classesCount += weeklyCounts[dayName]
               }
             }
           }
+
+          uniqueDays = workedDates.size
 
           const hourlyTotal = classesCount * (m.hourly_rate || 0)
           const transportTotal = uniqueDays * (m.daily_transport || 0)
