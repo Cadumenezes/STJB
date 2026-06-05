@@ -106,14 +106,10 @@ export default function App() {
     }
 
     // Check active session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       if (session?.user) {
-        try {
-          await checkMfa()
-        } catch (e) {
-          console.error('MFA verification error during session restore:', e)
-        }
+        checkMfa()
         fetchProfile(session.user.id)
       } else {
         setLoading(false)
@@ -121,7 +117,7 @@ export default function App() {
     })
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
         localStorage.setItem('resetting_password', 'true')
         navigate('/auth')
@@ -129,11 +125,7 @@ export default function App() {
       setSession(session)
       if (session?.user) {
         setLoading(true)
-        try {
-          await checkMfa()
-        } catch (e) {
-          console.error('MFA verification error during auth state change:', e)
-        }
+        checkMfa()
         fetchProfile(session.user.id)
       } else {
         setProfile(null)
