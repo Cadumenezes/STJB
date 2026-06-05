@@ -38,6 +38,8 @@ export default function Financial() {
   // Conciliação de Extrato
   const [students, setStudents] = useState<Student[]>([])
   const [discountDueDay, setDiscountDueDay] = useState(10)
+  const [payOnHolidays, setPayOnHolidays] = useState(true)
+  const [openOnHolidays, setOpenOnHolidays] = useState(false)
   const [pendingPayments, setPendingPayments] = useState<MonthlyPayment[]>([])
   const [reconciliationFile, setReconciliationFile] = useState<File | null>(null)
   const [reconciledItems, setReconciledItems] = useState<any[]>([])
@@ -104,6 +106,47 @@ export default function Financial() {
     }
   }
 
+  // Algoritmo de Páscoa (Meeus/Jones/Butcher)
+  function getEaster(year: number) {
+    const a = year % 19
+    const b = Math.floor(year / 100)
+    const c = year % 100
+    const d = Math.floor(b / 4)
+    const e = b % 4
+    const f = Math.floor((b + 8) / 25)
+    const g = Math.floor((b - f + 1) / 3)
+    const h = (19 * a + b - d - g + 15) % 30
+    const i = Math.floor(c / 4)
+    const k = c % 4
+    const L = (32 + 2 * e + 2 * i - h - k) % 7
+    const m = Math.floor((a + 11 * h + 22 * L) / 451)
+    const monthIdx = Math.floor((h + L - 7 * m + 114) / 31) - 1
+    const day = ((h + L - 7 * m + 114) % 31) + 1
+    return new Date(year, monthIdx, day, 12, 0, 0)
+  }
+
+  // Retorna os feriados nacionais do Brasil no ano
+  function getHolidaysForYear(year: number): Set<string> {
+    const holidays = new Set<string>()
+    const fixed = [
+      '01-01', '04-21', '05-01', '09-07', '10-12', '11-02', '11-15', '11-20', '12-25'
+    ]
+    fixed.forEach(f => holidays.add(`${year}-${f}`))
+
+    const easter = getEaster(year)
+    const addDays = (d: Date, days: number) => {
+      const res = new Date(d)
+      res.setDate(res.getDate() + days)
+      return res.toISOString().slice(0, 10)
+    }
+
+    holidays.add(addDays(easter, -47)) // Carnaval (Terça)
+    holidays.add(addDays(easter, -2))  // Sexta-feira Santa
+    holidays.add(addDays(easter, 60))  // Corpus Christi
+
+    return holidays
+  }
+
   async function loadData() {
     setLoading(true)
     try {
@@ -126,10 +169,16 @@ export default function Financial() {
         setSchoolAdminId(adminId)
       }
 
-      // Load settings (to get discount_due_day) and students for payment forecast
-      const { data: settingsData } = await supabase.from('school_settings').select('discount_due_day').limit(1).maybeSingle()
+      // Load settings (to get discount_due_day, pay_on_holidays, open_on_holidays) and students for payment forecast
+      const { data: settingsData } = await supabase.from('school_settings').select('discount_due_day, pay_on_holidays, open_on_holidays').limit(1).maybeSingle()
+      let payHolidaysVal = true
+      let openHolidaysVal = false
       if (settingsData) {
         setDiscountDueDay(settingsData.discount_due_day || 10)
+        payHolidaysVal = settingsData.pay_on_holidays !== undefined ? settingsData.pay_on_holidays : true
+        openHolidaysVal = settingsData.open_on_holidays !== undefined ? settingsData.open_on_holidays : false
+        setPayOnHolidays(payHolidaysVal)
+        setOpenOnHolidays(openHolidaysVal)
       }
       const { data: allStudents } = await supabase.from('students').select('*')
       setStudents(allStudents || [])
@@ -139,6 +188,9 @@ export default function Financial() {
       if (membersList && membersList.length > 0) {
         setSelectedInstructorId(prev => prev || membersList[0].id)
       }
+
+      // Fetch all classes schedule to calculate teacher class schedule in current month
+      const { data: allClasses } = await supabase.from('dance_classes').select('*')
 
       if (activeTab === 'events') {
         const { data: eventsData } = await supabase.from('events').select('*').order('date', { ascending: true })
@@ -152,10 +204,53 @@ export default function Financial() {
         const monthAtt = (att || []).filter(a => a.date.startsWith(currentMonth))
 
         const calculated = (membersList || []).map(m => {
-          const teacherAtt = monthAtt.filter(a => a.instructor_id === m.id)
-          const classesCount = teacherAtt.length
-          const uniqueDays = new Set(teacherAtt.map(a => a.date)).size
+          // Parse teacher class schedule
+          const teacherClasses = (allClasses || []).filter(c => c.instructor_id === m.id)
+          const weeklyCounts: Record<string, number> = {}
+          const weekdaysList = ['segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado', 'domingo']
+          weekdaysList.forEach(d => { weeklyCounts[d] = 0 })
           
+          const abbrMap: Record<string, string> = {
+            'seg': 'segunda', 'ter': 'terça', 'qua': 'quarta', 'qui': 'quinta', 'sex': 'sexta', 'sáb': 'sábado', 'dom': 'domingo'
+          }
+
+          teacherClasses.forEach(c => {
+            const sched = (c.schedule || '').toLowerCase()
+            Object.entries(abbrMap).forEach(([abbr, fullName]) => {
+              if (sched.includes(abbr)) {
+                weeklyCounts[fullName] += 1
+              }
+            })
+          })
+
+          const teacherAtt = monthAtt.filter(a => a.instructor_id === m.id)
+          let classesCount = teacherAtt.length
+          let uniqueDays = new Set(teacherAtt.map(a => a.date)).size
+
+          // Add holiday compensation if configured
+          if (payHolidaysVal && !openHolidaysVal) {
+            const holidays = getHolidaysForYear(new Date().getFullYear())
+            const numDays = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()
+            const dayMap: Record<number, string> = {
+              0: 'domingo', 1: 'segunda', 2: 'terça', 3: 'quarta', 4: 'quinta', 5: 'sexta', 6: 'sábado'
+            }
+            const currentYear = new Date().getFullYear()
+            const currentMonthIdx = new Date().getMonth()
+            
+            for (let d = 1; d <= numDays; d++) {
+              const dateStr = `${currentYear}-${(currentMonthIdx + 1).toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`
+              if (holidays.has(dateStr)) {
+                const date = new Date(currentYear, currentMonthIdx, d, 12, 0, 0)
+                const dayOfWeek = date.getDay()
+                const dayName = dayMap[dayOfWeek]
+                
+                if (weeklyCounts[dayName] > 0) {
+                  classesCount += weeklyCounts[dayName]
+                }
+              }
+            }
+          }
+
           const hourlyTotal = classesCount * (m.hourly_rate || 0)
           const transportTotal = uniqueDays * (m.daily_transport || 0)
           
@@ -189,10 +284,53 @@ export default function Financial() {
         const monthAtt = (att || []).filter(a => a.date.startsWith(currentMonth))
 
         const calculated = (membersList || []).map(m => {
-          const teacherAtt = monthAtt.filter(a => a.instructor_id === m.id)
-          const classesCount = teacherAtt.length
-          const uniqueDays = new Set(teacherAtt.map(a => a.date)).size
+          // Parse teacher class schedule
+          const teacherClasses = (allClasses || []).filter(c => c.instructor_id === m.id)
+          const weeklyCounts: Record<string, number> = {}
+          const weekdaysList = ['segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado', 'domingo']
+          weekdaysList.forEach(d => { weeklyCounts[d] = 0 })
           
+          const abbrMap: Record<string, string> = {
+            'seg': 'segunda', 'ter': 'terça', 'qua': 'quarta', 'qui': 'quinta', 'sex': 'sexta', 'sáb': 'sábado', 'dom': 'domingo'
+          }
+
+          teacherClasses.forEach(c => {
+            const sched = (c.schedule || '').toLowerCase()
+            Object.entries(abbrMap).forEach(([abbr, fullName]) => {
+              if (sched.includes(abbr)) {
+                weeklyCounts[fullName] += 1
+              }
+            })
+          })
+
+          const teacherAtt = monthAtt.filter(a => a.instructor_id === m.id)
+          let classesCount = teacherAtt.length
+          let uniqueDays = new Set(teacherAtt.map(a => a.date)).size
+
+          // Add holiday compensation if configured
+          if (payHolidaysVal && !openHolidaysVal) {
+            const holidays = getHolidaysForYear(new Date().getFullYear())
+            const numDays = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate()
+            const dayMap: Record<number, string> = {
+              0: 'domingo', 1: 'segunda', 2: 'terça', 3: 'quarta', 4: 'quinta', 5: 'sexta', 6: 'sábado'
+            }
+            const currentYear = new Date().getFullYear()
+            const currentMonthIdx = new Date().getMonth()
+            
+            for (let d = 1; d <= numDays; d++) {
+              const dateStr = `${currentYear}-${(currentMonthIdx + 1).toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`
+              if (holidays.has(dateStr)) {
+                const date = new Date(currentYear, currentMonthIdx, d, 12, 0, 0)
+                const dayOfWeek = date.getDay()
+                const dayName = dayMap[dayOfWeek]
+                
+                if (weeklyCounts[dayName] > 0) {
+                  classesCount += weeklyCounts[dayName]
+                }
+              }
+            }
+          }
+
           const hourlyTotal = classesCount * (m.hourly_rate || 0)
           const transportTotal = uniqueDays * (m.daily_transport || 0)
           
@@ -918,6 +1056,7 @@ export default function Financial() {
     
     const numDays = new Date(year, monthIdx + 1, 0).getDate()
     const workedDates = new Set<number>()
+    const holidays = getHolidaysForYear(year)
 
     const dayMap: Record<number, string> = {
       0: 'domingo',
@@ -930,13 +1069,27 @@ export default function Financial() {
     }
 
     for (let d = 1; d <= numDays; d++) {
+      const dateStr = `${year}-${(monthIdx + 1).toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`
+      const isHoliday = holidays.has(dateStr)
+
       const date = new Date(year, monthIdx, d, 12, 0, 0)
       const dayOfWeek = date.getDay()
       const dayName = dayMap[dayOfWeek]
       
       if (dayCounts[dayName] > 0) {
-        workedDates.add(d)
-        totalClassesCount += dayCounts[dayName]
+        if (isHoliday) {
+          if (openOnHolidays) {
+            workedDates.add(d)
+            totalClassesCount += dayCounts[dayName]
+          } else {
+            if (payOnHolidays) {
+              totalClassesCount += dayCounts[dayName]
+            }
+          }
+        } else {
+          workedDates.add(d)
+          totalClassesCount += dayCounts[dayName]
+        }
       }
     }
 
@@ -962,6 +1115,28 @@ export default function Financial() {
       
       dias = new Set(monthAtt.map(a => a.date)).size
       horas = monthAtt.length
+
+      // Adiciona compensação de feriados no realizado se a escola paga no feriado mas fecha
+      if (payOnHolidays && !openOnHolidays) {
+        const holidays = getHolidaysForYear(selectedYear)
+        const numDays = new Date(selectedYear, idx + 1, 0).getDate()
+        const dayMap: Record<number, string> = {
+          0: 'domingo', 1: 'segunda', 2: 'terça', 3: 'quarta', 4: 'quinta', 5: 'sexta', 6: 'sábado'
+        }
+        
+        for (let d = 1; d <= numDays; d++) {
+          const dateStr = `${selectedYear}-${(idx + 1).toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`
+          if (holidays.has(dateStr)) {
+            const date = new Date(selectedYear, idx, d, 12, 0, 0)
+            const dayOfWeek = date.getDay()
+            const dayName = dayMap[dayOfWeek]
+            
+            if (weeklyClassCounts[dayName] > 0) {
+              horas += weeklyClassCounts[dayName]
+            }
+          }
+        }
+      }
     } else {
       const proj = getMonthDaysAndClasses(selectedYear, idx, weeklyClassCounts)
       dias = proj.days

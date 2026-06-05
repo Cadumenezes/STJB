@@ -164,6 +164,8 @@ export default function SettingsPage() {
     address: '',
     director: '',
     discount_due_day: 10,
+    pay_on_holidays: true,
+    open_on_holidays: false,
     gateway_type: 'none' as 'none' | 'asaas' | 'cora',
     gateway_api_key: '',
     cora_client_id: '',
@@ -197,6 +199,8 @@ export default function SettingsPage() {
         address: data.address || '',
         director: data.director || '',
         discount_due_day: data.discount_due_day !== undefined ? data.discount_due_day : 10,
+        pay_on_holidays: data.pay_on_holidays !== undefined ? data.pay_on_holidays : true,
+        open_on_holidays: data.open_on_holidays !== undefined ? data.open_on_holidays : false,
         gateway_type: (data.gateway_type || 'none') as 'none' | 'asaas' | 'cora',
         gateway_api_key: data.gateway_api_key || '',
         cora_client_id: data.cora_client_id || '',
@@ -505,6 +509,46 @@ export default function SettingsPage() {
                     <p className="text-xs mt-1.5" style={{ color: 'var(--text-muted)' }}>
                       Os alunos receberão desconto automático caso efetuem o pagamento da mensalidade até este dia do mês de referência. (Padrão: 10)
                     </p>
+                  </div>
+                </div>
+
+                <div className="p-5 border border-purple-500/20 bg-purple-500/5 rounded-none space-y-4">
+                  <h3 className="text-sm font-bold text-purple-400 uppercase tracking-wider">Regras de Feriados & Funcionamento</h3>
+                  
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <label className="text-sm font-bold block" style={{ color: 'var(--text-primary)' }}>Pagar Aulas no Feriado?</label>
+                      <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                        Se ativado, o professor recebe a hora-aula se tiver turmas agendadas no dia do feriado.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, pay_on_holidays: !formData.pay_on_holidays })}
+                      className={`px-4 py-2 text-xs font-black rounded-xl transition-all cursor-pointer border ${
+                        formData.pay_on_holidays ? 'bg-purple-600 text-white border-transparent' : 'bg-transparent text-[var(--text-secondary)] border-white/10'
+                      }`}
+                    >
+                      {formData.pay_on_holidays ? 'SIM, PAGAR' : 'NÃO PAGAR'}
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4 pt-3 border-t border-purple-500/10">
+                    <div>
+                      <label className="text-sm font-bold block" style={{ color: 'var(--text-primary)' }}>Escola Abre/Funciona no Feriado?</label>
+                      <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                        Se ativado, a escola funciona normalmente e a passagem diária (vale-transporte) também é paga.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, open_on_holidays: !formData.open_on_holidays })}
+                      className={`px-4 py-2 text-xs font-black rounded-xl transition-all cursor-pointer border ${
+                        formData.open_on_holidays ? 'bg-purple-600 text-white border-transparent' : 'bg-transparent text-[var(--text-secondary)] border-white/10'
+                      }`}
+                    >
+                      {formData.open_on_holidays ? 'SIM, FUNCIONA' : 'FECHADA (SEM VT)'}
+                    </button>
                   </div>
                 </div>
 
