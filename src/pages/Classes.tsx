@@ -257,6 +257,12 @@ export default function Classes() {
           const instructor = instructors.find(i => i.id === cls.instructor_id)
           const isDraggable = ((profile?.role as any) === 'admin' || (profile?.role as any) === 'Diretor' || (profile?.role as any) === 'user')
           
+          const classStudents = students.filter(s => 
+            (s.class_id === cls.id || (s.class_ids && s.class_ids.includes(cls.id))) &&
+            s.status !== 'locked' && s.status !== 'inactive'
+          )
+          const remainingVagas = Math.max(0, (cls.max_students || 0) - classStudents.length)
+
           return (
             <div
               key={cls.id}
@@ -306,21 +312,19 @@ export default function Classes() {
                 <div className="flex items-center gap-3 text-sm">
                   <Users size={18} className="text-purple-400" />
                   <span style={{ color: 'var(--text-secondary)' }}>
-                    <strong>Vagas:</strong> {cls.max_students}
+                    <strong>Vagas Disponíveis:</strong> {remainingVagas} de {cls.max_students}
                   </span>
                 </div>
               </div>
 
               {/* Students List */}
               <div className="mt-4 pt-4" style={{ borderTop: '1px dashed var(--border-color)' }}>
-                <h4 className="text-xs font-bold uppercase tracking-widest text-purple-400 mb-2">Alunos Matriculados</h4>
+                <h4 className="text-xs font-bold uppercase tracking-widest text-purple-400 mb-2">Alunos Matriculados ({classStudents.length})</h4>
                 <div className="max-h-32 overflow-y-auto pr-2 space-y-1 custom-scrollbar">
-                  {(() => {
-                    const classStudents = students.filter(s => s.class_id === cls.id || (s.class_ids && s.class_ids.includes(cls.id)))
-                    if (classStudents.length === 0) {
-                      return <p className="text-xs italic" style={{ color: 'var(--text-muted)' }}>Nenhum aluno nesta turma.</p>
-                    }
-                    return classStudents.map(student => {
+                  {classStudents.length === 0 ? (
+                    <p className="text-xs italic" style={{ color: 'var(--text-muted)' }}>Nenhum aluno ativo nesta turma.</p>
+                  ) : (
+                    classStudents.map(student => {
                       const names = student.name.split(' ')
                       const displayName = names.length > 1 ? `${names[0]} ${names[names.length - 1]}` : names[0]
                       return (
@@ -329,7 +333,7 @@ export default function Classes() {
                         </div>
                       )
                     })
-                  })()}
+                  )}
                 </div>
               </div>
 
