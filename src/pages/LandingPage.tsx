@@ -7,6 +7,7 @@ import carolinaImg from '../assets/director_carolina.png'
 import ricardoImg from '../assets/director_ricardo.png'
 import hybridForecastImg from '../assets/hybrid_forecast_mockup.png'
 import theaterMapImg from '../assets/theater_map_mockup.png'
+import financialMockupImg from '../assets/financial_dashboard_mockup.png'
 
 export default function LandingPage() {
   return (
@@ -150,7 +151,7 @@ export default function LandingPage() {
             <div className="absolute w-[80%] h-[80%] rounded-full bg-purple-500/5 blur-[100px]" />
             <div className="relative z-10 w-full overflow-hidden rounded-3xl border border-white/5 bg-white/5 backdrop-blur-3xl p-4 shadow-2xl hover:border-white/10 transition-all hover:scale-[1.01] group">
               <img 
-                src={feature1Image} 
+                src={financialMockupImg} 
                 alt="Financeiro Avançado DanceFlow" 
                 className="w-full h-auto rounded-2xl object-cover object-center shadow-lg"
               />
