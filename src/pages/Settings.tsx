@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Save, Settings, Upload, FileText, Calendar, Code, GraduationCap } from 'lucide-react'
+import { Save, Settings, Upload, FileText, Calendar, Code, GraduationCap, Shield, Lock, AlertTriangle } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 const DEFAULT_TAX_TEMPLATE = `DECLARAÇÃO DE RENDIMENTOS DE INSTRUÇÃO (IRPF)
@@ -36,7 +36,102 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [settingsId, setSettingsId] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'general' | 'gateways' | 'templates'>('general')
+  const [activeTab, setActiveTab] = useState<'general' | 'gateways' | 'templates' | 'security'>('general')
+  
+  // MFA States
+  const [mfaActive, setMfaActive] = useState(false)
+  const [mfaFactorId, setMfaFactorId] = useState('')
+  const [mfaEnrollData, setMfaEnrollData] = useState<any>(null)
+  const [mfaEnrollStatus, setMfaEnrollStatus] = useState<'idle' | 'enrolling' | 'verified'>('idle')
+  const [mfaVerificationCode, setMfaVerificationCode] = useState('')
+  const [mfaError, setMfaError] = useState('')
+  const [mfaLoading, setMfaLoading] = useState(false)
+
+  async function loadMfaStatus() {
+    try {
+      const { data, error } = await supabase.auth.mfa.listFactors()
+      if (!error && data) {
+        const activeTotp = data.totp?.find(f => f.status === 'verified')
+        if (activeTotp) {
+          setMfaActive(true)
+          setMfaFactorId(activeTotp.id)
+        } else {
+          setMfaActive(false)
+          setMfaFactorId('')
+        }
+      }
+    } catch (e) {
+      console.error('MFA load error:', e)
+    }
+  }
+
+  async function handleMfaEnroll() {
+    setMfaLoading(true)
+    setMfaError('')
+    try {
+      const { data, error } = await supabase.auth.mfa.enroll({
+        factorType: 'totp',
+        issuer: 'DanceFlow (' + formData.school_name + ')'
+      })
+      if (error) throw error
+      setMfaEnrollData(data)
+      setMfaEnrollStatus('enrolling')
+    } catch (err: any) {
+      setMfaError(err.message || 'Erro ao iniciar ativação de MFA.')
+    } finally {
+      setMfaLoading(false)
+    }
+  }
+
+  async function handleMfaVerify(e: React.FormEvent) {
+    e.preventDefault()
+    if (!mfaEnrollData || mfaVerificationCode.length !== 6) return
+
+    setMfaLoading(true)
+    setMfaError('')
+    try {
+      const factorId = mfaEnrollData.id
+      
+      const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({ factorId })
+      if (challengeError) throw challengeError
+
+      const { error: verifyError } = await supabase.auth.mfa.verify({
+        factorId,
+        challengeId: challengeData.id,
+        code: mfaVerificationCode
+      })
+      if (verifyError) throw verifyError
+
+      alert('Autenticação de Duas Etapas (MFA) ativada com sucesso!')
+      setMfaEnrollStatus('verified')
+      setMfaVerificationCode('')
+      await loadMfaStatus()
+    } catch (err: any) {
+      setMfaError(err.message || 'Código de verificação inválido. Tente novamente.')
+    } finally {
+      setMfaLoading(false)
+    }
+  }
+
+  async function handleMfaDisable() {
+    if (!confirm('Tem certeza que deseja desativar a Autenticação de Duas Etapas (MFA)? Isso tornará sua conta menos segura.')) return
+
+    setMfaLoading(true)
+    setMfaError('')
+    try {
+      const { error } = await supabase.auth.mfa.unenroll({ factorId: mfaFactorId })
+      if (error) throw error
+
+      alert('Autenticação de Duas Etapas (MFA) desativada com sucesso!')
+      setMfaEnrollStatus('idle')
+      setMfaEnrollData(null)
+      await loadMfaStatus()
+    } catch (err: any) {
+      setMfaError(err.message || 'Erro ao desativar MFA.')
+    } finally {
+      setMfaLoading(false)
+    }
+  }
   
   const [hasBgMenuColumn, setHasBgMenuColumn] = useState(false)
   const [formData, setFormData] = useState({
@@ -102,6 +197,7 @@ export default function SettingsPage() {
         activity_declaration_template: localStorage.getItem('activity_declaration_template') || DEFAULT_ACTIVITY_TEMPLATE,
       }))
     }
+    await loadMfaStatus()
     setLoading(false)
   }
 
@@ -309,6 +405,21 @@ export default function SettingsPage() {
           }}
         >
           Modelos de Documentos
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('security')}
+          className={`px-8 py-3.5 text-sm font-bold transition-all rounded-xl shadow-md border cursor-pointer ${
+            activeTab === 'security' ? 'font-black scale-105' : 'text-gray-400 hover:text-white hover:bg-white/5'
+          }`}
+          style={{
+            backgroundColor: activeTab === 'security' ? 'var(--bg-card)' : 'rgba(0, 0, 0, 0.2)',
+            borderColor: activeTab === 'security' ? 'var(--accent-color)' : 'transparent',
+            color: activeTab === 'security' ? '#fff' : 'var(--text-primary)',
+            boxShadow: activeTab === 'security' ? '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 0 8px var(--accent-color)' : 'none'
+          }}
+        >
+          Segurança (MFA)
         </button>
       </div>
 
@@ -631,6 +742,153 @@ export default function SettingsPage() {
             <p className="text-sm text-gray-400 leading-relaxed max-w-md">
               Estamos preparando uma experiência incrível e simplificada para você personalizar as declarações de Imposto de Renda (IRPF) e Fichas de Matrícula da sua escola. Esta aba estará disponível em breve!
             </p>
+          </div>
+        )}
+
+        {activeTab === 'security' && (
+          <div className="rounded-none p-8 sm:p-10 space-y-6 animate-fade-in" style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="h-6 w-2 rounded-full bg-purple-500" />
+              <h3 className="text-sm font-bold text-purple-400 uppercase tracking-wider">Segurança da Conta</h3>
+            </div>
+
+            <div className="p-6 border border-white/5 bg-black/20 rounded-none flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+              <div className="space-y-2 max-w-xl text-left">
+                <h4 className="text-base font-bold flex items-center gap-2 text-white">
+                  <Shield size={18} className={mfaActive ? "text-emerald-400" : "text-gray-400"} />
+                  Autenticação de Duas Etapas (MFA)
+                </h4>
+                <p className="text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                  Adicione uma camada extra de segurança à sua conta de Diretor. Quando ativada, você precisará digitar um código de 6 dígitos gerado no aplicativo autenticador do seu celular (como Google Authenticator) toda vez que fizer login.
+                </p>
+                <div className="pt-2">
+                  <span className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-none border ${
+                    mfaActive 
+                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                      : 'bg-red-500/10 text-red-400 border-red-500/20'
+                  }`}>
+                    {mfaActive ? 'Ativado (Seguro)' : 'Desativado (Menos Seguro)'}
+                  </span>
+                </div>
+              </div>
+
+              {!mfaActive && mfaEnrollStatus === 'idle' && (
+                <button
+                  type="button"
+                  onClick={handleMfaEnroll}
+                  disabled={mfaLoading}
+                  className="rounded-none px-6 py-3.5 text-xs font-bold text-white transition-all hover:scale-105 disabled:opacity-50 flex items-center gap-2 cursor-pointer shadow-md"
+                  style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}
+                >
+                  <Lock size={14} />
+                  {mfaLoading ? 'Iniciando...' : 'Ativar MFA'}
+                </button>
+              )}
+
+              {mfaActive && (
+                <button
+                  type="button"
+                  onClick={handleMfaDisable}
+                  disabled={mfaLoading}
+                  className="rounded-none px-6 py-3.5 text-xs font-bold text-red-400 hover:text-red-300 transition-all border border-red-500/20 bg-red-500/10 hover:bg-red-500/20 flex items-center gap-2 cursor-pointer"
+                >
+                  <AlertTriangle size={14} />
+                  {mfaLoading ? 'Desativando...' : 'Desativar MFA'}
+                </button>
+              )}
+            </div>
+
+            {mfaError && (
+              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-none text-xs font-semibold text-red-400">
+                {mfaError}
+              </div>
+            )}
+
+            {mfaEnrollStatus === 'enrolling' && mfaEnrollData && (
+              <div className="p-8 border border-white/5 bg-black/40 rounded-none space-y-6 animate-fade-in max-w-2xl mx-auto text-left">
+                <div className="text-center space-y-2">
+                  <h4 className="text-sm font-bold text-white uppercase tracking-wider">Configurar Aplicativo Autenticador</h4>
+                  <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    Siga os passos abaixo para configurar o aplicativo autenticador no seu celular.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                  <div className="flex flex-col items-center justify-center p-4 bg-white rounded-none border border-white/10 shadow-lg w-fit mx-auto">
+                    <img 
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(mfaEnrollData.totp.uri)}`} 
+                      alt="MFA QR Code" 
+                      className="w-40 h-40 object-contain"
+                    />
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="space-y-1">
+                      <p className="text-xs font-bold text-purple-400">Passo 1:</p>
+                      <p className="text-xs text-gray-300 leading-normal">
+                        Abra o Google Authenticator ou Microsoft Authenticator no seu celular e escaneie o código QR ao lado.
+                      </p>
+                    </div>
+
+                    <div className="space-y-1 pt-2">
+                      <p className="text-xs font-bold text-purple-400">Passo 2:</p>
+                      <p className="text-xs text-gray-300 leading-normal">
+                        Se não conseguir escanear, adicione manualmente uma conta no aplicativo digitando a chave abaixo:
+                      </p>
+                      <code className="block p-2.5 bg-black/60 border border-white/10 rounded-none text-xs text-gray-300 font-mono select-all tracking-wider text-center break-all">
+                        {mfaEnrollData.totp.secret}
+                      </code>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="border-t border-white/5 pt-6 space-y-4">
+                  <div className="text-center">
+                    <p className="text-xs font-bold text-purple-400 mb-1">Passo 3:</p>
+                    <p className="text-xs text-gray-300">
+                      Digite o código de 6 dígitos gerado pelo seu aplicativo autenticador para confirmar a ativação:
+                    </p>
+                  </div>
+
+                  <form onSubmit={handleMfaVerify} className="flex flex-col sm:flex-row gap-3 max-w-sm mx-auto items-stretch">
+                    <input
+                      type="text"
+                      maxLength={6}
+                      pattern="\d*"
+                      required
+                      value={mfaVerificationCode}
+                      onChange={(e) => setMfaVerificationCode(e.target.value.replace(/\D/g, ''))}
+                      placeholder="000000"
+                      className="flex-1 bg-black/40 border border-white/10 rounded-none px-4 py-2.5 text-center text-sm font-bold tracking-widest focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                      style={inputStyle}
+                    />
+                    <button
+                      type="submit"
+                      disabled={mfaLoading || mfaVerificationCode.length !== 6}
+                      className="rounded-none px-6 py-2.5 text-xs font-bold text-white transition-all hover:scale-105 disabled:opacity-50 cursor-pointer"
+                      style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}
+                    >
+                      {mfaLoading ? 'Confirmando...' : 'Confirmar e Ativar'}
+                    </button>
+                  </form>
+                </div>
+
+                <div className="flex justify-end pt-4 border-t border-white/5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMfaEnrollStatus('idle')
+                      setMfaEnrollData(null)
+                      setMfaVerificationCode('')
+                      setMfaError('')
+                    }}
+                    className="text-xs text-gray-400 hover:text-white transition-colors cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

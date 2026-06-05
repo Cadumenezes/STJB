@@ -21,6 +21,7 @@ import LandingPage from './pages/LandingPage'
 import Checkout from './pages/Checkout'
 import Schedule from './pages/Schedule'
 import Shop from './pages/Shop'
+import MfaChallenge from './components/MfaChallenge'
 
 function PendingApproval({ status, onSignOut }: { status: string, onSignOut: () => void }) {
   return (
@@ -67,6 +68,7 @@ export default function App() {
   const [session, setSession] = useState<any>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
+  const [mfaRequired, setMfaRequired] = useState(false)
 
   useEffect(() => {
     // Fetch profile function
@@ -76,10 +78,26 @@ export default function App() {
       setLoading(false)
     }
 
+    const checkMfa = async () => {
+      try {
+        const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
+        if (!error && data) {
+          if (data.nextLevel === 'aal2' && data.currentLevel !== 'aal2') {
+            setMfaRequired(true)
+          } else {
+            setMfaRequired(false)
+          }
+        }
+      } catch (e) {
+        console.error('MFA check error:', e)
+      }
+    }
+
     // Check active session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session)
       if (session?.user) {
+        await checkMfa()
         fetchProfile(session.user.id)
       } else {
         setLoading(false)
@@ -87,7 +105,7 @@ export default function App() {
     })
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
         localStorage.setItem('resetting_password', 'true')
         navigate('/auth')
@@ -95,9 +113,11 @@ export default function App() {
       setSession(session)
       if (session?.user) {
         setLoading(true)
+        await checkMfa()
         fetchProfile(session.user.id)
       } else {
         setProfile(null)
+        setMfaRequired(false)
         setLoading(false)
       }
     })
@@ -111,6 +131,10 @@ export default function App() {
         <div className="h-12 w-12 border-4 border-purple-600/20 border-t-purple-600 rounded-full animate-spin" />
       </div>
     )
+  }
+
+  if (session && mfaRequired) {
+    return <MfaChallenge onVerified={() => setMfaRequired(false)} />
   }
 
   const isExpired = profile?.expires_at ? new Date(profile.expires_at) < new Date() : false;
