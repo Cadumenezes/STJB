@@ -291,7 +291,11 @@ export default function Financial() {
         const { data: monthsData } = await supabase.from('fixed_bill_months').select('*').order('month')
         setFixedBillMonths(monthsData || [])
 
-        // Calculate projected payroll data for the current month for Expense Forecast calculation
+        // Fetch payroll data for Expense Forecast calculation (attendance for elapsed days of the current month)
+        const { data: att } = await supabase.from('attendance').select('*').eq('type', 'instructor').eq('status', 'present')
+        const currentMonth = new Date().toISOString().slice(0, 7)
+        const monthAtt = (att || []).filter(a => a.date.startsWith(currentMonth))
+
         const currentYear = new Date().getFullYear()
         const currentMonthIdx = new Date().getMonth()
         const holidays = getHolidaysForYear(currentYear, fetchedCustomHolidays)
@@ -320,10 +324,19 @@ export default function Financial() {
             })
           })
 
-          // Calculate projection of days and classes for the current month
+          // Calculate projection/realized hybrid of days and classes for the current month
           let uniqueDays = 0
           let classesCount = 0
           const workedDates = new Set<number>()
+
+          // Filter actual attendance for this teacher
+          const instructorAttList = monthAtt.filter(a => a.instructor_id === m.id)
+          const attClassesByDate: Record<string, number> = {}
+          instructorAttList.forEach(a => {
+            attClassesByDate[a.date] = (attClassesByDate[a.date] || 0) + 1
+          })
+
+          const todayDay = new Date().getDate()
 
           for (let d = 1; d <= numDays; d++) {
             const dateStr = `${currentYear}-${(currentMonthIdx + 1).toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`
@@ -333,19 +346,28 @@ export default function Financial() {
             const dayOfWeek = date.getDay()
             const dayName = dayMap[dayOfWeek]
             
-            if (weeklyCounts[dayName] > 0) {
-              if (isHoliday) {
-                if (openHolidaysVal) {
+            if (d < todayDay) {
+              // Past days: use actual attendance recorded
+              if (attClassesByDate[dateStr] > 0) {
+                workedDates.add(d)
+                classesCount += attClassesByDate[dateStr]
+              }
+            } else {
+              // Today and future days: use schedule projection
+              if (weeklyCounts[dayName] > 0) {
+                if (isHoliday) {
+                  if (openHolidaysVal) {
+                    workedDates.add(d)
+                    classesCount += weeklyCounts[dayName]
+                  } else {
+                    if (payHolidaysVal) {
+                      classesCount += weeklyCounts[dayName]
+                    }
+                  }
+                } else {
                   workedDates.add(d)
                   classesCount += weeklyCounts[dayName]
-                } else {
-                  if (payHolidaysVal) {
-                    classesCount += weeklyCounts[dayName]
-                  }
                 }
-              } else {
-                workedDates.add(d)
-                classesCount += weeklyCounts[dayName]
               }
             }
           }
