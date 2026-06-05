@@ -149,68 +149,133 @@ export default function Theaters() {
         </div>
       </div>
 
-      <div className="rounded-none overflow-hidden" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
-                <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Teatro</th>
-                <th className="px-6 py-4 text-center text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Fileiras</th>
-                <th className="px-6 py-4 text-center text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Cadeiras/Fileira</th>
-                <th className="px-6 py-4 text-center text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Exceções</th>
-                <th className="px-6 py-4 text-right text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
-                    Carregando...
-                  </td>
-                </tr>
-              ) : theaters.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
-                    Nenhum teatro cadastrado. Crie um modelo de mapa de assentos para associar aos seus eventos!
-                  </td>
-                </tr>
-              ) : (
-                theaters.map((t) => (
-                  <tr 
-                    key={t.id} 
-                    className="transition-colors" 
-                    style={{ borderBottom: '1px solid var(--border-color)' }}
-                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-card-hover)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                  >
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="rounded-2xl p-2 animate-pulse" style={{ backgroundColor: 'rgba(139,92,246,0.15)' }}>
-                          <Map size={18} style={{ color: 'var(--accent-color)' }} />
-                        </div>
-                        <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{t.name}</p>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-center font-bold" style={{ color: 'var(--text-primary)' }}>{t.rows_count}</td>
-                    <td className="px-6 py-4 text-sm text-center font-bold" style={{ color: 'var(--text-primary)' }}>{t.seats_per_row}</td>
-                    <td className="px-6 py-4 text-sm text-center" style={{ color: 'var(--text-secondary)' }}>
-                      {Object.keys(t.exceptions || {}).length > 0 
-                        ? `${Object.keys(t.exceptions).length} fileiras customizadas` 
-                        : 'Nenhuma exceção'}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2">
-                        <button onClick={() => openEdit(t)} className="p-2 rounded-2xl hover:opacity-70 transition-opacity cursor-pointer" style={{ color: '#3b82f6' }}><Edit size={16} /></button>
-                        <button onClick={() => handleDelete(t.id)} className="p-2 rounded-2xl hover:opacity-70 transition-opacity cursor-pointer" style={{ color: '#f43f5e' }}><Trash2 size={16} /></button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      {loading ? (
+        <div className="flex h-64 items-center justify-center">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-transparent" style={{ borderTopColor: 'var(--accent-color)' }} />
         </div>
-      </div>
+      ) : theaters.length === 0 ? (
+        <div className="max-w-2xl mx-auto w-full rounded-2xl p-8 sm:p-12 text-center border border-white/5" style={{ backgroundColor: 'var(--bg-card)' }}>
+          <div className="h-20 w-20 rounded-3xl mx-auto flex items-center justify-center mb-6 bg-purple-500/10 border border-purple-500/20 animate-bounce">
+            <Map size={40} className="text-purple-400" />
+          </div>
+          <h2 className="text-2xl font-black text-white mb-4 uppercase tracking-wider">Nenhum Teatro Cadastrado</h2>
+          <p className="text-sm mb-8 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+            Crie um modelo de mapa de assentos para associar aos seus eventos!
+          </p>
+          <button
+            onClick={() => { resetForm(); setEditTheater(null); setShowModal(true) }}
+            className="flex items-center gap-2 rounded-2xl px-8 py-4 text-sm font-bold text-white transition-all hover:scale-105 active:scale-95 shadow-xl mx-auto cursor-pointer"
+            style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}
+          >
+            <Plus size={26} />
+            Novo Teatro
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {theaters.map((t) => {
+            const totalRows = t.rows_count
+            const defaultSeats = t.seats_per_row
+            
+            // Total capacity calculation
+            let totalSeatsCount = 0
+            for (let r = 0; r < totalRows; r++) {
+              const rowName = getRowLabel(r)
+              const count = t.exceptions?.[rowName] !== undefined ? t.exceptions[rowName] : defaultSeats
+              totalSeatsCount += count
+            }
+
+            // Preview configuration (limit max dimensions in card)
+            const previewRows = Math.min(6, totalRows)
+
+            return (
+              <div 
+                key={t.id}
+                className="group rounded-3xl border border-white/5 p-6 hover:border-purple-500/30 transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] flex flex-col justify-between"
+                style={{ backgroundColor: 'var(--bg-card)' }}
+              >
+                <div>
+                  {/* Card Title & Info */}
+                  <div className="flex items-start justify-between gap-4 mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-2xl p-3 bg-purple-500/10 border border-purple-500/20 group-hover:bg-purple-500/20 transition-all">
+                        <Map size={22} style={{ color: 'var(--accent-color)' }} />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-black text-white uppercase tracking-tight line-clamp-1">{t.name}</h3>
+                        <p className="text-[10px] uppercase font-bold tracking-widest text-purple-400 mt-0.5">{totalSeatsCount} Poltronas</p>
+                      </div>
+                    </div>
+                    
+                    {/* Action buttons */}
+                    <div className="flex gap-1 shrink-0">
+                      <button onClick={() => openEdit(t)} className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-all cursor-pointer"><Edit size={14} /></button>
+                      <button onClick={() => handleDelete(t.id)} className="p-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 transition-all cursor-pointer"><Trash2 size={14} /></button>
+                    </div>
+                  </div>
+
+                  {/* Config details tags */}
+                  <div className="flex flex-wrap gap-2 mb-6">
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-white/5 border border-white/10 px-2.5 py-1 rounded-full text-[var(--text-secondary)]">
+                      📁 {totalRows} Fileiras
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider bg-white/5 border border-white/10 px-2.5 py-1 rounded-full text-[var(--text-secondary)]">
+                      🪑 {defaultSeats} Assentos/Fil.
+                    </span>
+                    {Object.keys(t.exceptions || {}).length > 0 && (
+                      <span className="text-[10px] font-bold uppercase tracking-wider bg-purple-500/10 border border-purple-500/20 px-2.5 py-1 rounded-full text-purple-400">
+                        ⚡ {Object.keys(t.exceptions).length} Customizadas
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Seating Map Mini Preview */}
+                  <div className="flex flex-col items-center justify-center p-4 rounded-2xl bg-black/25 border border-white/5 relative overflow-hidden h-36">
+                    {/* Tiny stage representation */}
+                    <div 
+                      className="w-1/2 py-0.5 mb-4 rounded-b-md border-b text-center text-[7px] font-bold uppercase tracking-widest text-white/50"
+                      style={{ 
+                        background: 'linear-gradient(to bottom, rgba(139,92,246,0.05), rgba(139,92,246,0.15))',
+                        borderBottomColor: 'var(--accent-color)'
+                      }}
+                    >
+                      Palco
+                    </div>
+                    
+                    {/* Rows */}
+                    <div className="flex flex-col gap-1 w-full overflow-hidden items-center">
+                      {Array.from({ length: previewRows }).map((_, rIdx) => {
+                        const rowName = getRowLabel(rIdx)
+                        const count = t.exceptions?.[rowName] !== undefined ? t.exceptions[rowName] : defaultSeats
+                        const finalCount = Math.min(14, count) // max dots in preview
+                        return (
+                          <div key={rowName} className="flex gap-0.5 justify-center items-center">
+                            {Array.from({ length: finalCount }).map((_, sIdx) => (
+                              <div 
+                                key={sIdx}
+                                className="w-1.5 h-1.5 rounded-full"
+                                style={{ backgroundColor: 'rgba(139, 92, 246, 0.4)' }}
+                              />
+                            ))}
+                            {count > 14 && (
+                              <span className="text-[6px] text-gray-500 font-bold ml-0.5 leading-none">+</span>
+                            )}
+                          </div>
+                        )
+                      })}
+                      {totalRows > previewRows && (
+                        <div className="text-[7px] text-gray-500 font-bold tracking-widest mt-0.5">
+                          + {totalRows - previewRows} FILEIRAS
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       <Modal 
         isOpen={showModal} 
