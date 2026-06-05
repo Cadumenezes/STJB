@@ -49,6 +49,10 @@ export default function SettingsPage() {
 
   async function loadMfaStatus() {
     try {
+      if (!supabase.auth || !supabase.auth.mfa) {
+        console.warn('Supabase MFA API is not available on this client.')
+        return
+      }
       const { data, error } = await supabase.auth.mfa.listFactors()
       if (!error && data) {
         const activeTotp = data.totp?.find(f => f.status === 'verified')
@@ -66,6 +70,10 @@ export default function SettingsPage() {
   }
 
   async function handleMfaEnroll() {
+    if (!supabase.auth || !supabase.auth.mfa) {
+      setMfaError('Autenticação MFA não disponível neste cliente.')
+      return
+    }
     setMfaLoading(true)
     setMfaError('')
     try {
@@ -86,6 +94,10 @@ export default function SettingsPage() {
   async function handleMfaVerify(e: React.FormEvent) {
     e.preventDefault()
     if (!mfaEnrollData || mfaVerificationCode.length !== 6) return
+    if (!supabase.auth || !supabase.auth.mfa) {
+      setMfaError('Autenticação MFA não disponível neste cliente.')
+      return
+    }
 
     setMfaLoading(true)
     setMfaError('')
@@ -115,6 +127,10 @@ export default function SettingsPage() {
 
   async function handleMfaDisable() {
     if (!confirm('Tem certeza que deseja desativar a Autenticação de Duas Etapas (MFA)? Isso tornará sua conta menos segura.')) return
+    if (!supabase.auth || !supabase.auth.mfa) {
+      setMfaError('Autenticação MFA não disponível neste cliente.')
+      return
+    }
 
     setMfaLoading(true)
     setMfaError('')

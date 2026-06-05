@@ -80,6 +80,10 @@ export default function App() {
 
     const checkMfa = async () => {
       try {
+        if (!supabase.auth || !supabase.auth.mfa) {
+          console.warn('Supabase MFA API is not available on this client.')
+          return
+        }
         const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
         if (!error && data) {
           if (data.nextLevel === 'aal2' && data.currentLevel !== 'aal2') {
@@ -97,7 +101,11 @@ export default function App() {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session)
       if (session?.user) {
-        await checkMfa()
+        try {
+          await checkMfa()
+        } catch (e) {
+          console.error('MFA verification error during session restore:', e)
+        }
         fetchProfile(session.user.id)
       } else {
         setLoading(false)
@@ -113,7 +121,11 @@ export default function App() {
       setSession(session)
       if (session?.user) {
         setLoading(true)
-        await checkMfa()
+        try {
+          await checkMfa()
+        } catch (e) {
+          console.error('MFA verification error during auth state change:', e)
+        }
         fetchProfile(session.user.id)
       } else {
         setProfile(null)

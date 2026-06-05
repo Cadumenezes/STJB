@@ -11,6 +11,10 @@ export default function MfaChallenge({ onVerified }: { onVerified: () => void })
   useEffect(() => {
     async function init() {
       try {
+        if (!supabase.auth || !supabase.auth.mfa) {
+          setError('Autenticação MFA não disponível neste cliente.')
+          return
+        }
         const { data, error } = await supabase.auth.mfa.listFactors()
         if (error) throw error
         // Find the first active verified totp factor
