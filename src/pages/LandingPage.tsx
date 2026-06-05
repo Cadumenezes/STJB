@@ -6,6 +6,7 @@ import feature2Image from '../assets/dance_esmeralda_ballerina.png'
 import carolinaImg from '../assets/director_carolina.png'
 import ricardoImg from '../assets/director_ricardo.png'
 import hybridForecastImg from '../assets/hybrid_forecast_mockup.png'
+import theaterMapImg from '../assets/theater_map_mockup.png'
 
 export default function LandingPage() {
   return (
@@ -250,6 +251,39 @@ export default function LandingPage() {
               <img 
                 src={hybridForecastImg} 
                 alt="Previsão de Gastos Inteligente DanceFlow" 
+                className="w-full h-auto rounded-2xl object-cover object-center shadow-lg"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Premium Spotlight Section 5: Events & Theater Map */}
+      <section className="relative z-10 py-36 border-t border-white/5 w-full flex justify-center">
+        <div className="w-full max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center gap-16">
+          <div className="flex-1 space-y-6 text-center md:text-left flex flex-col items-center md:items-start">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-400 font-bold text-xs uppercase tracking-wider">
+              ⭐ Eventos & Bilheteria
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-black tracking-tight leading-tight">
+              Gestão de Espetáculos e Mapas de Assento Personalizados
+            </h2>
+            <p className="text-gray-400 text-base leading-relaxed">
+              Planejar um grande festival ou apresentação anual nunca foi tão simples! Com o DanceFlow, você pode cadastrar e mapear o teatro de forma visual, definindo fileiras de assentos customizadas e exceções de poltronas para refletir fielmente qualquer casa de espetáculos. Controle a ocupação em tempo real, venda ingressos numerados e integre a arrecadação de taxas de apresentação, kits e figurinos diretamente ao cadastro financeiro do aluno em lote.
+            </p>
+            <div className="pt-2">
+              <Link to="/auth" className="inline-flex items-center gap-3 px-6 py-3.5 bg-white/5 border border-white/10 hover:border-white/20 text-white font-bold rounded-xl transition-all hover:-translate-y-0.5 group text-sm">
+                Explorar Gestão de Eventos
+                <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+          </div>
+          <div className="flex-1 w-full max-w-md md:max-w-none relative flex justify-center items-center">
+            <div className="absolute w-[80%] h-[80%] rounded-full bg-pink-500/5 blur-[100px]" />
+            <div className="relative z-10 w-full overflow-hidden rounded-3xl border border-white/5 bg-white/5 backdrop-blur-3xl p-4 shadow-2xl hover:border-white/10 transition-all hover:scale-[1.01] group">
+              <img 
+                src={theaterMapImg} 
+                alt="Mapa de Assentos de Teatros DanceFlow" 
                 className="w-full h-auto rounded-2xl object-cover object-center shadow-lg"
               />
             </div>
