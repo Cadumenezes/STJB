@@ -139,6 +139,32 @@ export default function Financial() {
 
         const { data: monthsData } = await supabase.from('fixed_bill_months').select('*').order('month')
         setFixedBillMonths(monthsData || [])
+
+        // Fetch payroll data for Expense Forecast calculation
+        const { data: members } = await supabase.from('team_members').select('*').or('role.eq.instructor,role.eq.Professor').eq('status', 'active')
+        const { data: att } = await supabase.from('attendance').select('*').eq('type', 'instructor').eq('status', 'present')
+        
+        const currentMonth = new Date().toISOString().slice(0, 7)
+        const monthAtt = (att || []).filter(a => a.date.startsWith(currentMonth))
+
+        const calculated = (members || []).map(m => {
+          const teacherAtt = monthAtt.filter(a => a.instructor_id === m.id)
+          const classesCount = teacherAtt.length
+          const uniqueDays = new Set(teacherAtt.map(a => a.date)).size
+          
+          const hourlyTotal = classesCount * (m.hourly_rate || 0)
+          const transportTotal = uniqueDays * (m.daily_transport || 0)
+          
+          return {
+            ...m,
+            classesCount,
+            uniqueDays,
+            hourlyTotal,
+            transportTotal,
+            totalToPay: hourlyTotal + transportTotal + (m.salary || 0)
+          }
+        })
+        setPayrollData(calculated)
       }
     } catch (error) {
       console.error('Erro ao carregar dados:', error)
@@ -171,6 +197,12 @@ export default function Financial() {
         : Number(s.monthly_fee || 0)
       return sum + fee
     }, 0)
+
+  const fixedBillsTotal = fixedBills
+    .filter(bill => bill.active)
+    .reduce((sum, bill) => sum + getFixedBillAmountForMonth(bill.id, currentMonthStr, bill.amount), 0)
+
+  const previsaoGastos = fixedBillsTotal + payrollTotal
 
   const filteredEntries = entries.filter((e) => filter === 'all' || e.type === filter)
 
@@ -348,6 +380,14 @@ export default function Financial() {
       color: '#a78bfa',
       bg: 'rgba(167,139,250,0.1)',
       gradient: 'linear-gradient(135deg, #a78bfa, #7c3aed)',
+    },
+    {
+      label: 'Previsão de Gastos',
+      value: previsaoGastos,
+      icon: Wallet,
+      color: '#fbbf24',
+      bg: 'rgba(251,191,36,0.15)',
+      gradient: 'linear-gradient(135deg, #fbbf24, #d97706)',
     },
   ]
 
@@ -922,7 +962,7 @@ export default function Financial() {
       {activeTab === 'flow' && (
         <>
           {/* Summary Cards */}
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8">
             {summaryCards.map((card) => (
               <div
                 key={card.label}
