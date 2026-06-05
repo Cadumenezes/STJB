@@ -256,18 +256,37 @@ export default function Students() {
     if (paymentFilter === 'scholarship') return s.status === 'scholarship'
     if (paymentFilter === 'partial_scholarship') return s.status === 'partial_scholarship'
     if (paymentFilter === 'locked') return s.status === 'locked'
+    if (paymentFilter === 'pending') {
+      if (s.status !== 'active' && s.status !== 'partial_scholarship') return false
+      const status = getStudentPaymentStatus(s.id)
+      return status === 'pending' || status === 'none'
+    }
+    if (paymentFilter === 'paid' || paymentFilter === 'overdue') {
+      if (s.status !== 'active' && s.status !== 'partial_scholarship') return false
+      const status = getStudentPaymentStatus(s.id)
+      return status === paymentFilter
+    }
     const status = getStudentPaymentStatus(s.id)
     return status === paymentFilter
   })
 
   const stats = {
-    total: students.filter(s => s.status === 'active').length,
-    paid: payments.filter((p) => p.status === 'paid' && p.reference_month === new Date().toISOString().slice(0, 7)).length,
+    total: students.filter(s => s.status !== 'locked' && s.status !== 'inactive').length,
+    paid: payments.filter((p) => {
+      if (p.status !== 'paid' || p.reference_month !== new Date().toISOString().slice(0, 7)) return false
+      const student = students.find(s => s.id === p.student_id)
+      return student?.status === 'active' || student?.status === 'partial_scholarship'
+    }).length,
     pending: students.filter((s) => {
+      if (s.status !== 'active' && s.status !== 'partial_scholarship') return false
       const status = getStudentPaymentStatus(s.id)
       return status === 'pending' || status === 'none'
     }).length,
-    overdue: payments.filter((p) => p.status === 'overdue').length,
+    overdue: payments.filter((p) => {
+      if (p.status !== 'overdue') return false
+      const student = students.find(s => s.id === p.student_id)
+      return student?.status === 'active' || student?.status === 'partial_scholarship'
+    }).length,
     scholarship: students.filter(s => s.status === 'scholarship').length,
     partial_scholarship: students.filter(s => s.status === 'partial_scholarship').length,
     locked: students.filter(s => s.status === 'locked').length,
