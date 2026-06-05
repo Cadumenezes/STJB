@@ -99,7 +99,7 @@ export default function AttendancePage() {
   async function loadClassData() {
     setLoading(true)
     // Get students for this class
-    const { data: studentsData } = await supabase.from('students').select('*').contains('class_ids', [selectedClassId]).eq('status', 'active')
+    const { data: studentsData } = await supabase.from('students').select('*').contains('class_ids', [selectedClassId]).in('status', ['active', 'scholarship', 'partial_scholarship'])
     setStudents(studentsData || [])
 
     // Get today's attendance

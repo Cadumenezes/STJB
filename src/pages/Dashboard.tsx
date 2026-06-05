@@ -65,7 +65,7 @@ export default function Dashboard() {
       const { count: studentCount } = await supabase
         .from('students')
         .select('*', { count: 'exact', head: true })
-        .eq('status', 'active')
+        .in('status', ['active', 'scholarship', 'partial_scholarship'])
 
       // Overdue payments
       const today = new Date().toISOString().split('T')[0]
@@ -103,7 +103,7 @@ export default function Dashboard() {
       const { data: students } = await supabase
         .from('students')
         .select('name, birth_date')
-        .eq('status', 'active')
+        .in('status', ['active', 'scholarship', 'partial_scholarship'])
 
       const birthdaysThisWeek = (students || []).filter((s) => {
         if (!s.birth_date) return false

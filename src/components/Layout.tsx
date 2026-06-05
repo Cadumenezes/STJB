@@ -115,7 +115,7 @@ export default function Layout() {
         await new Promise(r => setTimeout(r, 2000))
         
         try {
-          const { count: sCount } = await supabase.from('students').select('*', { count: 'exact', head: true }).eq('status', 'active')
+          const { count: sCount } = await supabase.from('students').select('*', { count: 'exact', head: true }).in('status', ['active', 'scholarship', 'partial_scholarship'])
           const { count: oCount } = await supabase.from('monthly_payments').select('*', { count: 'exact', head: true }).eq('status', 'overdue')
           addLog(`✅ Dashboard OK! Alunos ativos: ${sCount || 0}, Mensalidades atrasadas: ${oCount || 0}`)
           setDiagnostics(prev => ({ ...prev, dashboard: 'success' }))
@@ -249,7 +249,7 @@ export default function Layout() {
         await new Promise(r => setTimeout(r, 2000))
         
         try {
-          const { count: sCount } = await supabase.from('students').select('*', { count: 'exact', head: true }).eq('status', 'active')
+          const { count: sCount } = await supabase.from('students').select('*', { count: 'exact', head: true }).in('status', ['active', 'scholarship', 'partial_scholarship'])
           addLog(`✅ Dashboard OK! Alunos ativos: ${sCount || 0}`)
           setDiagnostics(prev => ({ ...prev, dashboard: 'success' }))
         } catch (err: any) {
