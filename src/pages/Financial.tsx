@@ -30,6 +30,7 @@ export default function Financial() {
   
   // Conciliação de Extrato
   const [students, setStudents] = useState<Student[]>([])
+  const [discountDueDay, setDiscountDueDay] = useState(10)
   const [pendingPayments, setPendingPayments] = useState<MonthlyPayment[]>([])
   const [reconciliationFile, setReconciliationFile] = useState<File | null>(null)
   const [reconciledItems, setReconciledItems] = useState<any[]>([])
@@ -87,6 +88,15 @@ export default function Financial() {
         }
         setSchoolAdminId(adminId)
       }
+
+      // Load settings (to get discount_due_day) and students for payment forecast
+      const { data: settingsData } = await supabase.from('school_settings').select('discount_due_day').limit(1).maybeSingle()
+      if (settingsData) {
+        setDiscountDueDay(settingsData.discount_due_day || 10)
+      }
+      const { data: allStudents } = await supabase.from('students').select('*')
+      setStudents(allStudents || [])
+
       if (activeTab === 'events') {
         const { data: eventsData } = await supabase.from('events').select('*').order('date', { ascending: true })
         setEvents(eventsData || [])
@@ -118,8 +128,6 @@ export default function Financial() {
         })
         setPayrollData(calculated)
       } else if (activeTab === 'reconciliation') {
-        const { data: studentsData } = await supabase.from('students').select('*')
-        setStudents(studentsData || [])
         const { data: paymentsData } = await supabase.from('monthly_payments').select('*').neq('status', 'paid')
         setPendingPayments(paymentsData || [])
       } else {
@@ -151,6 +159,18 @@ export default function Financial() {
   const currentBalance = entries.reduce((sum, e) => e.type === 'income' ? sum + Number(e.amount) : sum - Number(e.amount), 0)
 
   const payrollTotal = payrollData.reduce((sum, p) => sum + p.totalToPay, 0)
+
+  const todayDay = new Date().getDate()
+  const isBeforeDiscount = todayDay <= discountDueDay
+
+  const previsaoPagamentos = students
+    .filter(s => s.status === 'active' || s.status === 'partial_scholarship')
+    .reduce((sum, s) => {
+      const fee = isBeforeDiscount && s.discount_monthly_fee && s.discount_monthly_fee > 0
+        ? Number(s.discount_monthly_fee)
+        : Number(s.monthly_fee || 0)
+      return sum + fee
+    }, 0)
 
   const filteredEntries = entries.filter((e) => filter === 'all' || e.type === filter)
 
@@ -323,7 +343,7 @@ export default function Financial() {
     },
     {
       label: 'Previsão Pagamentos',
-      value: payrollTotal,
+      value: previsaoPagamentos,
       icon: Users,
       color: '#a78bfa',
       bg: 'rgba(167,139,250,0.1)',
