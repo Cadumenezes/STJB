@@ -65,6 +65,13 @@ export default function Layout() {
   const [showTour, setShowTour] = useState(false)
   const [tourStep, setTourStep] = useState(0)
 
+  // Help Center State
+  const [showHelpCenter, setShowHelpCenter] = useState(false)
+  const [helpTitle, setHelpTitle] = useState('')
+  const [helpDescription, setHelpDescription] = useState('')
+  const [helpType, setHelpType] = useState<'suggestion' | 'bug'>('suggestion')
+  const [isSubmittingHelp, setIsSubmittingHelp] = useState(false)
+
   // IA Diagnostics Simulation HUD State
   const [showSimulator, setShowSimulator] = useState(false)
   const [isSimulating, setIsSimulating] = useState(false)
@@ -82,6 +89,65 @@ export default function Layout() {
   const addLog = (msg: string) => {
     const time = new Date().toLocaleTimeString('pt-BR')
     setSimLogs(prev => [...prev, `[${time}] ${msg}`])
+  }
+
+  const submitHelpRequest = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!helpTitle.trim() || !helpDescription.trim() || !profile) return
+
+    setIsSubmittingHelp(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Usuário não autenticado')
+
+      let error = null
+
+      if (helpType === 'suggestion') {
+        // Enviar para o Diretor (school_suggestions)
+        let directorId = user.id
+        
+        // Descobrir ID do diretor se não for o diretor logado
+        if (profile.role !== 'admin' && profile.role !== 'user') {
+            const { data: adminSettings } = await supabase.from('school_settings').select('id').limit(1).single()
+            if (adminSettings) {
+                directorId = adminSettings.id
+            }
+        }
+
+        const res = await supabase.from('school_suggestions').insert([{
+          user_id: directorId,
+          sender_name: profile.email || 'Usuário',
+          sender_role: profile.role,
+          category: 'Sugestão',
+          content: `**${helpTitle}**\n\n${helpDescription}`,
+          status: 'pending'
+        }])
+        error = res.error
+      } else {
+        // Enviar Suporte Técnico (support_tickets)
+        const res = await supabase.from('support_tickets').insert([{
+          user_id: user.id,
+          sender_name: profile.email || 'Usuário',
+          sender_email: profile.email || '',
+          subject: helpTitle,
+          message: helpDescription,
+          status: 'open'
+        }])
+        error = res.error
+      }
+
+      if (error) throw error
+
+      alert('Sua solicitação foi enviada com sucesso! A direção irá analisar em breve.')
+      setShowHelpCenter(false)
+      setHelpTitle('')
+      setHelpDescription('')
+      setHelpType('suggestion')
+    } catch (err: any) {
+      alert(`Erro ao enviar solicitação: ${err.message}`)
+    } finally {
+      setIsSubmittingHelp(false)
+    }
   }
 
   const runDiagnostics = async () => {
@@ -1117,6 +1183,116 @@ export default function Layout() {
             </span>
           </button>
         </div>
+      )}
+
+      {/* Floating Help Center Button (Visible for all logged users) */}
+      <div className={`fixed bottom-6 ${profile?.email?.toLowerCase() === 'alzirocarloseduardo@gmail.com' ? 'right-24' : 'right-6'} z-[100] no-print`}>
+        <button
+          onClick={() => setShowHelpCenter(true)}
+          className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-tr from-blue-600 to-cyan-500 text-white shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 relative group"
+          title="Central de Ajuda e Feedback"
+        >
+          <HelpCircle size={24} className="animate-bounce-slow" />
+          <span className="absolute -top-1 -right-1 flex h-4 w-4">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-4 w-4 bg-blue-500 text-[8px] font-black text-white items-center justify-center font-sans">?</span>
+          </span>
+        </button>
+      </div>
+
+      {/* Help Center Modal */}
+      {showHelpCenter && (
+        <Modal
+          isOpen={showHelpCenter}
+          onClose={() => setShowHelpCenter(false)}
+          title="Central de Ajuda & Feedback"
+        >
+          <div className="p-6 space-y-6">
+            <p className="text-sm text-[var(--text-secondary)]">
+              Encontrou algum problema ou tem uma ideia incrível para melhorar nossa escola? Conta pra gente!
+            </p>
+
+            <form onSubmit={submitHelpRequest} className="space-y-4">
+              <div className="flex gap-4 mb-4">
+                <button
+                  type="button"
+                  onClick={() => setHelpType('suggestion')}
+                  className={`flex-1 py-3 px-4 rounded-xl flex items-center justify-center gap-2 border-2 transition-all ${
+                    helpType === 'suggestion' 
+                      ? 'border-blue-500 bg-blue-500/10 text-blue-500' 
+                      : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:border-blue-500/50'
+                  }`}
+                >
+                  <Sparkles size={20} />
+                  <span className="font-bold">Sugestão</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setHelpType('bug')}
+                  className={`flex-1 py-3 px-4 rounded-xl flex items-center justify-center gap-2 border-2 transition-all ${
+                    helpType === 'bug' 
+                      ? 'border-rose-500 bg-rose-500/10 text-rose-500' 
+                      : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:border-rose-500/50'
+                  }`}
+                >
+                  <Shield size={20} />
+                  <span className="font-bold">Reportar Erro</span>
+                </button>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-2">
+                  Título do {helpType === 'suggestion' ? 'sua sugestão' : 'problema'}
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={helpTitle}
+                  onChange={(e) => setHelpTitle(e.target.value)}
+                  className="w-full rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)] px-4 py-3 text-[var(--text-primary)] focus:border-[var(--accent-color)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-color)] transition-colors"
+                  placeholder={helpType === 'suggestion' ? 'Ex: Nova funcionalidade para o financeiro' : 'Ex: Erro ao gerar o boleto'}
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-2">
+                  Descrição Detalhada
+                </label>
+                <textarea
+                  required
+                  rows={4}
+                  value={helpDescription}
+                  onChange={(e) => setHelpDescription(e.target.value)}
+                  className="w-full rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)] px-4 py-3 text-[var(--text-primary)] focus:border-[var(--accent-color)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-color)] transition-colors resize-none"
+                  placeholder={helpType === 'suggestion' ? 'Conte-nos detalhadamente como essa ideia pode ajudar a escola...' : 'Descreva o passo a passo de como o erro aconteceu...'}
+                />
+              </div>
+
+              <div className="pt-4 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowHelpCenter(false)}
+                  className="flex-1 rounded-xl px-4 py-3 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] transition-colors border border-[var(--border-color)]"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingHelp || !helpTitle.trim() || !helpDescription.trim()}
+                  className="flex-1 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-4 py-3 text-sm font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:scale-100 flex justify-center items-center gap-2"
+                >
+                  {isSubmittingHelp ? (
+                    'Enviando...'
+                  ) : (
+                    <>
+                      Enviar <ArrowRight size={16} />
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </Modal>
       )}
 
       {/* Simulator Modal / Panel HUD */}

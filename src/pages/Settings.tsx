@@ -36,7 +36,53 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [settingsId, setSettingsId] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'general' | 'gateways' | 'templates' | 'security'>('general')
+  const [activeTab, setActiveTab] = useState<'general' | 'gateways' | 'templates' | 'security' | 'feedback'>('general')
+  
+  // Feedback & Support States
+  const [suggestions, setSuggestions] = useState<any[]>([])
+  const [tickets, setTickets] = useState<any[]>([])
+  const [loadingFeedback, setLoadingFeedback] = useState(false)
+
+  async function loadFeedbackAndTickets() {
+    setLoadingFeedback(true)
+    try {
+      // Carregar sugestões internas
+      const { data: sugData, error: sugErr } = await supabase
+        .from('school_suggestions')
+        .select('*')
+        .order('created_at', { ascending: false })
+      if (sugErr) throw sugErr
+      setSuggestions(sugData || [])
+
+      // Carregar chamados de suporte
+      const { data: tickData, error: tickErr } = await supabase
+        .from('support_tickets')
+        .select('*')
+        .order('created_at', { ascending: false })
+      if (tickErr) throw tickErr
+      setTickets(tickData || [])
+    } catch (err: any) {
+      console.error('Erro ao carregar feedback:', err)
+    } finally {
+      setLoadingFeedback(false)
+    }
+  }
+
+  async function updateSuggestionStatus(id: string, status: string) {
+    try {
+      const { error } = await supabase.from('school_suggestions').update({ status }).eq('id', id)
+      if (error) throw error
+      loadFeedbackAndTickets()
+    } catch (err: any) {
+      alert('Erro ao atualizar status da sugestão: ' + err.message)
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab === 'feedback') {
+      loadFeedbackAndTickets()
+    }
+  }, [activeTab])
   
   // MFA States
   const [mfaActive, setMfaActive] = useState(false)
@@ -440,6 +486,21 @@ export default function SettingsPage() {
           }}
         >
           Segurança (MFA)
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('feedback')}
+          className={`px-8 py-3.5 text-sm font-bold transition-all rounded-xl shadow-md border cursor-pointer ${
+            activeTab === 'feedback' ? 'font-black scale-105' : 'text-gray-400 hover:text-white hover:bg-white/5'
+          }`}
+          style={{
+            backgroundColor: activeTab === 'feedback' ? 'var(--bg-card)' : 'rgba(0, 0, 0, 0.2)',
+            borderColor: activeTab === 'feedback' ? 'var(--accent-color)' : 'transparent',
+            color: activeTab === 'feedback' ? '#fff' : 'var(--text-primary)',
+            boxShadow: activeTab === 'feedback' ? '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 0 8px var(--accent-color)' : 'none'
+          }}
+        >
+          Feedback & Suporte
         </button>
       </div>
 
@@ -949,6 +1010,102 @@ export default function SettingsPage() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === 'feedback' && (
+          <div className="rounded-none p-8 sm:p-10 space-y-10 animate-fade-in" style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
+            
+            {/* Sugestões Internas */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="h-6 w-2 rounded-full bg-blue-500" />
+                <h3 className="text-sm font-bold text-blue-400 uppercase tracking-wider">Sugestões da Equipe</h3>
+              </div>
+              <p className="text-xs text-[var(--text-secondary)] -mt-4">Feedback enviado pelos professores e secretárias para a direção.</p>
+
+              {loadingFeedback ? (
+                <div className="text-center py-10 text-sm text-[var(--text-secondary)]">Carregando...</div>
+              ) : suggestions.length === 0 ? (
+                <div className="text-center py-10 text-sm text-[var(--text-secondary)] bg-black/20 border border-white/5 rounded-none">
+                  Nenhuma sugestão recebida ainda.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {suggestions.map((sug) => (
+                    <div key={sug.id} className="p-5 border border-white/5 bg-black/30 rounded-none space-y-3">
+                      <div className="flex justify-between items-start gap-4">
+                        <div>
+                          <span className="text-[10px] font-black uppercase tracking-wider text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">{sug.category}</span>
+                          <h4 className="text-sm font-bold mt-2 text-white">{sug.sender_name} <span className="text-gray-400 text-xs font-normal">({sug.sender_role})</span></h4>
+                        </div>
+                        <span className="text-[10px] text-gray-500">{new Date(sug.created_at).toLocaleDateString('pt-BR')}</span>
+                      </div>
+                      
+                      <div className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap p-3 bg-black/40 rounded border border-white/5">
+                        {sug.content}
+                      </div>
+
+                      <div className="pt-2 flex gap-2 border-t border-white/5">
+                        <select
+                          value={sug.status}
+                          onChange={(e) => updateSuggestionStatus(sug.id, e.target.value)}
+                          className="text-xs px-2 py-1 rounded bg-black/50 border border-white/10 text-white focus:outline-none"
+                        >
+                          <option value="pending">Pendente</option>
+                          <option value="read">Lido / Em análise</option>
+                          <option value="archived">Arquivado</option>
+                        </select>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-white/10" />
+
+            {/* Chamados de Suporte */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="h-6 w-2 rounded-full bg-rose-500" />
+                <h3 className="text-sm font-bold text-rose-400 uppercase tracking-wider">Meus Chamados de Suporte (Técnico)</h3>
+              </div>
+              <p className="text-xs text-[var(--text-secondary)] -mt-4">Chamados que você enviou para o suporte oficial do DanceFlow.</p>
+
+              {loadingFeedback ? (
+                <div className="text-center py-10 text-sm text-[var(--text-secondary)]">Carregando...</div>
+              ) : tickets.length === 0 ? (
+                <div className="text-center py-10 text-sm text-[var(--text-secondary)] bg-black/20 border border-white/5 rounded-none">
+                  Você não tem chamados de suporte abertos.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {tickets.map((ticket) => (
+                    <div key={ticket.id} className="p-5 border border-white/5 bg-black/30 rounded-none space-y-3">
+                      <div className="flex justify-between items-start gap-4">
+                        <div>
+                          <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded border ${
+                            ticket.status === 'open' ? 'text-rose-400 bg-rose-500/10 border-rose-500/20' :
+                            ticket.status === 'in_progress' ? 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20' :
+                            'text-emerald-400 bg-emerald-500/10 border-emerald-500/20'
+                          }`}>
+                            {ticket.status === 'open' ? 'Aberto' : ticket.status === 'in_progress' ? 'Em Análise' : 'Resolvido'}
+                          </span>
+                          <h4 className="text-sm font-bold mt-2 text-white">{ticket.subject}</h4>
+                        </div>
+                        <span className="text-[10px] text-gray-500">{new Date(ticket.created_at).toLocaleDateString('pt-BR')}</span>
+                      </div>
+                      
+                      <div className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap p-3 bg-black/40 rounded border border-white/5">
+                        {ticket.message}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
           </div>
         )}
       </div>
