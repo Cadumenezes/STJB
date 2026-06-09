@@ -90,7 +90,7 @@ serve(async (req) => {
       }
 
       const [userId, plan] = externalReference.split(':')
-      if (!userId || !plan || !['prata', 'ouro', 'diamante'].includes(plan)) {
+      if (!userId || !plan || !['bronze', 'prata', 'ouro', 'diamante'].includes(plan)) {
         console.error(`Referência externa inválida: ${externalReference}`)
         return new Response(JSON.stringify({ error: 'Invalid reference format' }), {
           status: 400,

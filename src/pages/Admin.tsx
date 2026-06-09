@@ -11,7 +11,7 @@ export default function Admin() {
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null)
   const [formData, setFormData] = useState({
     status: 'pending' as 'pending' | 'active' | 'suspended',
-    plan: 'gratis' as 'gratis' | 'prata' | 'ouro' | 'diamante',
+    plan: 'gratis' as 'gratis' | 'bronze' | 'prata' | 'ouro' | 'diamante',
     expires_at: ''
   })
 
@@ -194,6 +194,7 @@ export default function Admin() {
                         p.plan === 'diamante' ? 'bg-cyan-500/10 text-cyan-400' :
                         p.plan === 'ouro' ? 'bg-yellow-500/10 text-yellow-400' :
                         p.plan === 'prata' ? 'bg-gray-450/10 text-gray-300' :
+                        p.plan === 'bronze' ? 'bg-amber-500/10 text-amber-400' :
                         'bg-purple-500/10 text-purple-400'
                       }`}>
                         {p.plan || 'gratis'}
@@ -262,6 +263,7 @@ export default function Admin() {
                   className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition-all font-medium"
                 >
                   <option value="gratis" className="bg-gray-900">Grátis (7 Dias)</option>
+                  <option value="bronze" className="bg-gray-900">Bronze (Até 15 Alunos)</option>
                   <option value="prata" className="bg-gray-900">Prata (Até 25 Alunos)</option>
                   <option value="ouro" className="bg-gray-900">Ouro (Até 50 Alunos)</option>
                   <option value="diamante" className="bg-gray-900">Diamante (Ilimitado)</option>
