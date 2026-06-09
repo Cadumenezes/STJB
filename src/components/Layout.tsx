@@ -53,6 +53,138 @@ const navItems = [
   { path: '/settings', label: 'Configurações', icon: Settings },
 ]
 
+const manualChapters = [
+  {
+    title: '1. Configurações da Escola',
+    description: 'Personalize a identidade visual da sua escola, envie a logo e configure mensalidades, descontos e MFA.',
+    tips: 'Sempre mantenha seu logotipo e cores atualizados para que a área do aluno fique com a cara da sua escola!',
+    images: ['/screenshots/01_settings.png'],
+    accessPath: 'Menu Lateral > Configurações',
+    steps: [
+      'Acesse as Configurações da Escola no menu lateral.',
+      'Defina o nome da escola, CNPJ, dados de contato e envie o logotipo.',
+      'Configure as regras financeiras padrão (mensalidade cheia e com desconto).',
+      'Ative a autenticação de duas etapas (MFA) para maior segurança.',
+    ]
+  },
+  {
+    title: '2. Gerenciando sua Equipe',
+    description: 'Cadastre seus professores e secretários para que eles tenham acesso ao sistema. Cada cargo tem permissões diferentes: secretários ajudam na gestão, enquanto professores acessam apenas suas próprias turmas.',
+    images: ['/screenshots/03_team_after_inserts.png', '/screenshots/02_team_initial.png'],
+    accessPath: 'Menu Lateral > Equipe',
+    steps: [
+      'Acesse o menu de Equipe.',
+      'Clique em "Novo Membro" no canto superior direito.',
+      'Preencha as informações básicas (Nome Completo, E-mail, Telefone).',
+      'Selecione o Cargo / Função (Professor, Secretário, Diretor).',
+      'Defina as informações financeiras de contratação (Hora Aula ou Salário Base).',
+      'Clique em "CADASTRAR MEMBRO".'
+    ]
+  },
+  {
+    title: '3. Estoque & Lojinha',
+    description: 'Venda uniformes, sapatilhas e acessórios direto pela plataforma! Cadastre produtos, gerencie quantidades e venda para os alunos.',
+    images: ['/screenshots/04_inventory.png', '/screenshots/04_inventory_initial.png'],
+    accessPath: 'Menu Lateral > Estoque',
+    steps: [
+      'Vá em Estoque no menu lateral.',
+      'Clique em "Novo Produto".',
+      'Preencha o Nome do produto, Categoria, Preço de Custo, Preço de Venda e Quantidade.',
+      'Clique em "Cadastrar".'
+    ]
+  },
+  {
+    title: '4. Teatros e Mapas de Assentos',
+    description: 'Desenhe virtualmente o teatro da sua cidade, configurando o número de fileiras e assentos por fileira para organizar a bilheteria de seus festivais.',
+    images: ['/screenshots/05_theaters.png', '/screenshots/05_theaters_initial.png'],
+    accessPath: 'Menu Lateral > Teatros',
+    steps: [
+      'Acesse o painel de Teatros.',
+      'Clique no botão "Novo Teatro".',
+      'Defina o Nome do Teatro, total de Fileiras e Poltronas por Fileira.',
+      'Clique em "Cadastrar Teatro". O preview visual será gerado automaticamente.'
+    ]
+  },
+  {
+    title: '5. Eventos, Festivais e Assentos',
+    description: 'Crie espetáculos, vincule-os aos teatros virtuais, gerencie a planilha de participantes/vendas e faça a alocação de poltronas de forma interativa!',
+    images: ['/screenshots/06_events.png', '/screenshots/08b_event_participants.png', '/screenshots/08c_event_seating_map.png'],
+    accessPath: 'Menu Lateral > Eventos',
+    steps: [
+      'Acesse Eventos e clique em "Novo Evento".',
+      'Escolha um Teatro para o evento ou digite o local manualmente. Clique em "Criar Evento".',
+      'Na aba do evento, utilize o menu "Selecione um Aluno para Adicionar" para cadastrar participantes.',
+      'Alterne para a sub-aba "Mapa de Assentos" para reservar poltronas clicando nelas após selecionar um aluno na lista.'
+    ]
+  },
+  {
+    title: '6. Turmas de Dança',
+    description: 'Organize os horários e capacidade de cada modalidade de dança (Ballet, Jazz, Hip Hop).',
+    images: ['/screenshots/07_classes.png', '/screenshots/07_classes_initial.png'],
+    accessPath: 'Menu Lateral > Turmas',
+    steps: [
+      'Entre na página de Turmas.',
+      'Clique em "Nova Turma".',
+      'Preencha o Nome da Turma, Professor Responsável, Estilo, Capacidade Máxima e o Horário das Aulas.',
+      'Clique em "Cadastrar Turma".'
+    ]
+  },
+  {
+    title: '7. Cadastro de Alunos',
+    description: 'Gerencie toda a sua base de alunos, controle suas turmas vinculadas e o status de pagamento de mensalidades.',
+    images: ['/screenshots/08_students.png', '/screenshots/08_students_initial.png'],
+    accessPath: 'Menu Lateral > Alunos',
+    steps: [
+      'Acesse Alunos e clique em "Novo Aluno".',
+      'Preencha o Nome do Aluno, Nome do Responsável, Telefone do Responsável, E-mail, CPF, Data de Nascimento e Endereço.',
+      'Vincule o aluno a uma ou mais turmas.',
+      'Defina o valor da mensalidade e clique em "Salvar".'
+    ]
+  },
+  {
+    title: '8. Aulas Experimentais',
+    description: 'Gerencie agendamentos para visitantes interessados, registrando o comparecimento e a conversão de leads em matrículas.',
+    images: ['/screenshots/09_trials.png', '/screenshots/09_trials_initial.png'],
+    accessPath: 'Menu Lateral > Experimentais',
+    steps: [
+      'Vá em Experimentais.',
+      'Clique em "Agendar Aula".',
+      'Informe o Nome do Interessado, WhatsApp, Turma de Interesse e a Data Agendada.',
+      'Ao final da aula, marque se o interessado "Compareceu" ou "Faltou". Se ele decidir se matricular, clique em "Matricular Aluno" para transferir seus dados.'
+    ]
+  },
+  {
+    title: '9. Controle Financeiro',
+    description: 'Acompanhe a saúde financeira da escola: visualize o fluxo de caixa, cadastre contas fixas recorrentes e projete o pagamento dos professores (com o desconto automático de passagens em feriados).',
+    images: ['/screenshots/10a_financial_flow.png', '/screenshots/10c_financial_fixed_after_insert.png', '/screenshots/10d_financial_payroll.png'],
+    accessPath: 'Menu Lateral > Financeiro',
+    steps: [
+      'Acesse o Financeiro para ver o Fluxo de Caixa.',
+      'Entre na sub-aba "Contas Fixas" e clique em "Configurar Conta Fixa" para registrar despesas mensais recorrentes (aluguel, água, energia, etc.).',
+      'Entre em "Pagamentos Equipe" para ver a folha calculada automaticamente com base nas aulas dadas e regras de feriados do mês.'
+    ]
+  },
+  {
+    title: '10. Agenda Escolar',
+    description: 'Veja todos os agendamentos, turmas e feriados do ano organizados por Mês, Semestre ou Ano.',
+    images: ['/screenshots/11_schedule.png'],
+    accessPath: 'Menu Lateral > Agenda',
+    steps: [
+      'Navegue pela Agenda para consultar as aulas do dia e os feriados nacionais/municipais configurados.',
+      'Adicione feriados customizados ou visualize os compromissos em blocos cronológicos.'
+    ]
+  },
+  {
+    title: '11. Visão Geral (Dashboard)',
+    description: 'O painel executivo com resumos de faturamento, ocupação de turmas, aniversariantes do mês e chamadas pendentes.',
+    images: ['/screenshots/12_dashboard_final.png'],
+    accessPath: 'Menu Lateral > Visão Geral',
+    steps: [
+      'Ao entrar no DanceFlow, confira os cards de sumário para obter insights instantâneos do dia.'
+    ]
+  }
+];
+
 export default function Layout() {
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -71,6 +203,8 @@ export default function Layout() {
   const [helpDescription, setHelpDescription] = useState('')
   const [helpType, setHelpType] = useState<'suggestion' | 'bug'>('suggestion')
   const [isSubmittingHelp, setIsSubmittingHelp] = useState(false)
+  const [helpTab, setHelpTab] = useState<'manual' | 'feedback'>('manual')
+  const [activeManualChapter, setActiveManualChapter] = useState(0)
 
   // IA Diagnostics Simulation HUD State
   const [showSimulator, setShowSimulator] = useState(false)
@@ -129,6 +263,7 @@ export default function Layout() {
           user_id: user.id,
           sender_name: profile.email || 'Usuário',
           sender_email: profile.email || '',
+          sender_role: profile.role,
           subject: helpTitle,
           message: helpDescription,
           status: 'open'
@@ -1003,7 +1138,8 @@ export default function Layout() {
                   Plano {
                     profile?.plan === 'diamante' ? '💎 Diamante' :
                     profile?.plan === 'ouro' ? '🥇 Ouro' :
-                    profile?.plan === 'prata' ? '🥈 Prata' : '🆓 Grátis'
+                    profile?.plan === 'prata' ? '🥈 Prata' :
+                    profile?.plan === 'bronze' ? '🥉 Bronze' : '🆓 Grátis'
                   }
                 </span>
               </div>
@@ -1189,14 +1325,10 @@ export default function Layout() {
       <div className={`fixed bottom-6 ${profile?.email?.toLowerCase() === 'alzirocarloseduardo@gmail.com' ? 'right-24' : 'right-6'} z-[100] no-print`}>
         <button
           onClick={() => setShowHelpCenter(true)}
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-tr from-blue-600 to-cyan-500 text-white shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 relative group"
-          title="Central de Ajuda e Feedback"
+          className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 text-white shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 relative group"
+          title="Central de Ajuda & Suporte"
         >
-          <HelpCircle size={24} className="animate-bounce-slow" />
-          <span className="absolute -top-1 -right-1 flex h-4 w-4">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-4 w-4 bg-blue-500 text-[8px] font-black text-white items-center justify-center font-sans">?</span>
-          </span>
+          <HelpCircle size={24} />
         </button>
       </div>
 
@@ -1205,92 +1337,189 @@ export default function Layout() {
         <Modal
           isOpen={showHelpCenter}
           onClose={() => setShowHelpCenter(false)}
-          title="Central de Ajuda & Feedback"
+          title="Central de Ajuda & Suporte"
+          size="2xl"
         >
-          <div className="p-6 space-y-6">
-            <p className="text-sm text-[var(--text-secondary)]">
-              Encontrou algum problema ou tem uma ideia incrível para melhorar nossa escola? Conta pra gente!
-            </p>
+          <div className="flex flex-col h-[70vh]">
+            {/* Top Navigation Tabs */}
+            <div className="flex gap-2 mb-4 p-1 bg-black/30 border border-white/5 rounded-xl shrink-0">
+              <button
+                type="button"
+                onClick={() => setHelpTab('manual')}
+                className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  helpTab === 'manual' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                📖 Manual Passo a Passo
+              </button>
+              <button
+                type="button"
+                onClick={() => setHelpTab('feedback')}
+                className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  helpTab === 'feedback' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                💬 Enviar Feedback / Reportar Erro
+              </button>
+            </div>
 
-            <form onSubmit={submitHelpRequest} className="space-y-4">
-              <div className="flex gap-4 mb-4">
-                <button
-                  type="button"
-                  onClick={() => setHelpType('suggestion')}
-                  className={`flex-1 py-3 px-4 rounded-xl flex items-center justify-center gap-2 border-2 transition-all ${
-                    helpType === 'suggestion' 
-                      ? 'border-blue-500 bg-blue-500/10 text-blue-500' 
-                      : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:border-blue-500/50'
-                  }`}
-                >
-                  <Sparkles size={20} />
-                  <span className="font-bold">Sugestão</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setHelpType('bug')}
-                  className={`flex-1 py-3 px-4 rounded-xl flex items-center justify-center gap-2 border-2 transition-all ${
-                    helpType === 'bug' 
-                      ? 'border-rose-500 bg-rose-500/10 text-rose-500' 
-                      : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:border-rose-500/50'
-                  }`}
-                >
-                  <Shield size={20} />
-                  <span className="font-bold">Reportar Erro</span>
-                </button>
-              </div>
+            {helpTab === 'manual' ? (
+              <div className="flex-1 flex gap-6 overflow-hidden min-h-0">
+                {/* Left side: Topics List (30% width) */}
+                <div className="w-[30%] overflow-y-auto border-r border-white/10 pr-4 flex flex-col gap-2 scrollbar-thin">
+                  {manualChapters.map((ch, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setActiveManualChapter(idx)}
+                      className={`text-left p-3 rounded-xl text-[11px] sm:text-xs font-bold transition-all ${
+                        activeManualChapter === idx
+                          ? 'bg-blue-600 text-white shadow-md'
+                          : 'text-gray-400 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      {ch.title}
+                    </button>
+                  ))}
+                </div>
 
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-2">
-                  Título do {helpType === 'suggestion' ? 'sua sugestão' : 'problema'}
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={helpTitle}
-                  onChange={(e) => setHelpTitle(e.target.value)}
-                  className="w-full rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)] px-4 py-3 text-[var(--text-primary)] focus:border-[var(--accent-color)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-color)] transition-colors"
-                  placeholder={helpType === 'suggestion' ? 'Ex: Nova funcionalidade para o financeiro' : 'Ex: Erro ao gerar o boleto'}
-                />
-              </div>
+                {/* Right side: Topic Content (70% width) */}
+                <div className="w-[70%] overflow-y-auto pl-2 flex flex-col gap-4 scrollbar-thin">
+                  {(() => {
+                    const chapter = manualChapters[activeManualChapter]
+                    return (
+                      <div className="space-y-4 pr-2">
+                        <h3 className="text-base font-black text-white">{chapter.title}</h3>
+                        <p className="text-xs text-[var(--text-secondary)] leading-relaxed">{chapter.description}</p>
+                        
+                        {chapter.accessPath && (
+                          <div className="p-3 rounded-xl bg-white/5 border border-white/5 flex items-center justify-between text-[10px] font-bold text-blue-400 uppercase tracking-wider">
+                            <span>Como acessar no sistema:</span>
+                            <span>{chapter.accessPath}</span>
+                          </div>
+                        )}
 
-              <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-2">
-                  Descrição Detalhada
-                </label>
-                <textarea
-                  required
-                  rows={4}
-                  value={helpDescription}
-                  onChange={(e) => setHelpDescription(e.target.value)}
-                  className="w-full rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)] px-4 py-3 text-[var(--text-primary)] focus:border-[var(--accent-color)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-color)] transition-colors resize-none"
-                  placeholder={helpType === 'suggestion' ? 'Conte-nos detalhadamente como essa ideia pode ajudar a escola...' : 'Descreva o passo a passo de como o erro aconteceu...'}
-                />
-              </div>
+                        <div className="space-y-2">
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-white">Passo a Passo:</h4>
+                          <ul className="list-decimal list-inside space-y-1.5 text-xs text-[var(--text-secondary)]">
+                            {chapter.steps.map((st, sIdx) => (
+                              <li key={sIdx} className="leading-relaxed">{st}</li>
+                            ))}
+                          </ul>
+                        </div>
 
-              <div className="pt-4 flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowHelpCenter(false)}
-                  className="flex-1 rounded-xl px-4 py-3 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] transition-colors border border-[var(--border-color)]"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmittingHelp || !helpTitle.trim() || !helpDescription.trim()}
-                  className="flex-1 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-4 py-3 text-sm font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:scale-100 flex justify-center items-center gap-2"
-                >
-                  {isSubmittingHelp ? (
-                    'Enviando...'
-                  ) : (
-                    <>
-                      Enviar <ArrowRight size={16} />
-                    </>
-                  )}
-                </button>
+                        {chapter.tips && (
+                          <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs leading-relaxed">
+                            <span className="font-bold">💡 Dica Prática:</span> {chapter.tips}
+                          </div>
+                        )}
+
+                        <div className="space-y-3 pt-2">
+                          <h4 className="text-xs font-bold uppercase tracking-wider text-white">Captura de Tela do Sistema:</h4>
+                          <div className="grid grid-cols-1 gap-4">
+                            {chapter.images.map((imgUrl, imgIdx) => (
+                              <div key={imgIdx} className="rounded-xl overflow-hidden border border-white/10 shadow-lg bg-black/30">
+                                <img 
+                                  src={imgUrl} 
+                                  alt={`Tela ${chapter.title}`} 
+                                  className="w-full h-auto object-contain max-h-[300px]"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })()}
+                </div>
               </div>
-            </form>
+            ) : (
+              /* Original Feedback Form */
+              <div className="overflow-y-auto pr-2 flex-1">
+                <p className="text-sm text-[var(--text-secondary)] mb-4">
+                  Encontrou algum problema ou tem uma ideia incrível para melhorar nossa escola? Conta pra gente!
+                </p>
+                <form onSubmit={submitHelpRequest} className="space-y-4">
+                  <div className="flex gap-4 mb-4">
+                    <button
+                      type="button"
+                      onClick={() => setHelpType('suggestion')}
+                      className={`flex-1 py-3 px-4 rounded-xl flex items-center justify-center gap-2 border-2 transition-all ${
+                        helpType === 'suggestion' 
+                          ? 'border-blue-500 bg-blue-500/10 text-blue-500' 
+                          : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:border-blue-500/50'
+                      }`}
+                    >
+                      <Sparkles size={20} />
+                      <span className="font-bold">Sugestão</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setHelpType('bug')}
+                      className={`flex-1 py-3 px-4 rounded-xl flex items-center justify-center gap-2 border-2 transition-all ${
+                        helpType === 'bug' 
+                          ? 'border-rose-500 bg-rose-500/10 text-rose-500' 
+                          : 'border-[var(--border-color)] text-[var(--text-secondary)] hover:border-rose-500/50'
+                      }`}
+                    >
+                      <Shield size={20} />
+                      <span className="font-bold">Reportar Erro</span>
+                    </button>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-2">
+                      Título do {helpType === 'suggestion' ? 'sua sugestão' : 'problema'}
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={helpTitle}
+                      onChange={(e) => setHelpTitle(e.target.value)}
+                      className="w-full rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)] px-4 py-3 text-[var(--text-primary)] focus:border-[var(--accent-color)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-color)] transition-colors"
+                      placeholder={helpType === 'suggestion' ? 'Ex: Nova funcionalidade para o financeiro' : 'Ex: Erro ao gerar o boleto'}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] mb-2">
+                      Descrição Detalhada
+                    </label>
+                    <textarea
+                      required
+                      rows={4}
+                      value={helpDescription}
+                      onChange={(e) => setHelpDescription(e.target.value)}
+                      className="w-full rounded-xl border border-[var(--border-color)] bg-[var(--bg-secondary)] px-4 py-3 text-[var(--text-primary)] focus:border-[var(--accent-color)] focus:outline-none focus:ring-1 focus:ring-[var(--accent-color)] transition-colors resize-none"
+                      placeholder={helpType === 'suggestion' ? 'Conte-nos detalhadamente como essa ideia pode ajudar a escola...' : 'Descreva o passo a passo de como o erro aconteceu...'}
+                    />
+                  </div>
+
+                  <div className="pt-4 flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowHelpCenter(false)}
+                      className="flex-1 rounded-xl px-4 py-3 text-sm font-bold text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)] transition-colors border border-[var(--border-color)]"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSubmittingHelp || !helpTitle.trim() || !helpDescription.trim()}
+                      className="flex-1 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-4 py-3 text-sm font-bold text-white transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:scale-100 flex justify-center items-center gap-2"
+                    >
+                      {isSubmittingHelp ? (
+                        'Enviando...'
+                      ) : (
+                        <>
+                          Enviar <ArrowRight size={16} />
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
           </div>
         </Modal>
       )}

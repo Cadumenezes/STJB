@@ -38,7 +38,7 @@ serve(async (req) => {
 
     // Read payload
     const { plan, redirectOrigin } = await req.json()
-    if (!plan || !['prata', 'ouro', 'diamante'].includes(plan)) {
+    if (!plan || !['bronze', 'prata', 'ouro', 'diamante'].includes(plan)) {
       return new Response(
         JSON.stringify({ error: 'Plano inválido' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -54,13 +54,16 @@ serve(async (req) => {
     }
 
     // Configure details based on plan
-    let price = 40.00
-    let title = "DanceFlow - Plano Prata"
-    if (plan === 'ouro') {
-      price = 70.00
+    let price = 29.99
+    let title = "DanceFlow - Plano Bronze"
+    if (plan === 'prata') {
+      price = 49.99
+      title = "DanceFlow - Plano Prata"
+    } else if (plan === 'ouro') {
+      price = 99.99
       title = "DanceFlow - Plano Ouro"
     } else if (plan === 'diamante') {
-      price = 110.00
+      price = 199.99
       title = "DanceFlow - Plano Diamante"
     }
 

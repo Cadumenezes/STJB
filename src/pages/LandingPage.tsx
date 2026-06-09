@@ -346,95 +346,117 @@ export default function LandingPage() {
             <p className="text-gray-400 text-sm sm:text-base max-w-xl">Escolha o plano ideal para a sua escola e comece a escalar hoje mesmo.</p>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto items-stretch">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 max-w-7xl mx-auto items-stretch">
             
             {/* Gratis Plan */}
-            <div className="p-8 rounded-3xl bg-white/5 border border-white/10 flex flex-col justify-between hover:border-white/20 transition-all hover:scale-[1.01]">
+            <div className="p-6 rounded-3xl bg-white/5 border border-white/10 flex flex-col justify-between hover:border-white/20 transition-all hover:scale-[1.01]">
               <div>
-                <h3 className="text-xl font-bold mb-1">Plano Grátis</h3>
+                <h3 className="text-lg font-bold mb-1">Plano Grátis</h3>
                 <p className="text-gray-400 text-xs mb-6 font-semibold">Período de teste para você conhecer.</p>
                 <div className="mb-8">
-                  <span className="text-4xl font-black">Grátis</span><span className="text-gray-400 text-xs"> /7 dias</span>
+                  <span className="text-3xl font-black">Grátis</span><span className="text-gray-400 text-xs"> /7 dias</span>
                 </div>
                 <ul className="space-y-4 mb-8">
                   {['Teste de 7 Dias Totalmente Livre', 'Controle Financeiro Completo', 'Controle de Contas Fixas', 'Gestão de Chamadas & Turmas', 'Módulo Épico de Eventos', 'Controle de Estoque & Vendas', 'Suporte Prioritário VIP 24/7'].map((item, i) => (
-                    <li key={i} className="flex items-center gap-3 text-gray-300 text-[11px] leading-snug">
-                      <CheckCircle2 size={15} className="text-emerald-500 shrink-0" />
+                    <li key={i} className="flex items-center gap-2 text-gray-300 text-[10px] leading-snug">
+                      <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
                       <span>{item}</span>
                     </li>
                   ))}
                 </ul>
               </div>
-              <Link to="/auth" className="w-full py-3 rounded-xl border border-white/10 font-bold text-center text-xs hover:bg-white hover:text-black hover:border-white transition-all">
+              <Link to="/auth" className="w-full py-2.5 rounded-xl border border-white/10 font-bold text-center text-xs hover:bg-white hover:text-black hover:border-white transition-all">
                 Testar Grátis
               </Link>
             </div>
 
-            {/* Prata Plan */}
-            <div className="p-8 rounded-3xl bg-white/5 border border-white/10 flex flex-col justify-between hover:border-white/20 transition-all hover:scale-[1.01]">
+            {/* Bronze Plan */}
+            <div className="p-6 rounded-3xl bg-white/5 border border-white/10 flex flex-col justify-between hover:border-white/20 transition-all hover:scale-[1.01]">
               <div>
-                <h3 className="text-xl font-bold mb-1">Plano Prata</h3>
-                <p className="text-gray-400 text-xs mb-6 font-semibold">Excelente para escolas em início de jornada.</p>
+                <h3 className="text-lg font-bold mb-1">Plano Bronze</h3>
+                <p className="text-gray-400 text-xs mb-6 font-semibold">Perfeito para iniciar a organização.</p>
                 <div className="mb-8">
-                  <span className="text-4xl font-black">R$ 40</span><span className="text-gray-400 text-xs">/mês</span>
+                  <span className="text-3xl font-black">R$ 29,99</span><span className="text-gray-400 text-xs">/mês</span>
                 </div>
                 <ul className="space-y-4 mb-8">
-                  {['Limite de até 25 Alunos', 'Controle Financeiro Completo', 'Controle de Contas Fixas', 'Gestão de Chamadas & Turmas', 'Módulo Épico de Eventos', 'Controle de Estoque & Vendas', 'Suporte Prioritário VIP 24/7'].map((item, i) => (
-                    <li key={i} className="flex items-center gap-3 text-gray-300 text-[11px] leading-snug">
-                      <CheckCircle2 size={15} className="text-emerald-500 shrink-0" />
+                  {['Limite de até 15 Alunos', 'Controle Financeiro Completo', 'Controle de Contas Fixas', 'Gestão de Chamadas & Turmas', 'Módulo Épico de Eventos', 'Controle de Estoque & Vendas', 'Suporte Prioritário VIP 24/7'].map((item, i) => (
+                    <li key={i} className="flex items-center gap-2 text-gray-300 text-[10px] leading-snug">
+                      <CheckCircle2 size={14} className="text-amber-500 shrink-0" />
                       <span>{item}</span>
                     </li>
                   ))}
                 </ul>
               </div>
-              <Link to="/auth" className="w-full py-3 rounded-xl border border-white/10 font-bold text-center text-xs hover:bg-white hover:text-black hover:border-white transition-all">
+              <Link to="/auth" className="w-full py-2.5 rounded-xl border border-white/10 font-bold text-center text-xs hover:bg-white hover:text-black hover:border-white transition-all">
+                Assinar Bronze
+              </Link>
+            </div>
+
+            {/* Prata Plan */}
+            <div className="p-6 rounded-3xl bg-white/5 border border-white/10 flex flex-col justify-between hover:border-white/20 transition-all hover:scale-[1.01]">
+              <div>
+                <h3 className="text-lg font-bold mb-1">Plano Prata</h3>
+                <p className="text-gray-400 text-xs mb-6 font-semibold">Excelente para escolas em início.</p>
+                <div className="mb-8">
+                  <span className="text-3xl font-black">R$ 49,99</span><span className="text-gray-400 text-xs">/mês</span>
+                </div>
+                <ul className="space-y-4 mb-8">
+                  {['Limite de até 25 Alunos', 'Controle Financeiro Completo', 'Controle de Contas Fixas', 'Gestão de Chamadas & Turmas', 'Módulo Épico de Eventos', 'Controle de Estoque & Vendas', 'Suporte Prioritário VIP 24/7'].map((item, i) => (
+                    <li key={i} className="flex items-center gap-2 text-gray-300 text-[10px] leading-snug">
+                      <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <Link to="/auth" className="w-full py-2.5 rounded-xl border border-white/10 font-bold text-center text-xs hover:bg-white hover:text-black hover:border-white transition-all">
                 Assinar Prata
               </Link>
             </div>
 
             {/* Ouro Plan */}
-            <div className="p-8 rounded-3xl bg-gradient-to-b from-purple-600/10 to-pink-600/5 border border-purple-500/40 relative flex flex-col justify-between hover:border-purple-500 transition-all shadow-2xl hover:scale-[1.02]">
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full text-[9px] font-black uppercase tracking-widest">
+            <div className="p-6 rounded-3xl bg-gradient-to-b from-purple-600/10 to-pink-600/5 border border-purple-500/40 relative flex flex-col justify-between hover:border-purple-500 transition-all shadow-2xl hover:scale-[1.02]">
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 px-2.5 py-0.5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full text-[8px] font-black uppercase tracking-widest">
                 Mais Escolhido
               </div>
               <div>
-                <h3 className="text-xl font-bold mb-1 text-purple-400">Plano Ouro</h3>
+                <h3 className="text-lg font-bold mb-1 text-purple-400">Plano Ouro</h3>
                 <p className="text-gray-400 text-xs mb-6 font-semibold font-medium">O melhor equilíbrio para crescer.</p>
                 <div className="mb-8">
-                  <span className="text-4xl font-black">R$ 70</span><span className="text-gray-400 text-xs">/mês</span>
+                  <span className="text-3xl font-black">R$ 99,99</span><span className="text-gray-400 text-xs">/mês</span>
                 </div>
                 <ul className="space-y-4 mb-8">
                   {['Limite de até 50 Alunos', 'Controle Financeiro Completo', 'Controle de Contas Fixas', 'Gestão de Chamadas & Turmas', 'Módulo Épico de Eventos', 'Controle de Estoque & Vendas', 'Suporte Prioritário VIP 24/7'].map((item, i) => (
-                    <li key={i} className="flex items-center gap-3 text-gray-300 text-[11px] leading-snug">
-                      <CheckCircle2 size={15} className="text-purple-400 shrink-0" />
+                    <li key={i} className="flex items-center gap-2 text-gray-300 text-[10px] leading-snug">
+                      <CheckCircle2 size={14} className="text-purple-400 shrink-0" />
                       <span className="font-medium">{item}</span>
                     </li>
                   ))}
                 </ul>
               </div>
-              <Link to="/auth" className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 font-bold text-center text-xs text-white hover:shadow-[0_0_20px_rgba(168,85,247,0.3)] transition-all">
+              <Link to="/auth" className="w-full py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 font-bold text-center text-xs text-white hover:shadow-[0_0_20px_rgba(168,85,247,0.3)] transition-all">
                 Quero ser Ouro
               </Link>
             </div>
 
             {/* Diamante Plan */}
-            <div className="p-8 rounded-3xl bg-white/5 border border-white/10 flex flex-col justify-between hover:border-white/20 transition-all hover:scale-[1.01]">
+            <div className="p-6 rounded-3xl bg-white/5 border border-white/10 flex flex-col justify-between hover:border-white/20 transition-all hover:scale-[1.01]">
               <div>
-                <h3 className="text-xl font-bold mb-1">Plano Diamante</h3>
+                <h3 className="text-lg font-bold mb-1">Plano Diamante</h3>
                 <p className="text-gray-400 text-xs mb-6 font-semibold">Liberdade total sem limite de alunos.</p>
                 <div className="mb-8">
-                  <span className="text-4xl font-black">R$ 110</span><span className="text-gray-400 text-xs">/mês</span>
+                  <span className="text-3xl font-black">R$ 199,99</span><span className="text-gray-400 text-xs">/mês</span>
                 </div>
                 <ul className="space-y-4 mb-8">
                   {['Alunos Ilimitados (Sem Limites)', 'Controle Financeiro Completo', 'Controle de Contas Fixas', 'Gestão de Chamadas & Turmas', 'Módulo Épico de Eventos', 'Controle de Estoque & Vendas', 'Suporte Prioritário VIP 24/7'].map((item, i) => (
-                    <li key={i} className="flex items-center gap-3 text-gray-300 text-[11px] leading-snug">
-                      <CheckCircle2 size={15} className="text-pink-500 shrink-0" />
+                    <li key={i} className="flex items-center gap-2 text-gray-300 text-[10px] leading-snug">
+                      <CheckCircle2 size={14} className="text-pink-500 shrink-0" />
                       <span>{item}</span>
                     </li>
                   ))}
                 </ul>
               </div>
-              <Link to="/auth" className="w-full py-3 rounded-xl border border-white/10 font-bold text-center text-xs hover:bg-white hover:text-black hover:border-white transition-all">
+              <Link to="/auth" className="w-full py-2.5 rounded-xl border border-white/10 font-bold text-center text-xs hover:bg-white hover:text-black hover:border-white transition-all">
                 Assinar Diamante
               </Link>
             </div>

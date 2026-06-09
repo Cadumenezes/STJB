@@ -215,7 +215,7 @@ export interface Profile {
   phone: string | null
   role: 'admin' | 'user' | 'teacher' | 'secretary'
   status: 'pending' | 'active' | 'suspended'
-  plan: 'gratis' | 'prata' | 'ouro' | 'diamante' | 'starter' | 'pro'
+  plan: 'gratis' | 'bronze' | 'prata' | 'ouro' | 'diamante' | 'starter' | 'pro'
   expires_at: string | null
   created_at: string
 }
