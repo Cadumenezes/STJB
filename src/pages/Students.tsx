@@ -457,7 +457,22 @@ export default function Students() {
       const { data, error } = await supabase.functions.invoke('create-billing', {
         body: { paymentId }
       })
-      if (error) throw error
+      if (error) {
+        if ('context' in error && (error as any).context instanceof Response) {
+          try {
+            const body = await (error as any).context.json()
+            throw new Error(body.error || JSON.stringify(body))
+          } catch (e) {
+            try {
+              const text = await (error as any).context.text()
+              throw new Error(text || error.message)
+            } catch (inner) {
+              throw error
+            }
+          }
+        }
+        throw error
+      }
       if (data?.error) throw new Error(data.error)
       
       await loadData()
