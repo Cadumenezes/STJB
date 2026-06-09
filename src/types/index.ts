@@ -33,6 +33,10 @@ export interface MonthlyPayment {
   payment_method: string | null
   notes: string
   created_at: string
+  gateway_id?: string | null
+  payment_url?: string | null
+  pix_code?: string | null
+  barcode?: string | null
 }
 
 export interface DanceClass {

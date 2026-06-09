@@ -30,7 +30,8 @@ Pelo presente documento, confirmamos a regularidade da matrícula e a frequênci
 Direção Geral`;
 import {
   Users, UserPlus, Search, Filter, CheckCircle, Clock, AlertTriangle,
-  Edit, Trash2, CreditCard, X, ChevronDown, Music, FileText, Calendar, MessageCircle, Printer, Lock, GraduationCap
+  Edit, Trash2, CreditCard, X, ChevronDown, Music, FileText, Calendar, MessageCircle, Printer, Lock, GraduationCap,
+  Copy, ExternalLink, QrCode, RefreshCw
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { Student, MonthlyPayment, DanceClass, Attendance } from '../types'
@@ -58,6 +59,8 @@ export default function Students() {
   const [taxReportData, setTaxReportData] = useState<{ payments: any[], school: any } | null>(null)
   const [enrollmentReportData, setEnrollmentReportData] = useState<{ school: any } | null>(null)
   const [discountDueDay, setDiscountDueDay] = useState(10)
+  const [gatewayType, setGatewayType] = useState<'none' | 'asaas' | 'cora'>('none')
+  const [generatingBillingId, setGeneratingBillingId] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     name: '', email: '', phone: '', birth_date: '', cpf: '', address: '', guardian_name: '', guardian_phone: '', notes: '',
     monthly_fee: '', discount_monthly_fee: '', enrollment_fee: '', class_ids: [] as string[], status: 'active' as Student['status'],
@@ -171,7 +174,21 @@ export default function Students() {
       }))
 
     if (newPayments.length > 0) {
-      await supabase.from('monthly_payments').insert(newPayments)
+      const { data: createdPayments, error } = await supabase.from('monthly_payments').insert(newPayments).select()
+      if (!error && createdPayments) {
+        const { data: settings } = await supabase.from('school_settings').select('gateway_type').limit(1).single()
+        if (settings && settings.gateway_type && settings.gateway_type !== 'none') {
+          for (const payment of createdPayments) {
+            try {
+              await supabase.functions.invoke('create-billing', {
+                body: { paymentId: payment.id }
+              })
+            } catch (e) {
+              console.error(`Erro ao gerar cobrança automática para ${payment.id}:`, e)
+            }
+          }
+        }
+      }
     }
   }
 
@@ -180,9 +197,14 @@ export default function Students() {
     const { data: studentsData } = await supabase.from('students').select('*').order('name')
     const { data: classesData } = await supabase.from('dance_classes').select('*').order('name')
     
-    const { data: schoolData } = await supabase.from('school_settings').select('discount_due_day').limit(1).single()
-    if (schoolData && schoolData.discount_due_day !== undefined) {
-      setDiscountDueDay(schoolData.discount_due_day)
+    const { data: schoolData } = await supabase.from('school_settings').select('discount_due_day, gateway_type').limit(1).single()
+    if (schoolData) {
+      if (schoolData.discount_due_day !== undefined) {
+        setDiscountDueDay(schoolData.discount_due_day)
+      }
+      if (schoolData.gateway_type) {
+        setGatewayType(schoolData.gateway_type as any)
+      }
     }
     
     const currentMonth = new Date().toISOString().slice(0, 7)
@@ -299,6 +321,17 @@ export default function Students() {
       alert('Por favor, insira uma data de nascimento válida no formato DD/MM/AAAA.')
       return
     }
+    if (gatewayType !== 'none') {
+      if (!formData.guardian_name || !formData.guardian_name.trim()) {
+        alert('O Nome do Responsável é obrigatório para emissão de cobranças automáticas no gateway de pagamento.')
+        return
+      }
+      const cleanCpf = (formData.cpf || '').replace(/\D/g, '')
+      if (cleanCpf.length !== 11 && cleanCpf.length !== 14) {
+        alert('O CPF/CNPJ do Responsável deve ter 11 ou 14 dígitos numéricos para a emissão de cobranças automáticas.')
+        return
+      }
+    }
     const payload = {
       ...formData,
       birth_date: dbBirthDate,
@@ -326,6 +359,17 @@ export default function Students() {
     if (formData.birth_date && !dbBirthDate) {
       alert('Por favor, insira uma data de nascimento válida no formato DD/MM/AAAA.')
       return
+    }
+    if (gatewayType !== 'none') {
+      if (!formData.guardian_name || !formData.guardian_name.trim()) {
+        alert('O Nome do Responsável é obrigatório para emissão de cobranças automáticas no gateway de pagamento.')
+        return
+      }
+      const cleanCpf = (formData.cpf || '').replace(/\D/g, '')
+      if (cleanCpf.length !== 11 && cleanCpf.length !== 14) {
+        alert('O CPF/CNPJ do Responsável deve ter 11 ou 14 dígitos numéricos para a emissão de cobranças automáticas.')
+        return
+      }
     }
     const payload = {
       ...formData,
@@ -407,6 +451,34 @@ export default function Students() {
     }
   }
 
+  async function triggerCreateBilling(paymentId: string) {
+    setGeneratingBillingId(paymentId)
+    try {
+      const { data, error } = await supabase.functions.invoke('create-billing', {
+        body: { paymentId }
+      })
+      if (error) throw error
+      if (data?.error) throw new Error(data.error)
+      
+      await loadData()
+      // Reload profile payments if the profile modal is open
+      if (showProfileModal && selectedStudent) {
+        const { data: paymentsData } = await supabase
+          .from('monthly_payments')
+          .select('*')
+          .eq('student_id', selectedStudent.id)
+          .order('reference_month', { ascending: false })
+        setProfilePayments(paymentsData || [])
+      }
+      alert('Cobrança emitida com sucesso no gateway! 🚀')
+    } catch (err: any) {
+      console.error('Erro ao emitir cobrança:', err)
+      alert('Aviso: Não foi possível emitir boleto/Pix automaticamente. Erro: ' + (err.message || err))
+    } finally {
+      setGeneratingBillingId(null)
+    }
+  }
+
   async function generatePayment(student: Student) {
     const now = new Date()
     const referenceMonth = now.toISOString().slice(0, 7) // YYYY-MM
@@ -421,13 +493,16 @@ export default function Students() {
       reference_month: referenceMonth,
     }
 
-    const { error } = await supabase.from('monthly_payments').insert([payload])
+    const { data: createdPayments, error } = await supabase.from('monthly_payments').insert([payload]).select()
     
-    if (!error) {
+    if (!error && createdPayments && createdPayments.length > 0) {
       alert('Mensalidade gerada com sucesso! 📄')
       loadData()
+      if (gatewayType !== 'none') {
+        await triggerCreateBilling(createdPayments[0].id)
+      }
     } else {
-      alert('Erro ao gerar mensalidade: ' + error.message)
+      alert('Erro ao gerar mensalidade: ' + (error?.message || 'Erro desconhecido'))
     }
   }
 
@@ -1464,74 +1539,142 @@ export default function Students() {
                     return (
                       <div
                         key={payment.id}
-                        className="flex items-center justify-between rounded-2xl p-4 shadow-lg"
+                        className="flex flex-col rounded-2xl p-4 shadow-lg space-y-3"
                         style={{ 
                           backgroundColor: 'var(--bg-secondary)', 
                           border: `1px solid ${payment.status === 'paid' ? 'rgba(16,185,129,0.3)' : 'var(--border-color)'}` 
                         }}
                       >
-                        <div className="space-y-1">
-                          <p className={`text-xs font-bold uppercase tracking-widest ${payment.status === 'paid' ? 'text-emerald-400' : 'text-purple-400'}`}>
-                            Referência: {payment.reference_month}
-                            {payment.status === 'paid' && ' (PAGO)'}
-                          </p>
-                          <p className="text-[10px] opacity-60" style={{ color: 'var(--text-muted)' }}>
-                            Vencimento: {new Date(payment.due_date + 'T12:00:00').toLocaleDateString('pt-BR')}
-                          </p>
-                          
-                          {payment.status !== 'paid' && isEligible && (
-                            <div className="flex flex-col">
-                              <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider bg-emerald-500/10 py-0.5 px-2 rounded-full inline-block w-fit">
-                                🌟 Desconto Ativo (até {limitDateStr})
-                              </span>
-                              <div className="flex items-baseline gap-2 mt-1">
-                                <p className="text-lg font-black text-emerald-400">
-                                  R$ {Number(selectedStudent.discount_monthly_fee).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                </p>
-                                <p className="text-xs line-through opacity-50" style={{ color: 'var(--text-muted)' }}>
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-1">
+                            <p className={`text-xs font-bold uppercase tracking-widest ${payment.status === 'paid' ? 'text-emerald-400' : 'text-purple-400'}`}>
+                              Referência: {payment.reference_month}
+                              {payment.status === 'paid' && ' (PAGO)'}
+                            </p>
+                            <p className="text-[10px] opacity-60" style={{ color: 'var(--text-muted)' }}>
+                              Vencimento: {new Date(payment.due_date + 'T12:00:00').toLocaleDateString('pt-BR')}
+                            </p>
+                            
+                            {payment.status !== 'paid' && isEligible && (
+                              <div className="flex flex-col">
+                                <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider bg-emerald-500/10 py-0.5 px-2 rounded-full inline-block w-fit mt-1">
+                                  🌟 Desconto Ativo (até {limitDateStr})
+                                </span>
+                                <div className="flex items-baseline gap-2 mt-1">
+                                  <p className="text-lg font-black text-emerald-400">
+                                    R$ {Number(selectedStudent.discount_monthly_fee).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                  </p>
+                                  <p className="text-xs line-through opacity-50" style={{ color: 'var(--text-muted)' }}>
+                                    R$ {Number(payment.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+
+                            {payment.status !== 'paid' && !isEligible && (
+                              <div>
+                                {hasDiscount && (
+                                  <p className="text-[10px] text-rose-400 font-bold uppercase tracking-wider mt-1">
+                                    ⚠️ Desconto expirou em {limitDateStr}
+                                  </p>
+                                )}
+                                <p className="text-lg font-black text-rose-400 mt-1">
                                   R$ {Number(payment.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                 </p>
                               </div>
-                            </div>
-                          )}
+                            )}
 
-                          {payment.status !== 'paid' && !isEligible && (
-                            <div>
-                              {hasDiscount && (
-                                <p className="text-[10px] text-rose-400 font-bold uppercase tracking-wider">
-                                  ⚠️ Desconto expirou em {limitDateStr}
-                                </p>
-                              )}
-                              <p className="text-lg font-black text-rose-400 mt-1">
+                            {payment.status === 'paid' && (
+                              <p className="text-lg font-black text-emerald-500 mt-1">
                                 R$ {Number(payment.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                               </p>
-                            </div>
-                          )}
-
-                          {payment.status === 'paid' && (
-                            <p className="text-lg font-black text-emerald-500 mt-1">
-                              R$ {Number(payment.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                            </p>
-                          )}
+                            )}
+                          </div>
+                          
+                          <div>
+                            {payment.status === 'paid' ? (
+                              <button
+                                onClick={() => generateReceipt(selectedStudent, payment)}
+                                className="flex items-center gap-2 rounded-2xl px-6 py-3 text-xs font-black uppercase tracking-tighter text-emerald-400 transition-all hover:bg-emerald-500/10 active:scale-95 border border-dashed border-emerald-500/30"
+                              >
+                                <Printer size={16} />
+                                Recibo
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handlePayment(selectedStudent.id, payment.id)}
+                                className="flex items-center gap-2 rounded-2xl px-6 py-3 text-xs font-black uppercase tracking-tighter text-white transition-all hover:scale-105 active:scale-95 shadow-lg shadow-emerald-500/20"
+                                style={{ background: 'linear-gradient(135deg, #10b981, #000)' }}
+                              >
+                                <CheckCircle size={16} />
+                                Confirmar
+                              </button>
+                            )}
+                          </div>
                         </div>
-                        
-                        {payment.status === 'paid' ? (
-                          <button
-                            onClick={() => generateReceipt(selectedStudent, payment)}
-                            className="flex items-center gap-2 rounded-2xl px-6 py-3 text-xs font-black uppercase tracking-tighter text-emerald-400 transition-all hover:bg-emerald-500/10 active:scale-95 border border-dashed border-emerald-500/30"
-                          >
-                            <Printer size={16} />
-                            Recibo
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => handlePayment(selectedStudent.id, payment.id)}
-                            className="flex items-center gap-2 rounded-2xl px-6 py-3 text-xs font-black uppercase tracking-tighter text-white transition-all hover:scale-105 active:scale-95 shadow-lg shadow-emerald-500/20"
-                            style={{ background: 'linear-gradient(135deg, #10b981, #000)' }}
-                          >
-                            <CheckCircle size={16} />
-                            Confirmar
-                          </button>
+
+                        {/* Gateway Actions inside the payment modal */}
+                        {payment.status !== 'paid' && gatewayType !== 'none' && (
+                          <div className="pt-3 border-t border-white/5 flex flex-wrap items-center justify-between gap-3 bg-black/10 p-3 rounded-xl">
+                            <span className="text-[10px] uppercase font-bold tracking-widest text-purple-400">Gateway de Cobrança</span>
+                            {!payment.gateway_id ? (
+                              <button
+                                onClick={() => triggerCreateBilling(payment.id)}
+                                disabled={generatingBillingId === payment.id}
+                                className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 text-white rounded-xl px-4 py-2 text-xs font-bold transition-all"
+                              >
+                                {generatingBillingId === payment.id ? (
+                                  <>
+                                    <RefreshCw className="animate-spin" size={12} />
+                                    Gerando...
+                                  </>
+                                ) : (
+                                  <>
+                                    <CreditCard size={12} />
+                                    Gerar Boleto & Pix
+                                  </>
+                                )}
+                              </button>
+                            ) : (
+                              <div className="flex gap-2">
+                                {payment.pix_code && (
+                                  <button
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(payment.pix_code!);
+                                      alert('Pix Copia e Cola copiado com sucesso! 🚀');
+                                    }}
+                                    className="flex items-center gap-1.5 bg-teal-600/30 hover:bg-teal-600/50 text-teal-400 border border-teal-500/20 rounded-xl px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all"
+                                  >
+                                    <QrCode size={12} />
+                                    Copiar Pix
+                                  </button>
+                                )}
+                                {payment.barcode && (
+                                  <button
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(payment.barcode!);
+                                      alert('Código de barras copiado com sucesso! 🎫');
+                                    }}
+                                    className="flex items-center gap-1.5 bg-blue-600/30 hover:bg-blue-600/50 text-blue-400 border border-blue-500/20 rounded-xl px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all"
+                                  >
+                                    <Copy size={12} />
+                                    Código Barras
+                                  </button>
+                                )}
+                                {payment.payment_url && (
+                                  <a
+                                    href={payment.payment_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-1.5 bg-pink-600/30 hover:bg-pink-600/50 text-pink-400 border border-pink-500/20 rounded-xl px-3 py-1.5 text-[10px] font-black uppercase tracking-wider transition-all"
+                                  >
+                                    <ExternalLink size={12} />
+                                    Ver Boleto
+                                  </a>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         )}
                       </div>
                     );
@@ -1735,12 +1878,70 @@ export default function Students() {
                                         <Printer size={14} />
                                       </button>
                                     ) : (
-                                      <button
-                                        onClick={() => { setShowProfileModal(false); openPaymentModal(selectedStudent); }}
-                                        className="text-amber-400 hover:text-amber-300 p-1 font-bold"
-                                      >
-                                        Quitar
-                                      </button>
+                                      <div className="inline-flex items-center gap-2">
+                                        {gatewayType !== 'none' && (
+                                          <>
+                                            {!p.gateway_id ? (
+                                              <button
+                                                onClick={() => triggerCreateBilling(p.id)}
+                                                disabled={generatingBillingId === p.id}
+                                                className="text-purple-400 hover:text-purple-300 font-bold flex items-center gap-1 border border-purple-500/20 px-2 py-0.5 rounded hover:bg-purple-500/10 transition-all text-[10px]"
+                                                title="Gerar Boleto/Pix no gateway"
+                                              >
+                                                {generatingBillingId === p.id ? (
+                                                  <RefreshCw className="animate-spin" size={10} />
+                                                ) : (
+                                                  'Gerar Boleto/Pix'
+                                                )}
+                                              </button>
+                                            ) : (
+                                              <>
+                                                {p.pix_code && (
+                                                  <button
+                                                    onClick={() => {
+                                                      navigator.clipboard.writeText(p.pix_code!);
+                                                      alert('Pix Copia e Cola copiado com sucesso! 🚀');
+                                                    }}
+                                                    className="text-teal-400 hover:text-teal-300 p-1 rounded hover:bg-teal-500/10 transition-all"
+                                                    title="Copiar Chave Pix"
+                                                  >
+                                                    <QrCode size={14} />
+                                                  </button>
+                                                )}
+                                                {p.barcode && (
+                                                  <button
+                                                    onClick={() => {
+                                                      navigator.clipboard.writeText(p.barcode!);
+                                                      alert('Código de barras copiado com sucesso! 🎫');
+                                                    }}
+                                                    className="text-blue-400 hover:text-blue-300 p-1 rounded hover:bg-blue-500/10 transition-all"
+                                                    title="Copiar Código de Barras"
+                                                  >
+                                                    <Copy size={14} />
+                                                  </button>
+                                                )}
+                                                {p.payment_url && (
+                                                  <a
+                                                    href={p.payment_url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-pink-400 hover:text-pink-300 p-1 rounded hover:bg-pink-500/10 transition-all inline-flex items-center justify-center"
+                                                    title="Abrir PDF do Boleto"
+                                                  >
+                                                    <ExternalLink size={14} />
+                                                  </a>
+                                                )}
+                                              </>
+                                            )}
+                                          </>
+                                        )}
+                                        <button
+                                          onClick={() => { setShowProfileModal(false); openPaymentModal(selectedStudent); }}
+                                          className="text-amber-400 hover:text-amber-300 p-1 font-bold text-xs hover:bg-amber-500/10 px-2 py-0.5 rounded transition-all"
+                                        >
+                                          Quitar
+                                        </button>
+                                      </div>
                                     )}
                                   </td>
                                 </tr>

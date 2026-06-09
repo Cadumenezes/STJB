@@ -3,7 +3,8 @@ import { useSearchParams } from 'react-router-dom'
 import {
   DollarSign, TrendingUp, TrendingDown, Plus, Trash2, Edit,
   Wallet, ArrowUpCircle, ArrowDownCircle, Pin, CheckCircle2, Circle, Users,
-  UploadCloud, Check, AlertCircle, HelpCircle, RefreshCw, FileText
+  UploadCloud, Check, AlertCircle, HelpCircle, RefreshCw, FileText,
+  Copy, ExternalLink, QrCode, CreditCard
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { FinancialEntry, Student, MonthlyPayment } from '../types'
@@ -43,6 +44,8 @@ export default function Financial() {
   const [openOnHolidays, setOpenOnHolidays] = useState(false)
   const [customHolidays, setCustomHolidays] = useState<any[]>([])
   const [pendingPayments, setPendingPayments] = useState<MonthlyPayment[]>([])
+  const [gatewayType, setGatewayType] = useState<'none' | 'asaas' | 'cora'>('none')
+  const [generatingBillingId, setGeneratingBillingId] = useState<string | null>(null)
   const [reconciliationFile, setReconciliationFile] = useState<File | null>(null)
   const [reconciledItems, setReconciledItems] = useState<any[]>([])
   const [processingFile, setProcessingFile] = useState(false)
@@ -166,6 +169,26 @@ export default function Financial() {
     return holidays
   }
 
+  async function triggerCreateBilling(paymentId: string) {
+    setGeneratingBillingId(paymentId)
+    try {
+      const { data, error } = await supabase.functions.invoke('create-billing', {
+        body: { paymentId }
+      })
+      if (error) throw error
+      if (data?.error) throw new Error(data.error)
+      
+      const { data: paymentsData } = await supabase.from('monthly_payments').select('*').neq('status', 'paid')
+      setPendingPayments(paymentsData || [])
+      alert('Cobrança emitida com sucesso no gateway! 🚀')
+    } catch (err: any) {
+      console.error('Erro ao emitir cobrança:', err)
+      alert('Aviso: Não foi possível emitir boleto/Pix automaticamente. Erro: ' + (err.message || err))
+    } finally {
+      setGeneratingBillingId(null)
+    }
+  }
+
   async function loadData() {
     setLoading(true)
     try {
@@ -189,7 +212,7 @@ export default function Financial() {
       }
 
       // Load settings (to get discount_due_day, pay_on_holidays, open_on_holidays) and students for payment forecast
-      const { data: settingsData } = await supabase.from('school_settings').select('discount_due_day, pay_on_holidays, open_on_holidays').limit(1).maybeSingle()
+      const { data: settingsData } = await supabase.from('school_settings').select('discount_due_day, pay_on_holidays, open_on_holidays, gateway_type').limit(1).maybeSingle()
       let payHolidaysVal = true
       let openHolidaysVal = false
       if (settingsData) {
@@ -198,6 +221,9 @@ export default function Financial() {
         openHolidaysVal = settingsData.open_on_holidays !== undefined ? settingsData.open_on_holidays : false
         setPayOnHolidays(payHolidaysVal)
         setOpenOnHolidays(openHolidaysVal)
+        if (settingsData.gateway_type) {
+          setGatewayType(settingsData.gateway_type as any)
+        }
       }
 
       // Fetch custom holidays
@@ -2108,74 +2134,265 @@ export default function Financial() {
           <div className="h-6"></div> {/* Espaçador físico infalível */}
 
           {reconciledItems.length === 0 ? (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Upload Card */}
-              <div 
-                className="lg:col-span-2 rounded-2xl p-10 border border-dashed text-center flex flex-col items-center justify-center min-h-[300px] relative overflow-hidden group hover:border-[var(--accent-color)] transition-all"
-                style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
-              >
-                <div className="p-4 rounded-full mb-4 group-hover:scale-110 transition-all" style={{ backgroundColor: 'rgba(139, 92, 246, 0.1)', color: 'var(--accent-color)' }}>
-                  <UploadCloud size={40} />
+            <div className="space-y-8">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Upload Card */}
+                <div 
+                  className="lg:col-span-2 rounded-2xl p-10 border border-dashed text-center flex flex-col items-center justify-center min-h-[300px] relative overflow-hidden group hover:border-[var(--accent-color)] transition-all"
+                  style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+                >
+                  <div className="p-4 rounded-full mb-4 group-hover:scale-110 transition-all" style={{ backgroundColor: 'rgba(139, 92, 246, 0.1)', color: 'var(--accent-color)' }}>
+                    <UploadCloud size={40} />
+                  </div>
+                  <h3 className="font-bold text-lg mb-1.5" style={{ color: 'var(--text-primary)' }}>Enviar arquivo de extrato</h3>
+                  <p className="text-xs text-[var(--text-secondary)] max-w-sm mb-6 leading-relaxed">
+                    Arraste e solte o extrato em formato <strong>OFX ou CSV</strong> do seu banco. Nosso algoritmo inteligente fará a correspondência automática de pagamentos.
+                  </p>
+                  <label className="cursor-pointer px-6 py-3 text-white font-bold rounded-xl text-xs transition-all shadow-lg hover:brightness-110 active:scale-95" style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}>
+                    Selecionar Arquivo
+                    <input
+                      type="file"
+                      accept=".csv,.ofx"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                  </label>
                 </div>
-                <h3 className="font-bold text-lg mb-1.5" style={{ color: 'var(--text-primary)' }}>Enviar arquivo de extrato</h3>
-                <p className="text-xs text-[var(--text-secondary)] max-w-sm mb-6 leading-relaxed">
-                  Arraste e solte o extrato em formato <strong>OFX ou CSV</strong> do seu banco. Nosso algoritmo inteligente fará a correspondência automática de pagamentos.
-                </p>
-                <label className="cursor-pointer px-6 py-3 text-white font-bold rounded-xl text-xs transition-all shadow-lg hover:brightness-110 active:scale-95" style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}>
-                  Selecionar Arquivo
-                  <input
-                    type="file"
-                    accept=".csv,.ofx"
-                    onChange={handleFileChange}
-                    className="hidden"
-                  />
-                </label>
+
+                {/* Informational Help Card */}
+                <div 
+                  className="rounded-2xl p-6 border flex flex-col justify-between"
+                  style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+                >
+                  <div className="space-y-4">
+                    <h4 className="font-bold text-sm uppercase tracking-widest" style={{ color: 'var(--accent-color)' }}>🏦 Como funciona?</h4>
+                    <ul className="space-y-3.5 text-xs text-[var(--text-secondary)] leading-relaxed">
+                      <li className="flex gap-2">
+                        <span className="shrink-0 font-bold" style={{ color: 'var(--accent-color)' }}>1.</span>
+                        <span>Entre no seu banco (Cora, Itaú, Nubank, Bradesco, Inter, etc.) e baixe o extrato diário.</span>
+                      </li>
+                      <li className="flex gap-2">
+                        <span className="shrink-0 font-bold" style={{ color: 'var(--accent-color)' }}>2.</span>
+                        <span>Faça o upload do arquivo ao lado. Nosso sistema lerá os créditos (entradas).</span>
+                      </li>
+                      <li className="flex gap-2">
+                        <span className="shrink-0 font-bold" style={{ color: 'var(--accent-color)' }}>3.</span>
+                        <span>O sistema cruzará nomes dos alunos e valores de mensalidades na hora!</span>
+                      </li>
+                      <li className="flex gap-2">
+                        <span className="shrink-0 font-bold" style={{ color: 'var(--accent-color)' }}>4.</span>
+                        <span>Você confere a planilha, seleciona os corretos e dá baixa em lote com 1 clique.</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  <div className="pt-6 border-t space-y-3" style={{ borderColor: 'var(--border-color)' }}>
+                    <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Quer testar o funcionamento agora mesmo sem um arquivo real?</p>
+                    <button
+                      onClick={handleSimulateExtrato}
+                      disabled={processingFile}
+                      className="w-full py-3 bg-white/5 border hover:bg-white/10 text-white font-bold rounded-xl text-xs transition-all flex items-center justify-center gap-2"
+                      style={{ borderColor: 'var(--border-color)' }}
+                    >
+                      {processingFile ? (
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-transparent border-t-white" />
+                      ) : (
+                        <>
+                          <FileText size={14} />
+                          Gerar Extrato de Teste (Simulador)
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
               </div>
 
-              {/* Informational Help Card */}
-              <div 
-                className="rounded-2xl p-6 border flex flex-col justify-between"
-                style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
-              >
-                <div className="space-y-4">
-                  <h4 className="font-bold text-sm uppercase tracking-widest" style={{ color: 'var(--accent-color)' }}>🏦 Como funciona?</h4>
-                  <ul className="space-y-3.5 text-xs text-[var(--text-secondary)] leading-relaxed">
-                    <li className="flex gap-2">
-                      <span className="shrink-0 font-bold" style={{ color: 'var(--accent-color)' }}>1.</span>
-                      <span>Entre no seu banco (Cora, Itaú, Nubank, Bradesco, Inter, etc.) e baixe o extrato diário.</span>
-                    </li>
-                    <li className="flex gap-2">
-                      <span className="shrink-0 font-bold" style={{ color: 'var(--accent-color)' }}>2.</span>
-                      <span>Faça o upload do arquivo ao lado. Nosso sistema lerá os créditos (entradas).</span>
-                    </li>
-                    <li className="flex gap-2">
-                      <span className="shrink-0 font-bold" style={{ color: 'var(--accent-color)' }}>3.</span>
-                      <span>O sistema cruzará nomes dos alunos e valores de mensalidades na hora!</span>
-                    </li>
-                    <li className="flex gap-2">
-                      <span className="shrink-0 font-bold" style={{ color: 'var(--accent-color)' }}>4.</span>
-                      <span>Você confere a planilha, seleciona os corretos e dá baixa em lote com 1 clique.</span>
-                    </li>
-                  </ul>
+              {/* Mensalidades em Aberto Section */}
+              <div className="rounded-2xl border border-white/5 bg-[#141425] p-6 shadow-2xl space-y-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div>
+                    <h3 className="text-lg font-black uppercase tracking-tighter text-white">Mensalidades em Aberto</h3>
+                    <p className="text-xs text-[var(--text-secondary)]">Monitore as cobranças pendentes e envie os boletos/Pix diretamente para os pais dos alunos.</p>
+                  </div>
+                  {gatewayType !== 'none' && (
+                    <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold uppercase bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                      ⚡ Automação {gatewayType === 'asaas' ? 'Asaas' : 'Banco Cora'} Ativa
+                    </span>
+                  )}
                 </div>
 
-                <div className="pt-6 border-t space-y-3" style={{ borderColor: 'var(--border-color)' }}>
-                  <p className="text-[10px]" style={{ color: 'var(--text-muted)' }}>Quer testar o funcionamento agora mesmo sem um arquivo real?</p>
-                  <button
-                    onClick={handleSimulateExtrato}
-                    disabled={processingFile}
-                    className="w-full py-3 bg-white/5 border hover:bg-white/10 text-white font-bold rounded-xl text-xs transition-all flex items-center justify-center gap-2"
-                    style={{ borderColor: 'var(--border-color)' }}
-                  >
-                    {processingFile ? (
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-transparent border-t-white" />
-                    ) : (
-                      <>
-                        <FileText size={14} />
-                        Gerar Extrato de Teste (Simulador)
-                      </>
-                    )}
-                  </button>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="border-b border-white/5 uppercase tracking-wider text-[10px]" style={{ backgroundColor: 'rgba(0,0,0,0.2)', color: 'var(--text-secondary)' }}>
+                        <th className="py-3 px-4">Aluno</th>
+                        <th className="py-3 px-4">Mês de Referência</th>
+                        <th className="py-3 px-4">Data Vencimento</th>
+                        <th className="py-3 px-4 text-right">Valor Original</th>
+                        <th className="py-3 px-4 text-center">Boleto / Pix</th>
+                        <th className="py-3 px-4 text-right">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pendingPayments.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="py-8 text-center text-xs italic" style={{ color: 'var(--text-muted)' }}>
+                            Nenhuma mensalidade em aberto no momento.
+                          </td>
+                        </tr>
+                      ) : (
+                        pendingPayments.map((p) => {
+                          const student = students.find((s) => s.id === p.student_id);
+                          const studentName = student ? student.name : 'Aluno Removido';
+                          const hasDiscount = student && student.discount_monthly_fee && student.discount_monthly_fee > 0;
+                          
+                          // Check discount eligibility
+                          let isEligible = false;
+                          let limitDateStr = '';
+                          if (hasDiscount && p.reference_month) {
+                            const [yr, mn] = p.reference_month.split('-');
+                            const limitDate = new Date(parseInt(yr), parseInt(mn) - 1, discountDueDay, 23, 59, 59, 999);
+                            isEligible = new Date() <= limitDate;
+                            limitDateStr = new Date(parseInt(yr), parseInt(mn) - 1, discountDueDay).toLocaleDateString('pt-BR');
+                          }
+
+                          const displayAmount = (isEligible && student) ? student.discount_monthly_fee : p.amount;
+
+                          return (
+                            <tr key={p.id} className="border-b border-white/5 hover:bg-white/[0.01] transition-colors text-white">
+                              <td className="py-3 px-4 font-semibold">
+                                {studentName}
+                                {student?.guardian_name && (
+                                  <span className="block text-[10px] text-[var(--text-muted)] font-normal">
+                                    Resp: {student.guardian_name}
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-3 px-4 capitalize font-mono text-[var(--text-secondary)]">
+                                {new Date(p.reference_month + '-01').toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
+                              </td>
+                              <td className="py-3 px-4 font-mono text-[var(--text-secondary)]">
+                                {new Date(p.due_date + 'T12:00:00').toLocaleDateString('pt-BR')}
+                                {isEligible && (
+                                  <span className="block text-[9px] text-emerald-400 font-bold uppercase">
+                                    🌟 Desconto até {limitDateStr}
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-3 px-4 text-right font-bold">
+                                R$ {Number(displayAmount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                {isEligible && (
+                                  <span className="block text-[9px] line-through opacity-50 font-normal">
+                                    R$ {Number(p.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-3 px-4 text-center">
+                                {gatewayType === 'none' ? (
+                                  <span className="text-[10px] text-[var(--text-muted)] italic">Configurações para boleto inativas</span>
+                                ) : !p.gateway_id ? (
+                                  <button
+                                    onClick={() => triggerCreateBilling(p.id)}
+                                    disabled={generatingBillingId === p.id}
+                                    className="inline-flex items-center gap-1.5 bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 text-white rounded-lg px-2.5 py-1 text-[10px] font-bold transition-all mx-auto"
+                                  >
+                                    {generatingBillingId === p.id ? (
+                                      <>
+                                        <RefreshCw className="animate-spin" size={10} />
+                                        Gerando...
+                                      </>
+                                    ) : (
+                                      <>
+                                        <CreditCard size={10} />
+                                        Gerar Boleto & Pix
+                                      </>
+                                    )}
+                                  </button>
+                                ) : (
+                                  <div className="flex justify-center gap-2">
+                                    {p.pix_code && (
+                                      <button
+                                        onClick={() => {
+                                          navigator.clipboard.writeText(p.pix_code!);
+                                          alert('Pix Copia e Cola copiado com sucesso! 🚀');
+                                        }}
+                                        className="inline-flex items-center gap-1 bg-teal-600/20 hover:bg-teal-600/40 text-teal-400 border border-teal-500/20 rounded px-2 py-0.5 text-[10px] font-black uppercase tracking-wider transition-all"
+                                        title="Copiar Pix"
+                                      >
+                                        <QrCode size={10} />
+                                        Pix
+                                      </button>
+                                    )}
+                                    {p.barcode && (
+                                      <button
+                                        onClick={() => {
+                                          navigator.clipboard.writeText(p.barcode!);
+                                          alert('Código de barras copiado com sucesso! 🎫');
+                                        }}
+                                        className="inline-flex items-center gap-1 bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 border border-blue-500/20 rounded px-2 py-0.5 text-[10px] font-black uppercase tracking-wider transition-all"
+                                        title="Copiar Código de Barras"
+                                      >
+                                        <Copy size={10} />
+                                        Boleto
+                                      </button>
+                                    )}
+                                    {p.payment_url && (
+                                      <a
+                                        href={p.payment_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-1 bg-pink-600/20 hover:bg-pink-600/40 text-pink-400 border border-pink-500/20 rounded px-2 py-0.5 text-[10px] font-black uppercase tracking-wider transition-all"
+                                        title="Ver Boleto PDF"
+                                      >
+                                        <ExternalLink size={10} />
+                                        PDF
+                                      </a>
+                                    )}
+                                  </div>
+                                )}
+                              </td>
+                              <td className="py-3 px-4 text-right">
+                                <button
+                                  onClick={async () => {
+                                    if (!confirm(`Confirmar baixa manual para ${studentName}?`)) return;
+                                    try {
+                                      const { error: payErr } = await supabase.from('monthly_payments').update({
+                                        status: 'paid',
+                                        paid_date: new Date().toISOString().split('T')[0],
+                                        amount: displayAmount,
+                                        payment_method: 'Manual'
+                                      }).eq('id', p.id);
+
+                                      if (payErr) throw payErr;
+
+                                      // Register in financial entry
+                                      await supabase.from('financial_entries').insert([{
+                                        type: 'income',
+                                        category: 'Mensalidades',
+                                        description: `Mensalidade: ${studentName} - Ref: ${p.reference_month}${isEligible ? ' (Com Desconto)' : ''}`,
+                                        amount: displayAmount,
+                                        date: new Date().toISOString().split('T')[0]
+                                      }]);
+
+                                      // Reload
+                                      const { data: paymentsData } = await supabase.from('monthly_payments').select('*').neq('status', 'paid');
+                                      setPendingPayments(paymentsData || []);
+                                      alert('Pagamento quitado e registrado no financeiro com sucesso! ✅💰');
+                                    } catch (err: any) {
+                                      alert('Erro ao quitar mensalidade: ' + err.message);
+                                    }
+                                  }}
+                                  className="text-emerald-400 hover:text-emerald-300 font-bold hover:bg-emerald-500/10 px-2.5 py-1 rounded transition-all"
+                                >
+                                  Quitar
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
