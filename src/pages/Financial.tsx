@@ -30,6 +30,7 @@ export default function Financial() {
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
   const [viewMode, setViewMode] = useState<'projected' | 'realized'>('projected')
   const [annualAttendance, setAnnualAttendance] = useState<any[]>([])
+  const [instructorTeamAttendance, setInstructorTeamAttendance] = useState<any[]>([])
   const [instructorClasses, setInstructorClasses] = useState<any[]>([])
   const [instructors, setInstructors] = useState<any[]>([])
   const [events, setEvents] = useState<any[]>([])
@@ -95,6 +96,16 @@ export default function Financial() {
         .lte('date', `${year}-12-31`)
       
       setAnnualAttendance(attData || [])
+
+      const { data: teamAttData } = await supabase
+        .from('team_attendance')
+        .select('*')
+        .eq('member_id', instructorId)
+        .in('status', ['present', 'late'])
+        .gte('date', `${year}-01-01`)
+        .lte('date', `${year}-12-31`)
+
+      setInstructorTeamAttendance(teamAttData || [])
 
       const { data: classesData } = await supabase
         .from('dance_classes')
@@ -213,9 +224,11 @@ export default function Financial() {
         setEventParticipants(participantsData || [])
       } else if (activeTab === 'payroll') {
         const { data: att } = await supabase.from('attendance').select('*').eq('type', 'instructor').eq('status', 'present')
+        const { data: teamAtt } = await supabase.from('team_attendance').select('*').in('status', ['present', 'late'])
         
         const currentMonth = new Date().toISOString().slice(0, 7)
         const monthAtt = (att || []).filter(a => a.date.startsWith(currentMonth))
+        const monthTeamAtt = (teamAtt || []).filter(a => a.date.startsWith(currentMonth))
 
         const calculated = (membersList || []).map(m => {
           // Parse teacher class schedule
@@ -238,8 +251,14 @@ export default function Financial() {
           })
 
           const teacherAtt = monthAtt.filter(a => a.instructor_id === m.id)
+          const teacherTeamAtt = monthTeamAtt.filter(a => a.member_id === m.id)
+
+          const classDates = teacherAtt.map(a => a.date)
+          const teamDates = teacherTeamAtt.map(a => a.date)
+          const allWorkedDates = new Set([...classDates, ...teamDates])
+
           let classesCount = teacherAtt.length
-          let uniqueDays = new Set(teacherAtt.map(a => a.date)).size
+          let uniqueDays = allWorkedDates.size
 
           // Add holiday compensation if configured
           if (payHolidaysVal && !openHolidaysVal) {
@@ -293,8 +312,10 @@ export default function Financial() {
 
         // Fetch payroll data for Expense Forecast calculation (attendance for elapsed days of the current month)
         const { data: att } = await supabase.from('attendance').select('*').eq('type', 'instructor').eq('status', 'present')
+        const { data: teamAtt } = await supabase.from('team_attendance').select('*').in('status', ['present', 'late'])
         const currentMonth = new Date().toISOString().slice(0, 7)
         const monthAtt = (att || []).filter(a => a.date.startsWith(currentMonth))
+        const monthTeamAtt = (teamAtt || []).filter(a => a.date.startsWith(currentMonth))
 
         const currentYear = new Date().getFullYear()
         const currentMonthIdx = new Date().getMonth()
@@ -336,6 +357,9 @@ export default function Financial() {
             attClassesByDate[a.date] = (attClassesByDate[a.date] || 0) + 1
           })
 
+          const instructorTeamAttList = monthTeamAtt.filter(a => a.member_id === m.id)
+          const teamAttDates = new Set(instructorTeamAttList.map(a => a.date))
+
           const todayDay = new Date().getDate()
 
           for (let d = 1; d <= numDays; d++) {
@@ -347,10 +371,10 @@ export default function Financial() {
             const dayName = dayMap[dayOfWeek]
             
             if (d < todayDay) {
-              // Past days: use actual attendance recorded
-              if (attClassesByDate[dateStr] > 0) {
+              // Past days: use actual attendance recorded (class or team presence)
+              if (attClassesByDate[dateStr] > 0 || teamAttDates.has(dateStr)) {
                 workedDates.add(d)
-                classesCount += attClassesByDate[dateStr]
+                classesCount += attClassesByDate[dateStr] || 0
               }
             } else {
               // Today and future days: use schedule projection
@@ -1159,8 +1183,13 @@ export default function Financial() {
     if (viewMode === 'realized') {
       const monthPrefix = `${selectedYear}-${(idx + 1).toString().padStart(2, '0')}`
       const monthAtt = annualAttendance.filter(a => a.date.startsWith(monthPrefix))
+      const monthTeamAtt = instructorTeamAttendance.filter(a => a.date.startsWith(monthPrefix))
+
+      const classDates = monthAtt.map(a => a.date)
+      const teamDates = monthTeamAtt.map(a => a.date)
+      const allWorkedDates = new Set([...classDates, ...teamDates])
       
-      dias = new Set(monthAtt.map(a => a.date)).size
+      dias = allWorkedDates.size
       diasTrabalhados = dias
       horas = monthAtt.length
 
@@ -1181,7 +1210,9 @@ export default function Financial() {
             
             if (weeklyClassCounts[dayName] > 0) {
               horas += weeklyClassCounts[dayName]
-              dias += 1 // Conta o feriado na exibição dos dias agendados/pagos
+              if (!allWorkedDates.has(dateStr)) {
+                dias += 1 // Conta o feriado na exibição se não foi trabalhado (não estava em allWorkedDates)
+              }
             }
           }
         }

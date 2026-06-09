@@ -393,7 +393,8 @@ export default function Team() {
               type="date"
               value={attendanceDate}
               onChange={(e) => setAttendanceDate(e.target.value)}
-              className="rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+              onClick={(e) => e.currentTarget.showPicker?.()}
+              className="rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500/50 cursor-pointer"
               style={inputStyle}
             />
           </div>
