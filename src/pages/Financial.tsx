@@ -1094,11 +1094,11 @@ export default function Financial() {
     .join(' | ') || 'Sem aulas configuradas'
 
   function getMonthDaysAndClasses(year: number, monthIdx: number, dayCounts: Record<string, number>) {
-    let uniqueDaysCount = 0
     let totalClassesCount = 0
     
     const numDays = new Date(year, monthIdx + 1, 0).getDate()
     const workedDates = new Set<number>()
+    const scheduledDates = new Set<number>()
     const holidays = getHolidaysForYear(year)
 
     const dayMap: Record<number, string> = {
@@ -1123,22 +1123,25 @@ export default function Financial() {
         if (isHoliday) {
           if (openOnHolidays) {
             workedDates.add(d)
+            scheduledDates.add(d)
             totalClassesCount += dayCounts[dayName]
           } else {
             if (payOnHolidays) {
+              scheduledDates.add(d)
               totalClassesCount += dayCounts[dayName]
             }
           }
         } else {
           workedDates.add(d)
+          scheduledDates.add(d)
           totalClassesCount += dayCounts[dayName]
         }
       }
     }
 
-    uniqueDaysCount = workedDates.size
     return {
-      days: uniqueDaysCount,
+      workedDays: workedDates.size,
+      scheduledDays: scheduledDates.size,
       classes: totalClassesCount
     }
   }
@@ -1151,12 +1154,14 @@ export default function Financial() {
   const annualTableData = monthNames.map((monthName, idx) => {
     let dias = 0
     let horas = 0
+    let diasTrabalhados = 0
 
     if (viewMode === 'realized') {
       const monthPrefix = `${selectedYear}-${(idx + 1).toString().padStart(2, '0')}`
       const monthAtt = annualAttendance.filter(a => a.date.startsWith(monthPrefix))
       
       dias = new Set(monthAtt.map(a => a.date)).size
+      diasTrabalhados = dias
       horas = monthAtt.length
 
       // Adiciona compensação de feriados no realizado se a escola paga no feriado mas fecha
@@ -1176,18 +1181,20 @@ export default function Financial() {
             
             if (weeklyClassCounts[dayName] > 0) {
               horas += weeklyClassCounts[dayName]
+              dias += 1 // Conta o feriado na exibição dos dias agendados/pagos
             }
           }
         }
       }
     } else {
       const proj = getMonthDaysAndClasses(selectedYear, idx, weeklyClassCounts)
-      dias = proj.days
+      dias = proj.scheduledDays
+      diasTrabalhados = proj.workedDays
       horas = proj.classes
     }
 
     const salario = horas * hourlyRate
-    const passagem = dias * dailyTransport
+    const passagem = diasTrabalhados * dailyTransport
 
     return {
       name: monthName,
