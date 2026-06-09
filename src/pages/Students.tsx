@@ -458,13 +458,14 @@ export default function Students() {
         body: { paymentId }
       })
       if (error) {
-        if ('context' in error && (error as any).context instanceof Response) {
+        const context = (error as any).context
+        if (context && typeof context.json === 'function') {
           try {
-            const body = await (error as any).context.json()
+            const body = await context.json()
             throw new Error(body.error || JSON.stringify(body))
           } catch (e) {
             try {
-              const text = await (error as any).context.text()
+              const text = await context.text()
               throw new Error(text || error.message)
             } catch (inner) {
               throw error

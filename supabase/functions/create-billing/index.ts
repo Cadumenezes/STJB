@@ -71,7 +71,7 @@ serve(async (req) => {
     const { data: settings, error: settingsError } = await supabase
       .from('school_settings')
       .select('*')
-      .eq('id', student.user_id)
+      .eq('user_id', student.user_id)
       .single()
 
     if (settingsError || !settings) {
