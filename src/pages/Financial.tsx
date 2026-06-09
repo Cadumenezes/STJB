@@ -177,17 +177,17 @@ export default function Financial() {
       })
       if (error) {
         const context = (error as any).context
-        if (context && typeof context.json === 'function') {
+        if (context && typeof context.text === 'function') {
           try {
-            const body = await context.json()
-            throw new Error(body.error || JSON.stringify(body))
-          } catch (e) {
+            const text = await context.text()
             try {
-              const text = await context.text()
+              const body = JSON.parse(text)
+              throw new Error(body.error || text)
+            } catch (e) {
               throw new Error(text || error.message)
-            } catch (inner) {
-              throw error
             }
+          } catch (inner) {
+            throw error
           }
         }
         throw error
