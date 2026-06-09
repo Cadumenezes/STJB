@@ -458,21 +458,30 @@ export default function Students() {
         body: { paymentId }
       })
       if (error) {
-        const context = (error as any).context
-        if (context && typeof context.text === 'function') {
+        let errorMsg = error.message
+        const errObj = error as any
+        if (errObj.context) {
           try {
-            const text = await context.text()
-            try {
-              const body = JSON.parse(text)
-              throw new Error(body.error || text)
-            } catch (e) {
-              throw new Error(text || error.message)
+            const text = typeof errObj.context.text === 'function' ? await errObj.context.text() : null
+            if (text) {
+              try {
+                const body = JSON.parse(text)
+                errorMsg = body.error || text
+              } catch (e) {
+                errorMsg = text
+              }
             }
-          } catch (inner) {
-            throw error
+          } catch (e) {
+            console.error('Error reading context text:', e)
+          }
+        } else {
+          const keys = Object.keys(errObj)
+          const details = keys.map(k => `${k}: ${String(errObj[k])}`).join(', ')
+          if (details) {
+            errorMsg += ` (Details: ${details})`
           }
         }
-        throw error
+        throw new Error(errorMsg)
       }
       if (data?.error) throw new Error(data.error)
       
