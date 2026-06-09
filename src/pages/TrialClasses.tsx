@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   Star, UserPlus, Search, Phone, Calendar, Clock,
-  CheckCircle, XCircle, ChevronDown, Check
+  CheckCircle, XCircle, ChevronDown, Check, Trash2
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { TrialClass, DanceClass } from '../types'
@@ -61,6 +61,17 @@ export default function TrialClasses() {
       loadData()
     } else {
       alert('Erro ao atualizar status: ' + error.message)
+    }
+  }
+
+  async function deleteTrial(id: string) {
+    if (!window.confirm('Tem certeza que deseja excluir este agendamento de aula experimental?')) return
+    
+    const { error } = await supabase.from('trial_classes').delete().eq('id', id)
+    if (!error) {
+      loadData()
+    } else {
+      alert('Erro ao excluir agendamento: ' + error.message)
     }
   }
 
@@ -160,12 +171,21 @@ export default function TrialClasses() {
                     <p className="text-[10px] sm:text-xs font-medium truncate" style={{ color: 'var(--text-muted)' }}>Agendado em {new Date(trial.created_at).toLocaleDateString('pt-BR')}</p>
                   </div>
                 </div>
-                <span 
-                  className="px-3 py-1 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-widest border shrink-0 whitespace-nowrap"
-                  style={{ backgroundColor: statusInfo.bg, color: statusInfo.text, borderColor: `${statusInfo.text}33` }}
-                >
-                  {statusInfo.label}
-                </span>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span 
+                    className="px-3 py-1 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-widest border whitespace-nowrap"
+                    style={{ backgroundColor: statusInfo.bg, color: statusInfo.text, borderColor: `${statusInfo.text}33` }}
+                  >
+                    {statusInfo.label}
+                  </span>
+                  <button 
+                    onClick={() => deleteTrial(trial.id)}
+                    className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-500/10 hover:text-rose-500 transition-colors cursor-pointer"
+                    title="Excluir Agendamento"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-3 mb-6 p-4 rounded-2xl" style={{ backgroundColor: 'var(--bg-secondary)' }}>
