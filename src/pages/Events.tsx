@@ -265,7 +265,17 @@ export default function Events() {
         try { seatsBySession = JSON.parse(seatsBySession) } catch { seatsBySession = {} }
       }
       
-      return { ...p, seats: finalSeats, seats_by_session: seatsBySession }
+      const activeEv = (eventsData || []).find(e => e.id === p.event_id)
+      const choreoPrice = p.choreography_price !== undefined && p.choreography_price !== null 
+        ? Number(p.choreography_price) 
+        : (Number(p.choreography_count || 0) * Number(activeEv?.base_choreography_price || 0))
+
+      return { 
+        ...p, 
+        seats: finalSeats, 
+        seats_by_session: seatsBySession,
+        choreography_price: choreoPrice
+      }
     })
     setParticipants(formattedParts)
     
@@ -448,6 +458,7 @@ export default function Events() {
       kit: false,
       payment_method: null,
       choreography_count: 0,
+      choreography_price: 0,
       clothes_cost: 0,
       installments: []
     }
@@ -491,34 +502,36 @@ export default function Events() {
     const p = participants.find(x => x.id === id)
     if (!p) return
 
-    // Auto-calculate total value if quantities change
-    if (field === 'choreography_count' || field === 'clothes_cost' || field === 'ticket_quantity' || field === 'kit') {
+    // Auto-calculate total value if quantities or prices change
+    if (
+      field === 'choreography_count' || 
+      field === 'choreography_price' || 
+      field === 'clothes_cost' || 
+      field === 'ticket_quantity' || 
+      field === 'kit'
+    ) {
       const activeEvent = events.find(e => e.id === p.event_id)
       if (activeEvent) {
         const choreoCount = field === 'choreography_count' ? Number(value) : Number(p.choreography_count || 0)
-        let clothesQty = field === 'clothes_cost' ? Number(value) : Number(p.clothes_cost || 0)
+        let choreoPrice = field === 'choreography_price' ? Number(value) : Number(p.choreography_price || 0)
+        let clothesPrice = field === 'clothes_cost' ? Number(value) : Number(p.clothes_cost || 0)
         const ticketQty = field === 'ticket_quantity' ? Number(value) : Number(p.ticket_quantity || 0)
         const hasKitSelected = field === 'kit' ? Boolean(value) : Boolean(p.kit)
         
-        // Regra de Negócio: Se alterar o número de coreografias, auto-ajusta a quantidade de roupas para ser IGUAL
+        // Regra de Negócio: Se alterar o número de coreografias, auto-ajusta a taxa de participação e roupa
         if (field === 'choreography_count') {
-          clothesQty = choreoCount
-          payload.clothes_cost = clothesQty
-          optimUpdate.clothes_cost = clothesQty
+          choreoPrice = choreoCount * (activeEvent.base_choreography_price || 0)
+          payload.choreography_price = choreoPrice
+          optimUpdate.choreography_price = choreoPrice
+
+          clothesPrice = choreoCount * (activeEvent.base_clothes_cost || 0)
+          payload.clothes_cost = clothesPrice
+          optimUpdate.clothes_cost = clothesPrice
         }
 
-        const choreoFee = choreoCount > 0 ? (activeEvent.base_choreography_price || 0) : 0
-        
-        let clothesFee = 0
-        if (choreoCount === 1) {
-          clothesFee = Math.max(0, clothesQty - 1) * (activeEvent.base_clothes_cost || 0)
-        } else if (choreoCount > 1) {
-          clothesFee = clothesQty * (activeEvent.base_clothes_cost || 0)
-        }
-        
         const kitFee = (activeEvent.has_kit && hasKitSelected) ? (activeEvent.kit_price || 0) : 0
         
-        const newTotal = choreoFee + clothesFee + (ticketQty * (activeEvent.ticket_price || 0)) + kitFee
+        const newTotal = choreoPrice + clothesPrice + (ticketQty * (activeEvent.ticket_price || 0)) + kitFee
         
         payload.total_value = newTotal
         optimUpdate.total_value = newTotal
@@ -653,21 +666,10 @@ export default function Events() {
   const totalTickets = currentParticipants.reduce((acc, p) => acc + (Number(p.ticket_quantity) || 0), 0)
   const totalChoreographies = currentParticipants.reduce((acc, p) => acc + (Number(p.choreography_count) || 0), 0)
   const participantsWithChoreo = currentParticipants.filter(p => (Number(p.choreography_count) || 0) > 0).length
-  const totalChoreoRevenue = participantsWithChoreo * (activeEvent?.base_choreography_price || 0)
+  const totalChoreoRevenue = currentParticipants.reduce((acc, p) => acc + (Number(p.choreography_price) || 0), 0)
 
-  const totalClothesQuantity = currentParticipants.reduce((acc, p) => acc + (Number(p.clothes_cost) || 0), 0)
-  
-  const totalClothesRevenue = currentParticipants.reduce((acc, p) => {
-    const choreoCount = Number(p.choreography_count) || 0;
-    const clothesQty = Number(p.clothes_cost) || 0;
-    let fee = 0;
-    if (choreoCount === 1) {
-      fee = Math.max(0, clothesQty - 1) * (activeEvent?.base_clothes_cost || 0);
-    } else if (choreoCount > 1) {
-      fee = clothesQty * (activeEvent?.base_clothes_cost || 0);
-    }
-    return acc + fee;
-  }, 0);
+  const participantsWithClothes = currentParticipants.filter(p => (Number(p.clothes_cost) || 0) > 0).length
+  const totalClothesRevenue = currentParticipants.reduce((acc, p) => acc + (Number(p.clothes_cost) || 0), 0)
 
   const totalKits = currentParticipants.filter(p => p.kit).length
   const totalKitRevenue = totalKits * (activeEvent?.kit_price || 0)
@@ -885,12 +887,12 @@ export default function Events() {
                     {/* Coreografias */}
                     <div className="p-4 rounded-2xl" style={{ backgroundColor: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)' }}>
                       <div className="flex justify-between items-center mb-2">
-                        <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Coreografias</span>
+                        <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Taxas de Participação</span>
                         <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded-lg text-xs font-black">{totalChoreographies} un.</span>
                       </div>
                       <div className="flex justify-between items-end mt-4">
                         <div>
-                          <p className="text-[10px] text-white/30 uppercase tracking-widest mb-1">Taxa Única (un)</p>
+                          <p className="text-[10px] text-white/30 uppercase tracking-widest mb-1">Taxa Base (un)</p>
                           <p className="text-sm font-bold text-white/50">R$ {Number(activeEvent?.base_choreography_price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                         </div>
                         <div className="text-right">
@@ -904,7 +906,7 @@ export default function Events() {
                     <div className="p-4 rounded-2xl" style={{ backgroundColor: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)' }}>
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Roupas</span>
-                        <span className="px-2 py-1 bg-rose-500/20 text-rose-400 rounded-lg text-xs font-black">{totalClothesQuantity} un.</span>
+                        <span className="px-2 py-1 bg-rose-500/20 text-rose-400 rounded-lg text-xs font-black">{participantsWithClothes} alunos</span>
                       </div>
                       <div className="flex justify-between items-end mt-4">
                         <div>
@@ -912,7 +914,7 @@ export default function Events() {
                           <p className="text-sm font-bold text-white/50">R$ {Number(activeEvent?.base_clothes_cost || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-[10px] text-white/30 uppercase tracking-widest mb-1">Total Arrecadado (Automático)</p>
+                          <p className="text-[10px] text-white/30 uppercase tracking-widest mb-1">Total Arrecadado</p>
                           <p className="text-xl font-black text-rose-400">R$ {Number(totalClothesRevenue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                         </div>
                       </div>
@@ -1014,18 +1016,18 @@ export default function Events() {
                     <table className="w-full text-left text-sm whitespace-nowrap">
                       <thead style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}>
                         <tr>
-                          <th className="p-4 font-black text-[11px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5">Aluno</th>
-                          <th className="p-4 font-black text-[11px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-center">Tipo Pgto</th>
-                          <th className="p-4 font-black text-[11px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-center">Coreo</th>
-                          <th className="p-4 font-black text-[11px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-center">Roupa (Qtd)</th>
-                          <th className="p-4 font-black text-[11px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-left">Parcelas</th>
-                          <th className="p-4 font-black text-[11px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-right">Valor Total</th>
-                          <th className="p-4 font-black text-[11px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-right">Valor Pago</th>
-                          <th className="p-4 font-black text-[11px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-right">Falta Pagar</th>
-                          <th className="p-4 font-black text-[11px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-center">Convites</th>
-                          <th className="p-4 font-black text-[11px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-center">Qtd</th>
-                          <th className="p-4 font-black text-[11px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-center">Kit</th>
-                          <th className="p-4 font-black text-[11px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-center">Ações</th>
+                          <th className="px-3 py-3 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5">Aluno</th>
+                          <th className="px-3 py-3 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-center">Tipo Pgto</th>
+                          <th className="px-3 py-3 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-center">Coreo (Qtd/R$)</th>
+                          <th className="px-3 py-3 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-center">Roupa (R$)</th>
+                          <th className="px-3 py-3 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-left">Parcelas</th>
+                          <th className="px-3 py-3 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-right">Valor Total</th>
+                          <th className="px-3 py-3 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-right">Valor Pago</th>
+                          <th className="px-3 py-3 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-right">Falta Pagar</th>
+                          <th className="px-3 py-3 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-center">Convites</th>
+                          <th className="px-3 py-3 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-center">Qtd</th>
+                          <th className="px-3 py-3 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-center">Kit</th>
+                          <th className="px-3 py-3 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-center">Ações</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/5">
@@ -1048,15 +1050,15 @@ export default function Events() {
                             
                             return (
                               <tr key={p.id} className="hover:bg-white/[0.02] transition-colors">
-                                <td className="p-4 font-bold text-white max-w-[200px] truncate">{student?.name}</td>
+                                <td className="px-3 py-2.5 font-bold text-white max-w-[200px] truncate text-xs">{student?.name}</td>
                                 
                                 {/* Payment Method */}
-                                <td className="p-4 text-center">
+                                <td className="px-3 py-2.5 text-center text-xs">
                                   <select 
                                     value={p.payment_method || ''} 
                                     onChange={(e) => handleUpdateParticipant(p.id, 'payment_method', e.target.value)}
                                     disabled={profile?.role === 'secretary'}
-                                    className="bg-transparent border border-white/10 rounded-lg px-2 py-1 text-xs focus:ring-1 focus:ring-purple-500 disabled:opacity-50"
+                                    className="bg-transparent border border-white/10 rounded-lg px-1.5 py-0.5 text-[11px] focus:ring-1 focus:ring-purple-500 disabled:opacity-50"
                                   >
                                     <option value="" className="bg-gray-900">-</option>
                                     <option value="Boleto" className="bg-gray-900">Boleto</option>
@@ -1067,27 +1069,49 @@ export default function Events() {
                                 </td>
 
                                 {/* Coreografias */}
-                                <td className="p-4 text-center">
-                                  <input 
-                                    type="number" 
-                                    min="0"
-                                    value={p.choreography_count || 0} 
-                                    onChange={(e) => handleUpdateParticipant(p.id, 'choreography_count', parseInt(e.target.value) || 0)}
-                                    disabled={profile?.role === 'secretary'}
-                                    className={`w-16 text-center bg-transparent border border-white/10 rounded-lg px-2 py-1 font-black transition-all disabled:opacity-50 ${p.choreography_count > 0 ? 'text-purple-400' : 'text-white/30'}`}
-                                  />
+                                <td className="px-3 py-2.5 text-center text-xs">
+                                  <div className="flex flex-col gap-1 items-center">
+                                    <input 
+                                      type="number" 
+                                      min="0"
+                                      value={p.choreography_count || 0} 
+                                      onChange={(e) => handleUpdateParticipant(p.id, 'choreography_count', parseInt(e.target.value) || 0)}
+                                      disabled={profile?.role === 'secretary'}
+                                      className={`w-14 text-center bg-transparent border border-white/10 rounded-lg px-1 py-0.5 text-xs font-black transition-all disabled:opacity-50 ${p.choreography_count > 0 ? 'text-purple-400' : 'text-white/30'}`}
+                                      placeholder="Qtd"
+                                      title="Quantidade de coreografias"
+                                    />
+                                    <div className="flex items-center gap-0.5 bg-black/20 px-1 py-0.5 rounded border border-white/5 w-[84px]">
+                                      <span className="text-[9px] text-white/30">R$</span>
+                                      <input 
+                                        type="number" 
+                                        step="0.01"
+                                        value={p.choreography_price ?? 0} 
+                                        onChange={(e) => handleUpdateParticipant(p.id, 'choreography_price', parseFloat(e.target.value) || 0)}
+                                        disabled={profile?.role === 'secretary'}
+                                        className={`w-full bg-transparent border-none p-0 text-[10px] text-right font-black focus:outline-none ${p.choreography_price && p.choreography_price > 0 ? 'text-purple-300' : 'text-white/20'}`}
+                                        placeholder="Valor"
+                                        title="Valor total de participação"
+                                      />
+                                    </div>
+                                  </div>
                                 </td>
 
-                                {/* Quantidade de Roupa */}
-                                <td className="p-4 text-center">
-                                  <input 
-                                    type="number" 
-                                    min="0"
-                                    value={p.clothes_cost || 0} 
-                                    onChange={(e) => handleUpdateParticipant(p.id, 'clothes_cost', parseInt(e.target.value) || 0)}
-                                    disabled={profile?.role === 'secretary'}
-                                    className={`w-16 text-center bg-transparent border border-white/10 rounded-lg px-2 py-1 font-black transition-all disabled:opacity-50 ${p.clothes_cost > 0 ? 'text-rose-400' : 'text-white/30'}`}
-                                  />
+                                {/* Roupa (R$) */}
+                                <td className="px-3 py-2.5 text-center text-xs">
+                                  <div className="flex items-center gap-0.5 bg-black/20 px-2 py-1 rounded-lg border border-white/5 w-24 mx-auto">
+                                    <span className="text-[9px] text-white/30">R$</span>
+                                    <input 
+                                      type="number" 
+                                      step="0.01"
+                                      value={p.clothes_cost || 0} 
+                                      onChange={(e) => handleUpdateParticipant(p.id, 'clothes_cost', parseFloat(e.target.value) || 0)}
+                                      disabled={profile?.role === 'secretary'}
+                                      className={`w-full bg-transparent border-none p-0 text-xs text-right font-black focus:outline-none ${p.clothes_cost > 0 ? 'text-rose-400' : 'text-white/30'}`}
+                                      placeholder="Roupa"
+                                      title="Valor total da roupa"
+                                    />
+                                  </div>
                                 </td>
 
                                 {/* Parcelas */}
@@ -1135,7 +1159,7 @@ export default function Events() {
                                 </td>
                                 
                                 {/* Total Value */}
-                                <td className="p-4">
+                                <td className="px-3 py-2.5 text-xs">
                                   <div className="flex items-center justify-end gap-1">
                                     <span className="text-[10px] text-white/30">R$</span>
                                     <input 
@@ -1143,7 +1167,7 @@ export default function Events() {
                                       step="0.01"
                                       value={p.total_value} 
                                       onChange={(e) => handleUpdateParticipant(p.id, 'total_value', e.target.value)}
-                                      className="w-24 text-right bg-transparent border border-white/10 rounded-lg px-2 py-1 font-black text-blue-400 focus:bg-black/40 focus:ring-1 focus:ring-purple-500 transition-all disabled:opacity-50"
+                                      className="w-20 text-right bg-transparent border border-white/10 rounded-lg px-1.5 py-0.5 text-xs font-black text-blue-400 focus:bg-black/40 focus:ring-1 focus:ring-purple-500 transition-all disabled:opacity-50"
                                       disabled={profile?.role === 'secretary' || (p.installments || []).length > 0}
                                       title={(p.installments || []).length > 0 ? "Calculado pelas parcelas" : ""}
                                     />
@@ -1151,7 +1175,7 @@ export default function Events() {
                                 </td>
 
                                 {/* Amount Paid */}
-                                <td className="p-4">
+                                <td className="px-3 py-2.5 text-xs">
                                   <div className="flex items-center justify-end gap-1">
                                     <span className="text-[10px] text-white/30">R$</span>
                                     <input 
@@ -1159,7 +1183,7 @@ export default function Events() {
                                       step="0.01"
                                       value={p.amount_paid} 
                                       onChange={(e) => handleUpdateParticipant(p.id, 'amount_paid', e.target.value)}
-                                      className="w-24 text-right bg-transparent border border-white/10 rounded-lg px-2 py-1 font-black text-emerald-400 focus:bg-black/40 focus:ring-1 focus:ring-purple-500 transition-all disabled:opacity-50"
+                                      className="w-20 text-right bg-transparent border border-white/10 rounded-lg px-1.5 py-0.5 text-xs font-black text-emerald-400 focus:bg-black/40 focus:ring-1 focus:ring-purple-500 transition-all disabled:opacity-50"
                                       disabled={(p.installments || []).length > 0}
                                       title={(p.installments || []).length > 0 ? "Calculado pelas parcelas pagas" : ""}
                                     />
@@ -1167,32 +1191,32 @@ export default function Events() {
                                 </td>
 
                                 {/* Falta Pagar */}
-                                <td className="p-4 text-right">
+                                <td className="px-3 py-2.5 text-right text-xs">
                                   <span className={`font-black ${faltaPagar > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
                                     R$ {faltaPagar.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                                   </span>
                                 </td>
 
                                 {/* Has Ticket */}
-                                <td className="p-4 text-center">
+                                <td className="px-3 py-2.5 text-center text-xs">
                                   <button 
                                     type="button"
                                     onClick={() => handleUpdateParticipant(p.id, 'has_ticket', !p.has_ticket)}
-                                    className={`p-1.5 rounded-lg transition-all ${p.has_ticket ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/5 text-white/20'}`}
+                                    className={`p-1 rounded-lg transition-all ${p.has_ticket ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/5 text-white/20'}`}
                                   >
-                                    <CheckCircle size={18} />
+                                    <CheckCircle size={16} />
                                   </button>
                                 </td>
 
                                 {/* Ticket Quantity */}
-                                <td className="p-4 text-center">
+                                <td className="px-3 py-2.5 text-center text-xs">
                                   <div className="flex flex-col items-center gap-1">
                                     <input 
                                       type="number" 
                                       min="0"
                                       value={p.ticket_quantity} 
                                       onChange={(e) => handleUpdateParticipant(p.id, 'ticket_quantity', parseInt(e.target.value) || 0)}
-                                      className={`w-16 text-center bg-transparent border border-white/10 rounded-lg px-2 py-1 font-black transition-all ${p.ticket_quantity > 0 ? 'text-purple-400' : 'text-white/30'}`}
+                                      className={`w-12 text-center bg-transparent border border-white/10 rounded-lg px-1 py-0.5 text-xs font-black transition-all ${p.ticket_quantity > 0 ? 'text-purple-400' : 'text-white/30'}`}
                                     />
                                     {Array.isArray(p.seats) && p.seats.length > 0 && (
                                       <span className="text-[9px] font-bold max-w-[80px] truncate" style={{ color: 'var(--accent-color)' }} title={p.seats.join(', ')}>
@@ -1203,16 +1227,16 @@ export default function Events() {
                                 </td>
 
                                 {/* Kit */}
-                                <td className="p-4 text-center">
+                                <td className="px-3 py-2.5 text-center text-xs">
                                   {activeEvent.has_kit ? (
                                     <button 
                                       type="button"
                                       onClick={() => handleUpdateParticipant(p.id, 'kit', !p.kit)}
                                       disabled={profile?.role === 'secretary'}
-                                      className={`p-1.5 rounded-lg transition-all disabled:opacity-40 ${p.kit ? 'bg-blue-500/20 text-blue-400' : 'bg-white/5 text-white/20'}`}
+                                      className={`p-1 rounded-lg transition-all disabled:opacity-40 ${p.kit ? 'bg-blue-500/20 text-blue-400' : 'bg-white/5 text-white/20'}`}
                                       title={`Adicionar Kit (R$ ${Number(activeEvent.kit_price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })})`}
                                     >
-                                      <Box size={18} />
+                                      <Box size={16} />
                                     </button>
                                   ) : (
                                     <span className="text-white/20 text-xs font-semibold select-none cursor-default">Sem Kit</span>
@@ -1220,12 +1244,12 @@ export default function Events() {
                                 </td>
 
                                 {/* Actions */}
-                                <td className="p-4 text-center">
+                                <td className="px-3 py-2.5 text-center text-xs">
                                   {profile?.role !== 'secretary' ? (
                                     <button 
                                       type="button"
                                       onClick={() => handleRemoveParticipant(p.id)}
-                                      className="p-2 text-rose-400/50 hover:text-rose-400 hover:bg-rose-400/10 rounded-lg transition-all"
+                                      className="p-1 text-rose-400/50 hover:text-rose-400 hover:bg-rose-400/10 rounded-lg transition-all"
                                       title="Remover Aluno"
                                     >
                                       <Trash2 size={16} />
@@ -1966,7 +1990,7 @@ export default function Events() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Valor Base Coreografia (R$)</label>
+              <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Taxa de Participação (R$)</label>
               <input type="number" step="0.01" value={eventFormData.base_choreography_price} onChange={e => setEventFormData({...eventFormData, base_choreography_price: parseFloat(e.target.value) || 0})} className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none" style={inputStyle} />
             </div>
             <div>
@@ -2228,15 +2252,15 @@ export default function Events() {
               </div>
 
               <div className="p-3 bg-gray-50 border border-black/10 rounded">
-                <p className="font-bold uppercase text-gray-500">Coreografias</p>
-                <p className="text-sm font-black mt-1">{totalChoreographies} insc.</p>
+                <p className="font-bold uppercase text-gray-500">Taxas de Participação</p>
+                <p className="text-sm font-black mt-1">{totalChoreographies} un.</p>
                 <p className="text-xs text-gray-600 mt-0.5">Base: R$ {Number(activeEvent.base_choreography_price || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                 <p className="font-black mt-2 text-right">R$ {Number(totalChoreoRevenue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
               </div>
 
               <div className="p-3 bg-gray-50 border border-black/10 rounded">
                 <p className="font-bold uppercase text-gray-500">Roupas</p>
-                <p className="text-sm font-black mt-1">{totalClothesQuantity} unidades</p>
+                <p className="text-sm font-black mt-1">{participantsWithClothes} alunos</p>
                 <p className="text-xs text-gray-600 mt-0.5">Base: R$ {Number(activeEvent.base_clothes_cost || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                 <p className="font-black mt-2 text-right">R$ {Number(totalClothesRevenue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
               </div>
