@@ -519,8 +519,10 @@ export default function Events() {
         const hasKitSelected = field === 'kit' ? Boolean(value) : Boolean(p.kit)
         
         // Regra de Negócio: Se alterar o número de coreografias, auto-ajusta a taxa de participação e roupa
+        // A Taxa de Participação é cobrada uma única vez (se count > 0).
+        // A roupa é cobrada por coreografia (count * custo base).
         if (field === 'choreography_count') {
-          choreoPrice = choreoCount * (activeEvent.base_choreography_price || 0)
+          choreoPrice = choreoCount > 0 ? (activeEvent.base_choreography_price || 0) : 0
           payload.choreography_price = choreoPrice
           optimUpdate.choreography_price = choreoPrice
 
