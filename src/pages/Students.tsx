@@ -272,7 +272,8 @@ export default function Students() {
 
   const filteredStudents = students.filter((s) => {
     const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      s.email.toLowerCase().includes(searchTerm.toLowerCase())
+      s.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (s.guardian_name || '').toLowerCase().includes(searchTerm.toLowerCase())
     if (!matchesSearch) return false
     if (paymentFilter === 'all') return true
     if (paymentFilter === 'scholarship') return s.status === 'scholarship'
