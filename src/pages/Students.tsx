@@ -828,12 +828,12 @@ export default function Students() {
   }
 
   const statCards = [
-    { label: 'Total de Alunos', value: stats.total, icon: Users, color: '#8b5cf6', bg: 'rgba(139,92,246,0.15)' },
-    { label: 'Pagos este Mês', value: stats.paid, icon: CheckCircle, color: '#10b981', bg: 'rgba(16,185,129,0.15)' },
-    { label: 'Pendentes', value: stats.pending, icon: Clock, color: '#f59e0b', bg: 'rgba(245,158,11,0.15)' },
-    { label: 'Atrasados', value: stats.overdue, icon: AlertTriangle, color: '#f43f5e', bg: 'rgba(244,63,94,0.15)' },
-    { label: 'Bolsistas', value: stats.scholarship, icon: GraduationCap, color: '#3b82f6', bg: 'rgba(59,130,246,0.15)' },
-    { label: 'Trancados', value: stats.locked, icon: Lock, color: '#6b7280', bg: 'rgba(107,114,128,0.15)' },
+    { label: 'Total de Alunos', value: stats.total, icon: Users, color: '#8b5cf6', bg: 'rgba(139,92,246,0.15)', filter: 'all' as PaymentFilter },
+    { label: 'Pagos este Mês', value: stats.paid, icon: CheckCircle, color: '#10b981', bg: 'rgba(16,185,129,0.15)', filter: 'paid' as PaymentFilter },
+    { label: 'Pendentes', value: stats.pending, icon: Clock, color: '#f59e0b', bg: 'rgba(245,158,11,0.15)', filter: 'pending' as PaymentFilter },
+    { label: 'Atrasados', value: stats.overdue, icon: AlertTriangle, color: '#f43f5e', bg: 'rgba(244,63,94,0.15)', filter: 'overdue' as PaymentFilter },
+    { label: 'Bolsistas', value: stats.scholarship, icon: GraduationCap, color: '#3b82f6', bg: 'rgba(59,130,246,0.15)', filter: 'scholarship' as PaymentFilter },
+    { label: 'Trancados', value: stats.locked, icon: Lock, color: '#6b7280', bg: 'rgba(107,114,128,0.15)', filter: 'locked' as PaymentFilter },
   ]
 
   const inputStyle: React.CSSProperties = {
@@ -1323,8 +1323,17 @@ export default function Students() {
         {statCards.map((card) => (
           <div
             key={card.label}
-            className="group relative overflow-hidden rounded-2xl p-8 sm:p-10 transition-all duration-300 hover:scale-[1.05] hover:shadow-2xl"
-            style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
+            onClick={() => setPaymentFilter(card.filter)}
+            className={`group relative overflow-hidden rounded-2xl p-8 sm:p-10 transition-all duration-300 hover:scale-[1.05] hover:shadow-2xl cursor-pointer ${
+              paymentFilter === card.filter 
+                ? 'scale-[1.03] shadow-lg' 
+                : 'opacity-85 hover:opacity-100'
+            }`}
+            style={{ 
+              backgroundColor: 'var(--bg-card)', 
+              border: paymentFilter === card.filter ? `2px solid ${card.color}` : '1px solid var(--border-color)',
+              boxShadow: paymentFilter === card.filter ? `0 0 20px ${card.color}20` : 'none'
+            }}
           >
             <div className="flex flex-col items-center justify-center text-center gap-4">
               <div className="rounded-xl p-3" style={{ backgroundColor: card.bg }}>
