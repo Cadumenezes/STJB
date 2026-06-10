@@ -2045,7 +2045,7 @@ export default function Events() {
                 )
               })() : (
                 <div className="space-y-6 animate-fade-in">
-                  <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-black/20 p-4 rounded-3xl border border-white/5">
+                  <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-4 rounded-3xl border" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
                     <h3 className="text-sm font-black uppercase text-purple-400">Gerenciamento de Despesas</h3>
                     {profile?.role !== 'secretary' && (
                       <button
@@ -2068,17 +2068,17 @@ export default function Events() {
 
                   {/* Comparative Summary */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="p-6 rounded-3xl border border-white/5 bg-white/5" style={{ borderColor: 'var(--border-color)' }}>
+                    <div className="p-6 rounded-3xl border text-center" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
                       <p className="text-xs font-bold uppercase text-[var(--text-muted)] tracking-wider mb-2">Custo Orçado</p>
                       <p className="text-2xl font-black text-white">R$ {Number(eventCost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                       <p className="text-[10px] text-gray-400 mt-2">Definido no cadastro do evento</p>
                     </div>
-                    <div className="p-6 rounded-3xl border border-white/5 bg-white/5" style={{ borderColor: 'var(--border-color)' }}>
+                    <div className="p-6 rounded-3xl border text-center" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
                       <p className="text-xs font-bold uppercase text-[var(--text-muted)] tracking-wider mb-2">Despesa Real (Gasto)</p>
                       <p className="text-2xl font-black text-rose-400">R$ {Number(totalRealExpenses).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                       <p className="text-[10px] text-gray-400 mt-2">Soma de todas as despesas diárias</p>
                     </div>
-                    <div className="p-6 rounded-3xl border border-white/5 bg-white/5" style={{ borderColor: 'var(--border-color)' }}>
+                    <div className="p-6 rounded-3xl border text-center" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
                       <p className="text-xs font-bold uppercase text-[var(--text-muted)] tracking-wider mb-2">Saldo do Orçamento</p>
                       <p className={`text-2xl font-black ${budgetBalance >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                         R$ {Number(budgetBalance).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
