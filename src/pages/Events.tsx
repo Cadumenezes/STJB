@@ -1018,18 +1018,18 @@ export default function Events() {
                     <table className="w-full text-left text-sm whitespace-nowrap">
                       <thead style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}>
                         <tr>
-                          <th className="px-3 py-3 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5">Aluno</th>
-                          <th className="px-3 py-3 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-center">Tipo Pgto</th>
-                          <th className="px-3 py-3 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-center">Coreo (Qtd/R$)</th>
-                          <th className="px-3 py-3 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-center">Roupa (R$)</th>
-                          <th className="px-3 py-3 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-left">Parcelas</th>
-                          <th className="px-3 py-3 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-right">Valor Total</th>
-                          <th className="px-3 py-3 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-right">Valor Pago</th>
-                          <th className="px-3 py-3 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-right">Falta Pagar</th>
-                          <th className="px-3 py-3 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-center">Convites</th>
-                          <th className="px-3 py-3 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-center">Qtd</th>
-                          <th className="px-3 py-3 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-center">Kit</th>
-                          <th className="px-3 py-3 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-center">Ações</th>
+                          <th className="pl-5 pr-8 py-3.5 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5">Aluno</th>
+                          <th className="px-4 py-3.5 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-center">Tipo Pgto</th>
+                          <th className="px-4 py-3.5 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-center">Coreo (Qtd / R$)</th>
+                          <th className="px-4 py-3.5 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-center">Roupa (R$)</th>
+                          <th className="px-4 py-3.5 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-left">Parcelas</th>
+                          <th className="px-4 py-3.5 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-right">Valor Total</th>
+                          <th className="px-4 py-3.5 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-right">Valor Pago</th>
+                          <th className="px-4 py-3.5 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-right">Falta Pagar</th>
+                          <th className="px-4 py-3.5 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-center">Convites</th>
+                          <th className="px-4 py-3.5 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-center">Qtd</th>
+                          <th className="px-4 py-3.5 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-center">Kit</th>
+                          <th className="px-4 py-3.5 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-center">Ações</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/5">
@@ -1052,10 +1052,10 @@ export default function Events() {
                             
                             return (
                               <tr key={p.id} className="hover:bg-white/[0.02] transition-colors">
-                                <td className="px-3 py-2.5 font-bold text-white max-w-[200px] truncate text-xs">{student?.name}</td>
+                                <td className="pl-5 pr-8 py-3.5 font-bold text-white max-w-[200px] truncate text-xs">{student?.name}</td>
                                 
                                 {/* Payment Method */}
-                                <td className="px-3 py-2.5 text-center text-xs">
+                                <td className="px-4 py-3.5 text-center text-xs">
                                   <select 
                                     value={p.payment_method || ''} 
                                     onChange={(e) => handleUpdateParticipant(p.id, 'payment_method', e.target.value)}
@@ -1071,7 +1071,7 @@ export default function Events() {
                                 </td>
 
                                 {/* Coreografias */}
-                                <td className="px-3 py-2.5 text-center text-xs">
+                                <td className="px-4 py-3.5 text-center text-xs">
                                   <div className="flex flex-col gap-1 items-center">
                                     <input 
                                       type="number" 
@@ -1100,7 +1100,7 @@ export default function Events() {
                                 </td>
 
                                 {/* Roupa (R$) */}
-                                <td className="px-3 py-2.5 text-center text-xs">
+                                <td className="px-4 py-3.5 text-center text-xs">
                                   <div className="flex items-center gap-0.5 bg-black/20 px-2 py-1 rounded-lg border border-white/5 w-24 mx-auto">
                                     <span className="text-[9px] text-white/30">R$</span>
                                     <input 
@@ -1117,7 +1117,7 @@ export default function Events() {
                                 </td>
 
                                 {/* Parcelas */}
-                                <td className="p-4">
+                                <td className="px-4 py-3.5 text-xs">
                                   {p.payment_method === 'Boleto' ? (
                                     <div className="flex flex-col gap-2 min-w-[180px]">
                                       <div className="flex items-center gap-2 mb-2 bg-white/5 p-2 rounded-xl">
