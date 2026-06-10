@@ -67,6 +67,18 @@ export default function Financial() {
     return labels[role] || role || 'Professor'
   }
 
+  const formatTime = (createdAtStr: string) => {
+    if (!createdAtStr) return ''
+    try {
+      const dateObj = new Date(createdAtStr)
+      const hours = dateObj.getHours().toString().padStart(2, '0')
+      const minutes = dateObj.getMinutes().toString().padStart(2, '0')
+      return `${hours}:${minutes}`
+    } catch (e) {
+      return ''
+    }
+  }
+
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [showFixedModal, setShowFixedModal] = useState(false)
@@ -368,7 +380,7 @@ export default function Financial() {
         const { data: paymentsData } = await supabase.from('monthly_payments').select('*').neq('status', 'paid')
         setPendingPayments(paymentsData || [])
       } else {
-        const { data: entriesData } = await supabase.from('financial_entries').select('*').order('date', { ascending: false })
+        const { data: entriesData } = await supabase.from('financial_entries').select('*').order('date', { ascending: false }).order('created_at', { ascending: false })
         setEntries(entriesData || [])
 
         const { data: fixedData } = await supabase.from('fixed_bills').select('*').order('due_day')
@@ -1581,7 +1593,12 @@ export default function Financial() {
                           {entry.category || '-'}
                         </td>
                         <td className="px-6 py-4 text-sm hidden sm:table-cell" style={{ color: 'var(--text-secondary)' }}>
-                          {new Date(entry.date + 'T12:00:00').toLocaleDateString('pt-BR')}
+                          <div>{new Date(entry.date + 'T12:00:00').toLocaleDateString('pt-BR')}</div>
+                          {entry.created_at && (
+                            <div className="text-[10px] text-[var(--text-muted)] mt-0.5">
+                              🕒 {formatTime(entry.created_at)}
+                            </div>
+                          )}
                         </td>
                         <td className="px-6 py-4 text-right">
                           <span className={`text-sm font-bold ${entry.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}`}>
