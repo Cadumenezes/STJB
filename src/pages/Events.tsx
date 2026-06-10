@@ -2261,7 +2261,7 @@ export default function Events() {
             </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Método de Pagamento</label>
               <select
@@ -2291,7 +2291,7 @@ export default function Events() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Taxa de Participação (R$)</label>
               <input
@@ -2319,7 +2319,7 @@ export default function Events() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Qtd de Convites</label>
               <input

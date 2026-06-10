@@ -678,7 +678,7 @@ export default function Schedule() {
             Clique em qualquer mês para abrir a visualização detalhada da agenda!
           </p>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">{annualMonths}</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">{annualMonths}</div>
       </div>
     )
   }
@@ -943,7 +943,7 @@ export default function Schedule() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-xs font-bold block mb-1.5 text-gray-400 uppercase tracking-wider">Data *</label>
               <input 
@@ -966,7 +966,7 @@ export default function Schedule() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-xs font-bold block mb-1.5 text-gray-400 uppercase tracking-wider">Categoria</label>
               <input

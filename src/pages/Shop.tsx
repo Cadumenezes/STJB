@@ -448,7 +448,7 @@ export default function Shop() {
 
               return (
                 <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-4 animate-in">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <p className="text-xs text-gray-400 font-bold">Preço Unitário</p>
                       <p className="text-lg font-black text-white">R$ {selectedProduct.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
@@ -459,7 +459,7 @@ export default function Shop() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="text-xs text-gray-400 font-bold block mb-1">Quantidade *</label>
                       <input

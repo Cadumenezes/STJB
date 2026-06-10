@@ -400,99 +400,101 @@ export default function Team() {
           </div>
 
           <div className="rounded-2xl border border-white/5 overflow-hidden" style={{ backgroundColor: 'var(--bg-card)' }}>
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b" style={{ borderColor: 'var(--border-color)', backgroundColor: 'rgba(255,255,255,0.01)' }}>
-                  <th className="p-6 text-xs font-black uppercase tracking-widest text-white/50">Membro da Equipe</th>
-                  <th className="p-6 text-xs font-black uppercase tracking-widest text-white/50">Função</th>
-                  <th className="p-6 text-xs font-black uppercase tracking-widest text-white/50 text-center">Registrar Ponto (Diário)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {members.length === 0 ? (
-                  <tr>
-                    <td colSpan={3} className="p-10 text-center opacity-50 text-sm">
-                      Nenhum funcionário cadastrado.
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[650px]">
+                <thead>
+                  <tr className="border-b" style={{ borderColor: 'var(--border-color)', backgroundColor: 'rgba(255,255,255,0.01)' }}>
+                    <th className="p-6 text-xs font-black uppercase tracking-widest text-white/50">Membro da Equipe</th>
+                    <th className="p-6 text-xs font-black uppercase tracking-widest text-white/50">Função</th>
+                    <th className="p-6 text-xs font-black uppercase tracking-widest text-white/50 text-center">Registrar Ponto (Diário)</th>
                   </tr>
-                ) : (
-                  members.map((m) => {
-                    const currentStatus = teamAttendance[m.id]
-                    const isSaving = savingAttendance === m.id
-                    const roleConf = roleColors[m.role] || { bg: 'rgba(156,163,175,0.15)', text: '#9ca3af', label: m.role }
+                </thead>
+                <tbody>
+                  {members.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="p-10 text-center opacity-50 text-sm">
+                        Nenhum funcionário cadastrado.
+                      </td>
+                    </tr>
+                  ) : (
+                    members.map((m) => {
+                      const currentStatus = teamAttendance[m.id]
+                      const isSaving = savingAttendance === m.id
+                      const roleConf = roleColors[m.role] || { bg: 'rgba(156,163,175,0.15)', text: '#9ca3af', label: m.role }
 
-                    return (
-                      <tr key={m.id} className="border-b" style={{ borderColor: 'var(--border-color)' }}>
-                        <td className="p-6">
-                          <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
-                              <span className="text-white font-bold">{m.name.charAt(0)}</span>
+                      return (
+                        <tr key={m.id} className="border-b" style={{ borderColor: 'var(--border-color)' }}>
+                          <td className="p-6">
+                            <div className="flex items-center gap-3">
+                              <div className="h-10 w-10 rounded-xl bg-purple-500/10 flex items-center justify-center">
+                                <span className="text-white font-bold">{m.name.charAt(0)}</span>
+                              </div>
+                              <div>
+                                <p className="font-bold text-white text-sm">{m.name}</p>
+                                <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{m.specialty || 'Geral'}</span>
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-bold text-white text-sm">{m.name}</p>
-                              <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{m.specialty || 'Geral'}</span>
+                          </td>
+                          <td className="p-6">
+                            <span className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full" style={{ backgroundColor: roleConf.bg, color: roleConf.text }}>
+                              {roleConf.label}
+                            </span>
+                          </td>
+                          <td className="p-6">
+                            <div className="flex justify-center items-center gap-3">
+                              {isSaving ? (
+                                <div className="h-6 w-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                              ) : (
+                                <>
+                                  {/* Present */}
+                                  <button
+                                    onClick={() => handleMarkAttendance(m.id, 'present')}
+                                    className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
+                                      currentStatus === 'present'
+                                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500'
+                                        : 'border-white/5 text-white/50 hover:bg-emerald-500/5 hover:text-emerald-400'
+                                    }`}
+                                  >
+                                    <Check size={14} />
+                                    PRESENTE
+                                  </button>
+
+                                  {/* Late */}
+                                  <button
+                                    onClick={() => handleMarkAttendance(m.id, 'late')}
+                                    className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
+                                      currentStatus === 'late'
+                                        ? 'bg-amber-500/20 text-amber-400 border-amber-500'
+                                        : 'border-white/5 text-white/50 hover:bg-amber-500/5 hover:text-amber-400'
+                                    }`}
+                                  >
+                                    <Clock size={14} />
+                                    ATRASADO
+                                  </button>
+
+                                  {/* Absent */}
+                                  <button
+                                    onClick={() => handleMarkAttendance(m.id, 'absent')}
+                                    className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
+                                      currentStatus === 'absent'
+                                        ? 'bg-rose-500/20 text-rose-400 border-rose-500'
+                                        : 'border-white/5 text-white/50 hover:bg-rose-500/5 hover:text-rose-400'
+                                    }`}
+                                  >
+                                    <X size={14} />
+                                    FALTOU
+                                  </button>
+                                </>
+                              )}
                             </div>
-                          </div>
-                        </td>
-                        <td className="p-6">
-                          <span className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full" style={{ backgroundColor: roleConf.bg, color: roleConf.text }}>
-                            {roleConf.label}
-                          </span>
-                        </td>
-                        <td className="p-6">
-                          <div className="flex justify-center items-center gap-3">
-                            {isSaving ? (
-                              <div className="h-6 w-6 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                            ) : (
-                              <>
-                                {/* Present */}
-                                <button
-                                  onClick={() => handleMarkAttendance(m.id, 'present')}
-                                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
-                                    currentStatus === 'present'
-                                      ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500'
-                                      : 'border-white/5 text-white/50 hover:bg-emerald-500/5 hover:text-emerald-400'
-                                  }`}
-                                >
-                                  <Check size={14} />
-                                  PRESENTE
-                                </button>
-
-                                {/* Late */}
-                                <button
-                                  onClick={() => handleMarkAttendance(m.id, 'late')}
-                                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
-                                    currentStatus === 'late'
-                                      ? 'bg-amber-500/20 text-amber-400 border-amber-500'
-                                      : 'border-white/5 text-white/50 hover:bg-amber-500/5 hover:text-amber-400'
-                                  }`}
-                                >
-                                  <Clock size={14} />
-                                  ATRASADO
-                                </button>
-
-                                {/* Absent */}
-                                <button
-                                  onClick={() => handleMarkAttendance(m.id, 'absent')}
-                                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
-                                    currentStatus === 'absent'
-                                      ? 'bg-rose-500/20 text-rose-400 border-rose-500'
-                                      : 'border-white/5 text-white/50 hover:bg-rose-500/5 hover:text-rose-400'
-                                  }`}
-                                >
-                                  <X size={14} />
-                                  FALTOU
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })
-                )}
-              </tbody>
-            </table>
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}

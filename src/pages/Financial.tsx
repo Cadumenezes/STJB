@@ -1372,74 +1372,76 @@ export default function Financial() {
       </div>
 
       {/* Tabs */}
-      <div className="flex flex-wrap gap-4 p-1 bg-black/20 rounded-2xl w-fit mb-12">
-        <button
-          onClick={() => setActiveTab('flow')}
-          className={`px-12 py-4 text-sm font-bold transition-all rounded-2xl shadow-lg border ${
-            activeTab === 'flow' ? 'font-black scale-105' : 'text-[var(--text-primary)] hover:text-white hover:bg-white/10'
-          }`}
-          style={{ 
-            backgroundColor: activeTab === 'flow' ? 'var(--bg-card)' : 'rgba(0, 0, 0, 0.15)',
-            borderColor: activeTab === 'flow' ? 'var(--accent-color)' : 'var(--border-color)',
-            color: activeTab === 'flow' ? '#fff' : 'var(--text-primary)'
-          }}
-        >
-          Fluxo de Caixa
-        </button>
-        <button
-          onClick={() => setActiveTab('fixed')}
-          className={`px-12 py-4 text-sm font-bold transition-all rounded-2xl shadow-lg border ${
-            activeTab === 'fixed' ? 'font-black scale-105' : 'text-[var(--text-primary)] hover:text-white hover:bg-white/10'
-          }`}
-          style={{ 
-            backgroundColor: activeTab === 'fixed' ? 'var(--bg-card)' : 'rgba(0, 0, 0, 0.15)',
-            borderColor: activeTab === 'fixed' ? 'var(--accent-color)' : 'var(--border-color)',
-            color: activeTab === 'fixed' ? '#fff' : 'var(--text-primary)'
-          }}
-        >
-          Contas Fixas
-        </button>
-        <button
-          onClick={() => setActiveTab('payroll')}
-          className={`px-12 py-4 text-sm font-bold transition-all rounded-2xl shadow-lg border ${
-            activeTab === 'payroll' ? 'font-black scale-105' : 'text-[var(--text-primary)] hover:text-white hover:bg-white/10'
-          }`}
-          style={{ 
-            backgroundColor: activeTab === 'payroll' ? 'var(--bg-card)' : 'rgba(0, 0, 0, 0.15)',
-            borderColor: activeTab === 'payroll' ? 'var(--accent-color)' : 'var(--border-color)',
-            color: activeTab === 'payroll' ? '#fff' : 'var(--text-primary)'
-          }}
-        >
-          Pagamentos Equipe
-        </button>
-        {profile?.role !== 'secretary' && (
+      <div className="w-full overflow-x-auto no-scrollbar mb-12 select-none">
+        <div className="flex gap-2 sm:gap-4 p-1 bg-black/20 rounded-2xl w-fit whitespace-nowrap">
           <button
-            onClick={() => setActiveTab('events')}
+            onClick={() => setActiveTab('flow')}
             className={`px-12 py-4 text-sm font-bold transition-all rounded-2xl shadow-lg border ${
-              activeTab === 'events' ? 'font-black scale-105' : 'text-[var(--text-primary)] hover:text-white hover:bg-white/10'
+              activeTab === 'flow' ? 'font-black scale-105' : 'text-[var(--text-primary)] hover:text-white hover:bg-white/10'
             }`}
             style={{ 
-              backgroundColor: activeTab === 'events' ? 'var(--bg-card)' : 'rgba(0, 0, 0, 0.15)',
-              borderColor: activeTab === 'events' ? 'var(--accent-color)' : 'var(--border-color)',
-              color: activeTab === 'events' ? '#fff' : 'var(--text-primary)'
+              backgroundColor: activeTab === 'flow' ? 'var(--bg-card)' : 'rgba(0, 0, 0, 0.15)',
+              borderColor: activeTab === 'flow' ? 'var(--accent-color)' : 'var(--border-color)',
+              color: activeTab === 'flow' ? '#fff' : 'var(--text-primary)'
             }}
           >
-            Relatório de Eventos
+            Fluxo de Caixa
           </button>
-        )}
-        <button
-          onClick={() => setActiveTab('reconciliation')}
-          className={`px-12 py-4 text-sm font-bold transition-all rounded-2xl shadow-lg border ${
-            activeTab === 'reconciliation' ? 'font-black scale-105' : 'text-[var(--text-primary)] hover:text-white hover:bg-white/10'
-          }`}
-          style={{ 
-            backgroundColor: activeTab === 'reconciliation' ? 'var(--bg-card)' : 'rgba(0, 0, 0, 0.15)',
-            borderColor: activeTab === 'reconciliation' ? 'var(--accent-color)' : 'var(--border-color)',
-            color: activeTab === 'reconciliation' ? '#fff' : 'var(--text-primary)'
-          }}
-        >
-          Conciliação por Extrato
-        </button>
+          <button
+            onClick={() => setActiveTab('fixed')}
+            className={`px-12 py-4 text-sm font-bold transition-all rounded-2xl shadow-lg border ${
+              activeTab === 'fixed' ? 'font-black scale-105' : 'text-[var(--text-primary)] hover:text-white hover:bg-white/10'
+            }`}
+            style={{ 
+              backgroundColor: activeTab === 'fixed' ? 'var(--bg-card)' : 'rgba(0, 0, 0, 0.15)',
+              borderColor: activeTab === 'fixed' ? 'var(--accent-color)' : 'var(--border-color)',
+              color: activeTab === 'fixed' ? '#fff' : 'var(--text-primary)'
+            }}
+          >
+            Contas Fixas
+          </button>
+          <button
+            onClick={() => setActiveTab('payroll')}
+            className={`px-12 py-4 text-sm font-bold transition-all rounded-2xl shadow-lg border ${
+              activeTab === 'payroll' ? 'font-black scale-105' : 'text-[var(--text-primary)] hover:text-white hover:bg-white/10'
+            }`}
+            style={{ 
+              backgroundColor: activeTab === 'payroll' ? 'var(--bg-card)' : 'rgba(0, 0, 0, 0.15)',
+              borderColor: activeTab === 'payroll' ? 'var(--accent-color)' : 'var(--border-color)',
+              color: activeTab === 'payroll' ? '#fff' : 'var(--text-primary)'
+            }}
+          >
+            Pagamentos Equipe
+          </button>
+          {profile?.role !== 'secretary' && (
+            <button
+              onClick={() => setActiveTab('events')}
+              className={`px-12 py-4 text-sm font-bold transition-all rounded-2xl shadow-lg border ${
+                activeTab === 'events' ? 'font-black scale-105' : 'text-[var(--text-primary)] hover:text-white hover:bg-white/10'
+              }`}
+              style={{ 
+                backgroundColor: activeTab === 'events' ? 'var(--bg-card)' : 'rgba(0, 0, 0, 0.15)',
+                borderColor: activeTab === 'events' ? 'var(--accent-color)' : 'var(--border-color)',
+                color: activeTab === 'events' ? '#fff' : 'var(--text-primary)'
+              }}
+            >
+              Relatório de Eventos
+            </button>
+          )}
+          <button
+            onClick={() => setActiveTab('reconciliation')}
+            className={`px-12 py-4 text-sm font-bold transition-all rounded-2xl shadow-lg border ${
+              activeTab === 'reconciliation' ? 'font-black scale-105' : 'text-[var(--text-primary)] hover:text-white hover:bg-white/10'
+            }`}
+            style={{ 
+              backgroundColor: activeTab === 'reconciliation' ? 'var(--bg-card)' : 'rgba(0, 0, 0, 0.15)',
+              borderColor: activeTab === 'reconciliation' ? 'var(--accent-color)' : 'var(--border-color)',
+              color: activeTab === 'reconciliation' ? '#fff' : 'var(--text-primary)'
+            }}
+          >
+            Conciliação por Extrato
+          </button>
+        </div>
       </div>
 
       {activeTab === 'flow' && (
@@ -2489,7 +2491,7 @@ export default function Financial() {
               </div>
 
               {/* Reconciliation Table */}
-              <div className="rounded-2xl border border-white/5 bg-[#141425] overflow-hidden shadow-2xl">
+              <div className="rounded-2xl border border-white/5 bg-[#141425] overflow-x-auto shadow-2xl">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-white/5 text-[10px] uppercase tracking-wider" style={{ backgroundColor: 'rgba(0,0,0,0.2)', color: 'var(--text-secondary)' }}>

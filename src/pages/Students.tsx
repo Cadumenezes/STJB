@@ -981,7 +981,7 @@ export default function Students() {
           </div>
           <div className="col-span-full">
             <label className="text-sm font-bold block mb-3 text-purple-400 uppercase tracking-widest">Status do Aluno</label>
-            <div className="flex gap-3">
+            <div className="grid grid-cols-2 sm:flex gap-2 sm:gap-3">
               {[
                 { value: 'active', label: 'Ativo', color: '#10b981', bg: 'rgba(16,185,129,0.15)' },
                 { value: 'scholarship', label: 'Bolsista Total', color: '#3b82f6', bg: 'rgba(59,130,246,0.15)' },

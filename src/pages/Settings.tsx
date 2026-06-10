@@ -426,82 +426,84 @@ export default function SettingsPage() {
       </div>
 
       {/* Tab Selectors */}
-      <div className="flex flex-wrap gap-6 p-2 bg-black/30 rounded-2xl w-fit mb-12 max-w-7xl mx-auto select-none border border-white/5">
-        <button
-          type="button"
-          onClick={() => setActiveTab('general')}
-          className={`px-8 py-3.5 text-sm font-bold transition-all rounded-xl shadow-md border cursor-pointer ${
-            activeTab === 'general' ? 'font-black scale-105' : 'text-gray-400 hover:text-white hover:bg-white/5'
-          }`}
-          style={{
-            backgroundColor: activeTab === 'general' ? 'var(--bg-card)' : 'rgba(0, 0, 0, 0.2)',
-            borderColor: activeTab === 'general' ? 'var(--accent-color)' : 'transparent',
-            color: activeTab === 'general' ? '#fff' : 'var(--text-primary)',
-            boxShadow: activeTab === 'general' ? '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 0 8px var(--accent-color)' : 'none'
-          }}
-        >
-          Aparência & Identidade
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('gateways')}
-          className={`px-8 py-3.5 text-sm font-bold transition-all rounded-xl shadow-md border cursor-pointer ${
-            activeTab === 'gateways' ? 'font-black scale-105' : 'text-gray-400 hover:text-white hover:bg-white/5'
-          }`}
-          style={{
-            backgroundColor: activeTab === 'gateways' ? 'var(--bg-card)' : 'rgba(0, 0, 0, 0.2)',
-            borderColor: activeTab === 'gateways' ? 'var(--accent-color)' : 'transparent',
-            color: activeTab === 'gateways' ? '#fff' : 'var(--text-primary)',
-            boxShadow: activeTab === 'gateways' ? '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 0 8px var(--accent-color)' : 'none'
-          }}
-        >
-          Integrações & Bancos
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('templates')}
-          className={`px-8 py-3.5 text-sm font-bold transition-all rounded-xl shadow-md border cursor-pointer ${
-            activeTab === 'templates' ? 'font-black scale-105' : 'text-gray-400 hover:text-white hover:bg-white/5'
-          }`}
-          style={{
-            backgroundColor: activeTab === 'templates' ? 'var(--bg-card)' : 'rgba(0, 0, 0, 0.2)',
-            borderColor: activeTab === 'templates' ? 'var(--accent-color)' : 'transparent',
-            color: activeTab === 'templates' ? '#fff' : 'var(--text-primary)',
-            boxShadow: activeTab === 'templates' ? '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 0 8px var(--accent-color)' : 'none'
-          }}
-        >
-          Modelos de Documentos
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('security')}
-          className={`px-8 py-3.5 text-sm font-bold transition-all rounded-xl shadow-md border cursor-pointer ${
-            activeTab === 'security' ? 'font-black scale-105' : 'text-gray-400 hover:text-white hover:bg-white/5'
-          }`}
-          style={{
-            backgroundColor: activeTab === 'security' ? 'var(--bg-card)' : 'rgba(0, 0, 0, 0.2)',
-            borderColor: activeTab === 'security' ? 'var(--accent-color)' : 'transparent',
-            color: activeTab === 'security' ? '#fff' : 'var(--text-primary)',
-            boxShadow: activeTab === 'security' ? '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 0 8px var(--accent-color)' : 'none'
-          }}
-        >
-          Segurança (MFA)
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('feedback')}
-          className={`px-8 py-3.5 text-sm font-bold transition-all rounded-xl shadow-md border cursor-pointer ${
-            activeTab === 'feedback' ? 'font-black scale-105' : 'text-gray-400 hover:text-white hover:bg-white/5'
-          }`}
-          style={{
-            backgroundColor: activeTab === 'feedback' ? 'var(--bg-card)' : 'rgba(0, 0, 0, 0.2)',
-            borderColor: activeTab === 'feedback' ? 'var(--accent-color)' : 'transparent',
-            color: activeTab === 'feedback' ? '#fff' : 'var(--text-primary)',
-            boxShadow: activeTab === 'feedback' ? '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 0 8px var(--accent-color)' : 'none'
-          }}
-        >
-          Feedback & Suporte
-        </button>
+      <div className="w-full overflow-x-auto no-scrollbar mb-12 select-none">
+        <div className="flex gap-4 p-2 bg-black/30 rounded-2xl w-fit border border-white/5 whitespace-nowrap">
+          <button
+            type="button"
+            onClick={() => setActiveTab('general')}
+            className={`px-8 py-3.5 text-sm font-bold transition-all rounded-xl shadow-md border cursor-pointer ${
+              activeTab === 'general' ? 'font-black scale-105' : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`}
+            style={{
+              backgroundColor: activeTab === 'general' ? 'var(--bg-card)' : 'rgba(0, 0, 0, 0.2)',
+              borderColor: activeTab === 'general' ? 'var(--accent-color)' : 'transparent',
+              color: activeTab === 'general' ? '#fff' : 'var(--text-primary)',
+              boxShadow: activeTab === 'general' ? '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 0 8px var(--accent-color)' : 'none'
+            }}
+          >
+            Aparência & Identidade
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('gateways')}
+            className={`px-8 py-3.5 text-sm font-bold transition-all rounded-xl shadow-md border cursor-pointer ${
+              activeTab === 'gateways' ? 'font-black scale-105' : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`}
+            style={{
+              backgroundColor: activeTab === 'gateways' ? 'var(--bg-card)' : 'rgba(0, 0, 0, 0.2)',
+              borderColor: activeTab === 'gateways' ? 'var(--accent-color)' : 'transparent',
+              color: activeTab === 'gateways' ? '#fff' : 'var(--text-primary)',
+              boxShadow: activeTab === 'gateways' ? '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 0 8px var(--accent-color)' : 'none'
+            }}
+          >
+            Integrações & Bancos
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('templates')}
+            className={`px-8 py-3.5 text-sm font-bold transition-all rounded-xl shadow-md border cursor-pointer ${
+              activeTab === 'templates' ? 'font-black scale-105' : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`}
+            style={{
+              backgroundColor: activeTab === 'templates' ? 'var(--bg-card)' : 'rgba(0, 0, 0, 0.2)',
+              borderColor: activeTab === 'templates' ? 'var(--accent-color)' : 'transparent',
+              color: activeTab === 'templates' ? '#fff' : 'var(--text-primary)',
+              boxShadow: activeTab === 'templates' ? '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 0 8px var(--accent-color)' : 'none'
+            }}
+          >
+            Modelos de Documentos
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('security')}
+            className={`px-8 py-3.5 text-sm font-bold transition-all rounded-xl shadow-md border cursor-pointer ${
+              activeTab === 'security' ? 'font-black scale-105' : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`}
+            style={{
+              backgroundColor: activeTab === 'security' ? 'var(--bg-card)' : 'rgba(0, 0, 0, 0.2)',
+              borderColor: activeTab === 'security' ? 'var(--accent-color)' : 'transparent',
+              color: activeTab === 'security' ? '#fff' : 'var(--text-primary)',
+              boxShadow: activeTab === 'security' ? '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 0 8px var(--accent-color)' : 'none'
+            }}
+          >
+            Segurança (MFA)
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('feedback')}
+            className={`px-8 py-3.5 text-sm font-bold transition-all rounded-xl shadow-md border cursor-pointer ${
+              activeTab === 'feedback' ? 'font-black scale-105' : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`}
+            style={{
+              backgroundColor: activeTab === 'feedback' ? 'var(--bg-card)' : 'rgba(0, 0, 0, 0.2)',
+              borderColor: activeTab === 'feedback' ? 'var(--accent-color)' : 'transparent',
+              color: activeTab === 'feedback' ? '#fff' : 'var(--text-primary)',
+              boxShadow: activeTab === 'feedback' ? '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 0 8px var(--accent-color)' : 'none'
+            }}
+          >
+            Feedback & Suporte
+          </button>
+        </div>
       </div>
 
       <div className="w-full max-w-7xl mx-auto">
