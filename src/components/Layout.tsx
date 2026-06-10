@@ -981,8 +981,13 @@ export default function Layout() {
   }, [profile])
 
   const finishTour = () => {
+    const wasCompleted = localStorage.getItem('danceflow_tour_completed') === 'true'
     localStorage.setItem('danceflow_tour_completed', 'true')
     setShowTour(false)
+    if (!wasCompleted) {
+      setHelpTab('manual')
+      setShowHelpCenter(true)
+    }
   }
 
   useEffect(() => {
