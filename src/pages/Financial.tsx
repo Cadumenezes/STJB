@@ -51,6 +51,22 @@ export default function Financial() {
   const [processingFile, setProcessingFile] = useState(false)
   const [batchSaving, setBatchSaving] = useState(false)
 
+  const getRoleLabel = (role: string) => {
+    const labels: Record<string, string> = {
+      'instructor': 'Professor',
+      'staff': 'Staff',
+      'admin': 'Admin',
+      'secretary': 'Secretário',
+      'Secretário': 'Secretário',
+      'Diretor': 'Diretor',
+      'Professor': 'Professor',
+      'Zelador': 'Zelador',
+      'Porteiro': 'Porteiro',
+      'Coordenador': 'Coordenador'
+    }
+    return labels[role] || role || 'Professor'
+  }
+
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [showFixedModal, setShowFixedModal] = useState(false)
@@ -259,7 +275,7 @@ export default function Financial() {
       const { data: allStudents } = await supabase.from('students').select('*')
       setStudents(allStudents || [])
 
-      const { data: membersList } = await supabase.from('team_members').select('*').or('role.eq.instructor,role.eq.Professor').eq('status', 'active')
+      const { data: membersList } = await supabase.from('team_members').select('*').eq('status', 'active').order('name')
       setInstructors(membersList || [])
       if (membersList && membersList.length > 0) {
         setSelectedInstructorId(prev => prev || membersList[0].id)
@@ -1275,7 +1291,7 @@ export default function Financial() {
       horas = proj.classes
     }
 
-    const salario = horas * hourlyRate
+    const salario = (horas * hourlyRate) + (selectedInstructor?.salary || 0)
     const passagem = diasTrabalhados * dailyTransport
 
     return {
@@ -1783,7 +1799,7 @@ export default function Financial() {
               <div className="grid grid-cols-1 gap-6">
                 {payrollData.length === 0 ? (
                   <div className="py-20 text-center bg-black/20 rounded-3xl border border-dashed border-white/10">
-                    <p className="text-[var(--text-muted)]">Nenhum professor com aulas registradas este mês.</p>
+                    <p className="text-[var(--text-muted)]">Nenhum membro da equipe cadastrado ou ativo este mês.</p>
                   </div>
                 ) : (
                   payrollData.map(teacher => (
@@ -1799,9 +1815,15 @@ export default function Financial() {
                       <div className="flex flex-col lg:flex-row gap-8 items-center lg:items-start relative z-10">
                         <div className="flex-1">
                           <h3 className="text-2xl font-black text-white mb-1">{teacher.name}</h3>
-                          <p className="text-sm font-bold text-purple-400 uppercase tracking-widest mb-6">{teacher.specialty || 'Professor'}</p>
+                          <p className="text-sm font-bold text-purple-400 uppercase tracking-widest mb-6">{getRoleLabel(teacher.role)}</p>
                           
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                          <div className={`grid grid-cols-2 ${teacher.salary > 0 ? 'md:grid-cols-5' : 'md:grid-cols-4'} gap-6`}>
+                            {teacher.salary > 0 && (
+                              <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1">Salário Fixo</p>
+                                <p className="text-xl font-black text-emerald-400">R$ {teacher.salary.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                              </div>
+                            )}
                             <div className="p-4 rounded-2xl bg-white/5 border border-white/5">
                               <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)] mb-1">Aulas Dadas</p>
                               <p className="text-xl font-black text-white">{teacher.classesCount}</p>
@@ -1829,7 +1851,7 @@ export default function Financial() {
                               const payload = {
                                 type: 'expense',
                                 category: 'Salários',
-                                description: `Pagamento Professor: ${teacher.name}`,
+                                description: `Pagamento Equipe: ${teacher.name} (${getRoleLabel(teacher.role)})`,
                                 amount: teacher.totalToPay,
                                 date: new Date().toISOString().split('T')[0],
                               }
@@ -1903,7 +1925,7 @@ export default function Financial() {
                       onChange={(e) => setSelectedInstructorId(e.target.value)}
                       className="rounded-xl px-4 py-2 text-xs bg-[#1a1a2e] border border-white/10 text-white focus:outline-none focus:ring-1 focus:ring-purple-500/30 font-bold cursor-pointer"
                     >
-                      <option value="" disabled>-- Selecionar Professor --</option>
+                      <option value="" disabled>-- Selecionar Membro --</option>
                       {instructors.map(inst => (
                         <option key={inst.id} value={inst.id}>{inst.name}</option>
                       ))}
@@ -1919,7 +1941,9 @@ export default function Financial() {
                       ))}
                     </select>
                   </div>
-                  <div className="py-4 text-white/20">-</div>
+                  <div className="py-4 text-emerald-400 font-bold">
+                    {selectedInstructor?.salary > 0 ? `Fixo: R$ ${selectedInstructor.salary.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '-'}
+                  </div>
                   <div className="col-span-2 py-4 text-purple-300 font-bold text-xs truncate px-4" title={scheduleSummary}>
                     📅 {scheduleSummary}
                   </div>
