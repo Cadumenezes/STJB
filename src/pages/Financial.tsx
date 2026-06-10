@@ -36,6 +36,7 @@ export default function Financial() {
   const [instructors, setInstructors] = useState<any[]>([])
   const [events, setEvents] = useState<any[]>([])
   const [eventParticipants, setEventParticipants] = useState<any[]>([])
+  const [eventExpenses, setEventExpenses] = useState<any[]>([])
   
   // Conciliação de Extrato
   const [students, setStudents] = useState<Student[]>([])
@@ -301,6 +302,8 @@ export default function Financial() {
         setEvents(eventsData || [])
         const { data: participantsData } = await supabase.from('event_participants').select('*')
         setEventParticipants(participantsData || [])
+        const { data: expensesData } = await supabase.from('event_expenses').select('*')
+        setEventExpenses(expensesData || [])
       } else if (activeTab === 'payroll') {
         const { data: att } = await supabase.from('attendance').select('*').eq('type', 'instructor').eq('status', 'present')
         const { data: teamAtt } = await supabase.from('team_attendance').select('*').in('status', ['present', 'late'])
@@ -1786,24 +1789,32 @@ export default function Financial() {
       {activeTab === 'payroll' && (
         <div className="space-y-6">
           {/* Sub-abas */}
-          <div className="flex gap-3 border-b border-white/5 pb-4">
+          <div className="flex flex-wrap gap-4 p-2 rounded-2xl border w-fit" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', marginBottom: '24px' }}>
             <button
+              type="button"
               onClick={() => setPayrollSubTab('summary')}
-              className={`px-6 py-2 text-xs font-bold transition-all rounded-xl border ${
-                payrollSubTab === 'summary'
-                  ? 'bg-purple-500/10 border-purple-500/30 text-purple-400 font-black'
-                  : 'border-transparent text-[var(--text-secondary)] hover:text-white'
-              }`}
+              className="px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer"
+              style={{
+                backgroundColor: 'var(--bg-card)',
+                color: 'var(--text-primary)',
+                border: payrollSubTab === 'summary' ? '2px solid var(--accent-color)' : '1px solid var(--border-color)',
+                boxShadow: payrollSubTab === 'summary' ? '0 0 10px var(--accent-color)' : 'none',
+                opacity: payrollSubTab === 'summary' ? 1 : 0.6
+              }}
             >
               Resumo Mensal (Atual)
             </button>
             <button
+              type="button"
               onClick={() => setPayrollSubTab('annual')}
-              className={`px-6 py-2 text-xs font-bold transition-all rounded-xl border ${
-                payrollSubTab === 'annual'
-                  ? 'bg-purple-500/10 border-purple-500/30 text-purple-400 font-black'
-                  : 'border-transparent text-[var(--text-secondary)] hover:text-white'
-              }`}
+              className="px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer"
+              style={{
+                backgroundColor: 'var(--bg-card)',
+                color: 'var(--text-primary)',
+                border: payrollSubTab === 'annual' ? '2px solid var(--accent-color)' : '1px solid var(--border-color)',
+                boxShadow: payrollSubTab === 'annual' ? '0 0 10px var(--accent-color)' : 'none',
+                opacity: payrollSubTab === 'annual' ? 1 : 0.6
+              }}
             >
               Histórico Anual / Simulador (Novo)
             </button>
@@ -2024,26 +2035,27 @@ export default function Financial() {
           {/* Consolidated Event Cards */}
           {(() => {
             const consolidatedCost = events.reduce((sum, ev) => sum + (Number(ev.cost) || 0), 0)
+            const consolidatedExpenses = eventExpenses.reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0)
             const consolidatedExpected = eventParticipants.reduce((sum, p) => sum + (Number(p.total_value) || 0), 0)
             const consolidatedPaid = eventParticipants.reduce((sum, p) => sum + (Number(p.amount_paid) || 0), 0)
-            const consolidatedBalance = consolidatedPaid - consolidatedCost
+            const consolidatedNetBalance = consolidatedPaid - consolidatedExpenses
 
             return (
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
                 {/* Projected Revenue */}
                 <div
-                  className="group relative overflow-hidden rounded-2xl p-8 transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl"
+                  className="group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl text-center"
                   style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
                 >
-                  <div className="flex flex-col items-center justify-center h-28 text-center gap-2 relative z-10">
+                  <div className="flex flex-col items-center justify-center gap-2 relative z-10">
                     <div className="rounded-xl p-3" style={{ backgroundColor: 'rgba(59,130,246,0.15)' }}>
-                      <TrendingUp size={26} className="text-blue-400" />
+                      <TrendingUp size={24} className="text-blue-400" />
                     </div>
                     <div>
-                      <p className="text-2xl font-black text-blue-400">
+                      <p className="text-xl font-black text-blue-400">
                         R$ {consolidatedExpected.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </p>
-                      <p className="mt-2 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Faturamento Previsto</p>
+                      <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">Faturamento Previsto</p>
                     </div>
                   </div>
                   <div className="absolute left-0 top-0 h-full w-1" style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)' }} />
@@ -2051,37 +2063,56 @@ export default function Financial() {
 
                 {/* Received Revenue */}
                 <div
-                  className="group relative overflow-hidden rounded-2xl p-8 transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl"
+                  className="group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl text-center"
                   style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
                 >
-                  <div className="flex flex-col items-center justify-center h-28 text-center gap-2 relative z-10">
+                  <div className="flex flex-col items-center justify-center gap-2 relative z-10">
                     <div className="rounded-xl p-3" style={{ backgroundColor: 'rgba(16,185,129,0.15)' }}>
-                      <CheckCircle2 size={26} className="text-emerald-400" />
+                      <CheckCircle2 size={24} className="text-emerald-400" />
                     </div>
                     <div>
-                      <p className="text-2xl font-black text-emerald-400">
+                      <p className="text-xl font-black text-emerald-400">
                         R$ {consolidatedPaid.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </p>
-                      <p className="mt-2 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Faturamento Recebido</p>
+                      <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">Faturamento Recebido</p>
                     </div>
                   </div>
                   <div className="absolute left-0 top-0 h-full w-1" style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }} />
                 </div>
 
-                {/* Total Event Costs */}
+                {/* Total Budgeted Cost */}
                 <div
-                  className="group relative overflow-hidden rounded-2xl p-8 transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl"
+                  className="group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl text-center"
                   style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
                 >
-                  <div className="flex flex-col items-center justify-center h-28 text-center gap-2 relative z-10">
-                    <div className="rounded-xl p-3" style={{ backgroundColor: 'rgba(244,63,94,0.15)' }}>
-                      <TrendingDown size={26} className="text-rose-400" />
+                  <div className="flex flex-col items-center justify-center gap-2 relative z-10">
+                    <div className="rounded-xl p-3" style={{ backgroundColor: 'rgba(255,255,255,0.08)' }}>
+                      <DollarSign size={24} className="text-gray-300" />
                     </div>
                     <div>
-                      <p className="text-2xl font-black text-rose-400">
+                      <p className="text-xl font-black text-white">
                         R$ {consolidatedCost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </p>
-                      <p className="mt-2 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Custos Acumulados</p>
+                      <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">Custo Orçado Total</p>
+                    </div>
+                  </div>
+                  <div className="absolute left-0 top-0 h-full w-1" style={{ background: 'linear-gradient(135deg, #9ca3af, #4b5563)' }} />
+                </div>
+
+                {/* Total Real Expenses */}
+                <div
+                  className="group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl text-center"
+                  style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
+                >
+                  <div className="flex flex-col items-center justify-center gap-2 relative z-10">
+                    <div className="rounded-xl p-3" style={{ backgroundColor: 'rgba(244,63,94,0.15)' }}>
+                      <TrendingDown size={24} className="text-rose-400" />
+                    </div>
+                    <div>
+                      <p className="text-xl font-black text-rose-400">
+                        R$ {consolidatedExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                      <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">Despesa Real Total</p>
                     </div>
                   </div>
                   <div className="absolute left-0 top-0 h-full w-1" style={{ background: 'linear-gradient(135deg, #f43f5e, #be123c)' }} />
@@ -2089,21 +2120,21 @@ export default function Financial() {
 
                 {/* Net Result */}
                 <div
-                  className="group relative overflow-hidden rounded-2xl p-8 transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl"
+                  className="group relative overflow-hidden rounded-2xl p-6 transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl text-center"
                   style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
                 >
-                  <div className="flex flex-col items-center justify-center h-28 text-center gap-2 relative z-10">
-                    <div className="rounded-xl p-3" style={{ backgroundColor: consolidatedBalance >= 0 ? 'rgba(16,185,129,0.15)' : 'rgba(244,63,94,0.15)' }}>
-                      <DollarSign size={26} style={{ color: consolidatedBalance >= 0 ? '#10b981' : '#f43f5e' }} />
+                  <div className="flex flex-col items-center justify-center gap-2 relative z-10">
+                    <div className="rounded-xl p-3" style={{ backgroundColor: consolidatedNetBalance >= 0 ? 'rgba(16,185,129,0.15)' : 'rgba(244,63,94,0.15)' }}>
+                      <DollarSign size={24} style={{ color: consolidatedNetBalance >= 0 ? '#10b981' : '#f43f5e' }} />
                     </div>
                     <div>
-                      <p className="text-2xl font-black" style={{ color: consolidatedBalance >= 0 ? '#10b981' : '#f43f5e' }}>
-                        R$ {consolidatedBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      <p className="text-xl font-black" style={{ color: consolidatedNetBalance >= 0 ? '#10b981' : '#f43f5e' }}>
+                        R$ {consolidatedNetBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </p>
-                      <p className="mt-2 text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">Saldo Líquido (Pago)</p>
+                      <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">Saldo Líquido Real</p>
                     </div>
                   </div>
-                  <div className="absolute left-0 top-0 h-full w-1" style={{ background: consolidatedBalance >= 0 ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #f43f5e, #be123c)' }} />
+                  <div className="absolute left-0 top-0 h-full w-1" style={{ background: consolidatedNetBalance >= 0 ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #f43f5e, #be123c)' }} />
                 </div>
               </div>
             )
@@ -2118,17 +2149,19 @@ export default function Financial() {
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">Nome do Evento</th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] text-center">Data</th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] text-center">Inscritos</th>
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] text-right">Custo</th>
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] text-right">Faturamento Previsto</th>
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] text-right">Faturamento Recebido</th>
-                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] text-right">Saldo Líquido (Pago)</th>
+                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] text-right">Custo Orçado</th>
+                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] text-right">Despesa Real</th>
+                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] text-right">Saldo Orçamento</th>
+                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] text-right">Fat. Previsto</th>
+                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] text-right">Fat. Recebido</th>
+                    <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] text-right">Saldo Líquido Real</th>
                     <th className="px-6 py-4 text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] text-center">Planilha</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/5">
                   {events.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="px-6 py-12 text-center text-sm text-[var(--text-muted)]">
+                      <td colSpan={10} className="px-6 py-12 text-center text-sm text-[var(--text-muted)]">
                         Nenhum evento registrado.
                       </td>
                     </tr>
@@ -2136,10 +2169,15 @@ export default function Financial() {
                     events.map((ev) => {
                       const evParticipants = eventParticipants.filter(p => p.event_id === ev.id)
                       const subscribersCount = evParticipants.length
-                      const cost = Number(ev.cost) || 0
+                      const costOrçado = Number(ev.cost) || 0
+                      
+                      const evExpenses = eventExpenses.filter(exp => exp.event_id === ev.id)
+                      const totalDespesaReal = evExpenses.reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0)
+                      const saldoOrçamento = costOrçado - totalDespesaReal
+                      
                       const expected = evParticipants.reduce((sum, p) => sum + (Number(p.total_value) || 0), 0)
                       const paid = evParticipants.reduce((sum, p) => sum + (Number(p.amount_paid) || 0), 0)
-                      const balance = paid - cost
+                      const saldoLiquidoReal = paid - totalDespesaReal
 
                       return (
                         <tr key={ev.id} className="transition-colors hover:bg-white/5">
@@ -2150,17 +2188,23 @@ export default function Financial() {
                           <td className="px-6 py-4 text-center text-sm font-bold text-white">
                             {subscribersCount}
                           </td>
-                          <td className="px-6 py-4 text-right text-sm text-rose-400 font-bold">
-                            R$ {cost.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          <td className="px-6 py-4 text-right text-sm text-gray-300 font-semibold">
+                            R$ {costOrçado.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </td>
-                          <td className="px-6 py-4 text-right text-sm text-blue-400 font-bold">
+                          <td className="px-6 py-4 text-right text-sm text-rose-400 font-semibold">
+                            R$ {totalDespesaReal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className={`px-6 py-4 text-right text-sm font-semibold ${saldoOrçamento >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            R$ {saldoOrçamento.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </td>
+                          <td className="px-6 py-4 text-right text-sm text-blue-400 font-semibold">
                             R$ {expected.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </td>
-                          <td className="px-6 py-4 text-right text-sm text-emerald-400 font-bold">
+                          <td className="px-6 py-4 text-right text-sm text-emerald-400 font-semibold">
                             R$ {paid.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </td>
-                          <td className={`px-6 py-4 text-right text-sm font-black ${balance >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                            R$ {balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          <td className={`px-6 py-4 text-right text-sm font-black ${saldoLiquidoReal >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            R$ {saldoLiquidoReal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </td>
                           <td className="px-6 py-4 text-center">
                             <a
