@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Plus, Edit, Trash2, Calendar, MapPin, DollarSign, Users, Download, PlusCircle, CheckCircle, CreditCard, Box, Search, Printer, Map } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { Event, EventParticipant, Student, Installment, Profile, EventSession, SeatingMapConfig, Theater } from '../types'
+import { Event, EventParticipant, Student, Installment, Profile, EventSession, SeatingMapConfig, Theater, EventExpense } from '../types'
 import Modal from '../components/Modal'
 
 export default function Events() {
@@ -26,10 +26,20 @@ export default function Events() {
   const [exceptions, setExceptions] = useState<Record<string, number>>({})
 
   // Estados para Aba de Mapa de Teatro e Reservas
-  const [activeSubTab, setActiveSubTab] = useState<'spreadsheet' | 'seating_map'>('spreadsheet')
+  const [activeSubTab, setActiveSubTab] = useState<'spreadsheet' | 'seating_map' | 'expenses'>('spreadsheet')
   const [selectedParticipantId, setSelectedParticipantId] = useState<string | null>(null)
   const [seatingSearchQuery, setSeatingSearchQuery] = useState('')
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
+
+  // Estados para Despesas do Evento
+  const [eventExpenses, setEventExpenses] = useState<EventExpense[]>([])
+  const [showExpenseModal, setShowExpenseModal] = useState(false)
+  const [editExpense, setEditExpense] = useState<EventExpense | null>(null)
+  const [expenseFormData, setExpenseFormData] = useState({
+    description: '',
+    amount: '',
+    expense_date: new Date().toISOString().split('T')[0]
+  })
 
   // Estados para Modal de Adicionar Participante
   const [showAddParticipantModal, setShowAddParticipantModal] = useState(false)
@@ -291,8 +301,67 @@ export default function Events() {
       }
     })
     setParticipants(formattedParts)
+
+    const { data: expensesData } = await supabase.from('event_expenses').select('*').order('expense_date', { ascending: false })
+    setEventExpenses(expensesData || [])
     
     setLoading(false)
+  }
+
+  async function handleSaveExpense(e: React.FormEvent) {
+    e.preventDefault()
+    if (!activeEventId) return
+
+    const { data: { user } } = await supabase.auth.getUser()
+    const payload = {
+      event_id: activeEventId,
+      description: expenseFormData.description,
+      amount: parseFloat(expenseFormData.amount) || 0,
+      expense_date: expenseFormData.expense_date,
+      user_id: user?.id
+    }
+
+    let error = null
+    if (editExpense) {
+      const res = await supabase.from('event_expenses').update(payload).eq('id', editExpense.id)
+      error = res.error
+    } else {
+      const res = await supabase.from('event_expenses').insert([payload])
+      error = res.error
+    }
+
+    if (error) {
+      alert('Erro ao salvar despesa: ' + error.message)
+    } else {
+      setShowExpenseModal(false)
+      setEditExpense(null)
+      setExpenseFormData({
+        description: '',
+        amount: '',
+        expense_date: new Date().toISOString().split('T')[0]
+      })
+      loadData()
+    }
+  }
+
+  async function handleDeleteExpense(id: string) {
+    if (!confirm('Deseja realmente excluir esta despesa?')) return
+    const { error } = await supabase.from('event_expenses').delete().eq('id', id)
+    if (error) {
+      alert('Erro ao excluir despesa: ' + error.message)
+    } else {
+      loadData()
+    }
+  }
+
+  function openEditExpense(exp: EventExpense) {
+    setEditExpense(exp)
+    setExpenseFormData({
+      description: exp.description,
+      amount: exp.amount.toString(),
+      expense_date: exp.expense_date
+    })
+    setShowExpenseModal(true)
   }
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -734,7 +803,10 @@ export default function Events() {
   const totalKitRevenue = totalKits * (activeEvent?.kit_price || 0)
 
   const eventCost = activeEvent?.cost || 0
-  const netResult = totalReceived - eventCost
+  const activeEventExpenses = eventExpenses.filter(exp => exp.event_id === activeEventId)
+  const totalRealExpenses = activeEventExpenses.reduce((acc, exp) => acc + Number(exp.amount), 0)
+  const budgetBalance = eventCost - totalRealExpenses
+  const netResult = totalReceived - totalRealExpenses
 
   const inputStyle: React.CSSProperties = {
     backgroundColor: 'var(--bg-input)',
@@ -879,25 +951,37 @@ export default function Events() {
                 </div>
                 {profile?.role !== 'secretary' && (
                   <>
-                    <div className="flex-1 min-w-0 p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
-                      <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">Custo do Evento</p>
-                      <p className={`font-black text-rose-400 ${getDynamicFontSize(`R$ ${Number(eventCost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`)}`}>
+                    <div className="flex-1 min-w-0 p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center animate-fade-in" style={{ backgroundColor: 'var(--bg-card)' }}>
+                      <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">Custo Orçado</p>
+                      <p className={`font-black text-white/50 ${getDynamicFontSize(`R$ ${Number(eventCost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`)}`}>
                         R$ {Number(eventCost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </p>
                     </div>
-                    <div className="flex-1 min-w-0 p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
+                    <div className="flex-1 min-w-0 p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center animate-fade-in" style={{ backgroundColor: 'var(--bg-card)' }}>
+                      <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">Despesa Real</p>
+                      <p className={`font-black text-rose-400 ${getDynamicFontSize(`R$ ${Number(totalRealExpenses).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`)}`}>
+                        R$ {Number(totalRealExpenses).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                    <div className="flex-1 min-w-0 p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center animate-fade-in" style={{ backgroundColor: 'var(--bg-card)' }}>
+                      <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">Saldo Orçamento</p>
+                      <p className={`font-black ${budgetBalance >= 0 ? 'text-emerald-400' : 'text-rose-400'} ${getDynamicFontSize(`R$ ${Number(budgetBalance).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`)}`}>
+                        R$ {Number(budgetBalance).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                    <div className="flex-1 min-w-0 p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center animate-fade-in" style={{ backgroundColor: 'var(--bg-card)' }}>
                       <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">A Receber Total</p>
                       <p className={`font-black text-blue-400 ${getDynamicFontSize(`R$ ${Number(expectedRevenue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`)}`}>
                         R$ {Number(expectedRevenue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </p>
                     </div>
-                    <div className="flex-1 min-w-0 p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
+                    <div className="flex-1 min-w-0 p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center animate-fade-in" style={{ backgroundColor: 'var(--bg-card)' }}>
                       <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">Já Recebido</p>
                       <p className={`font-black text-emerald-400 ${getDynamicFontSize(`R$ ${Number(totalReceived).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`)}`}>
                         R$ {Number(totalReceived).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </p>
                     </div>
-                    <div className="flex-1 min-w-0 p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
+                    <div className="flex-1 min-w-0 p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center animate-fade-in" style={{ backgroundColor: 'var(--bg-card)' }}>
                       <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">Falta Receber</p>
                       <p className={`font-black text-amber-400 ${getDynamicFontSize(`R$ ${Number(expectedRevenue - totalReceived).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`)}`}>
                         R$ {Number(expectedRevenue - totalReceived).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
@@ -983,7 +1067,7 @@ export default function Events() {
               )}
 
               {/* Sub-tabs Selection */}
-              <div className="flex gap-4 p-2 rounded-2xl border w-fit" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', marginBottom: '30px' }}>
+              <div className="flex flex-wrap gap-4 p-2 rounded-2xl border w-fit" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', marginBottom: '30px' }}>
                 <button
                   type="button"
                   onClick={() => setActiveSubTab('spreadsheet')}
@@ -1011,6 +1095,20 @@ export default function Events() {
                   }}
                 >
                   Mapa de Assentos
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveSubTab('expenses')}
+                  className="px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer"
+                  style={{
+                    backgroundColor: 'var(--bg-card)',
+                    color: 'var(--text-primary)',
+                    border: activeSubTab === 'expenses' ? '2px solid var(--accent-color)' : '1px solid var(--border-color)',
+                    boxShadow: activeSubTab === 'expenses' ? '0 0 10px var(--accent-color)' : 'none',
+                    opacity: activeSubTab === 'expenses' ? 1 : 0.6
+                  }}
+                >
+                  Despesas do Evento
                 </button>
               </div>
 
@@ -1321,7 +1419,7 @@ export default function Events() {
                     </table>
                   </div>
                 </>
-              ) : (() => {
+              ) : activeSubTab === 'seating_map' ? (() => {
                 const hasSessions = activeEvent.sessions && activeEvent.sessions.length > 0
                 const activeSession = hasSessions ? activeEvent.sessions!.find(s => s.id === selectedSessionId) : null
                 const displaySeatingMap = activeEvent.seating_map
@@ -1945,7 +2043,106 @@ export default function Events() {
                   )}
                 </div>
                 )
-              })()}
+              })() : (
+                <div className="space-y-6 animate-fade-in">
+                  <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-black/20 p-4 rounded-3xl border border-white/5">
+                    <h3 className="text-sm font-black uppercase text-purple-400">Gerenciamento de Despesas</h3>
+                    {profile?.role !== 'secretary' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditExpense(null)
+                          setExpenseFormData({
+                            description: '',
+                            amount: '',
+                            expense_date: new Date().toISOString().split('T')[0]
+                          })
+                          setShowExpenseModal(true)
+                        }}
+                        className="px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm transition-all flex items-center gap-2 shadow-lg shadow-purple-600/20 hover:scale-[1.03] active:scale-95 cursor-pointer"
+                      >
+                        <Plus size={16} /> Nova Despesa
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Comparative Summary */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="p-6 rounded-3xl border border-white/5 bg-white/5" style={{ borderColor: 'var(--border-color)' }}>
+                      <p className="text-xs font-bold uppercase text-[var(--text-muted)] tracking-wider mb-2">Custo Orçado</p>
+                      <p className="text-2xl font-black text-white">R$ {Number(eventCost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      <p className="text-[10px] text-gray-400 mt-2">Definido no cadastro do evento</p>
+                    </div>
+                    <div className="p-6 rounded-3xl border border-white/5 bg-white/5" style={{ borderColor: 'var(--border-color)' }}>
+                      <p className="text-xs font-bold uppercase text-[var(--text-muted)] tracking-wider mb-2">Despesa Real (Gasto)</p>
+                      <p className="text-2xl font-black text-rose-400">R$ {Number(totalRealExpenses).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      <p className="text-[10px] text-gray-400 mt-2">Soma de todas as despesas diárias</p>
+                    </div>
+                    <div className="p-6 rounded-3xl border border-white/5 bg-white/5" style={{ borderColor: 'var(--border-color)' }}>
+                      <p className="text-xs font-bold uppercase text-[var(--text-muted)] tracking-wider mb-2">Saldo do Orçamento</p>
+                      <p className={`text-2xl font-black ${budgetBalance >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                        R$ {Number(budgetBalance).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                      <p className="text-[10px] text-gray-400 mt-2">
+                        {budgetBalance >= 0 ? 'Dentro do orçamento planejado' : 'Orçamento estourado!'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Expenses Table */}
+                  <div className="rounded-none overflow-hidden" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[600px]">
+                        <thead>
+                          <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
+                            <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Data</th>
+                            <th className="px-6 py-4 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Descrição</th>
+                            <th className="px-6 py-4 text-right text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Valor</th>
+                            {profile?.role !== 'secretary' && (
+                              <th className="px-6 py-4 text-right text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Ações</th>
+                            )}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {activeEventExpenses.length === 0 ? (
+                            <tr>
+                              <td colSpan={profile?.role !== 'secretary' ? 4 : 3} className="px-6 py-12 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+                                Nenhuma despesa cadastrada para este evento.
+                              </td>
+                            </tr>
+                          ) : (
+                            activeEventExpenses.map((exp) => (
+                              <tr 
+                                key={exp.id} 
+                                className="transition-colors border-b" 
+                                style={{ borderColor: 'var(--border-color)' }}
+                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-card-hover)')} 
+                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                              >
+                                <td className="px-6 py-4 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                                  {new Date(exp.expense_date + 'T12:00:00').toLocaleDateString('pt-BR')}
+                                </td>
+                                <td className="px-6 py-4 text-sm font-semibold text-white">{exp.description}</td>
+                                <td className="px-6 py-4 text-sm text-right font-black text-rose-400">
+                                  R$ {Number(exp.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </td>
+                                {profile?.role !== 'secretary' && (
+                                  <td className="px-6 py-4 text-right">
+                                    <div className="flex justify-end gap-2">
+                                      <button onClick={() => openEditExpense(exp)} className="p-2 rounded-2xl hover:opacity-70 transition-opacity" style={{ color: '#3b82f6' }}><Edit size={16} /></button>
+                                      <button onClick={() => handleDeleteExpense(exp.id)} className="p-2 rounded-2xl hover:opacity-70 transition-opacity" style={{ color: '#f43f5e' }}><Trash2 size={16} /></button>
+                                    </div>
+                                  </td>
+                                )}
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </>
@@ -2808,6 +3005,30 @@ export default function Events() {
             </button>
           </div>
 
+        </form>
+      </Modal>
+
+      {/* Modal Criar/Editar Despesa */}
+      <Modal isOpen={showExpenseModal} onClose={() => { setShowExpenseModal(false); setEditExpense(null); }} title={editExpense ? 'Editar Despesa' : 'Nova Despesa'}>
+        <form onSubmit={handleSaveExpense} className="space-y-4">
+          <div>
+            <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Descrição *</label>
+            <input required value={expenseFormData.description} onChange={(e) => setExpenseFormData({ ...expenseFormData, description: e.target.value })} placeholder="Ex: Cartolina, Livro para encenação" className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none" style={inputStyle} />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Valor (R$) *</label>
+              <input required type="number" step="0.01" value={expenseFormData.amount} onChange={(e) => setExpenseFormData({ ...expenseFormData, amount: e.target.value })} placeholder="0.00" className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none" style={inputStyle} />
+            </div>
+            <div>
+              <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Data *</label>
+              <input required type="date" value={expenseFormData.expense_date} onChange={(e) => setExpenseFormData({ ...expenseFormData, expense_date: e.target.value })} className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none [color-scheme:dark]" style={inputStyle} />
+            </div>
+          </div>
+          <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+            <button type="button" onClick={() => { setShowExpenseModal(false); setEditExpense(null); }} className="rounded-2xl px-6 py-3 text-sm font-bold transition-all hover:bg-white/5" style={{ color: 'var(--text-secondary)' }}>Cancelar</button>
+            <button type="submit" className="rounded-2xl px-8 py-3 text-sm font-bold text-white transition-all hover:scale-105 shadow-lg shadow-purple-500/20" style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}>{editExpense ? 'Salvar' : 'Cadastrar'}</button>
+          </div>
         </form>
       </Modal>
 

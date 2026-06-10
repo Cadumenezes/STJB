@@ -224,3 +224,14 @@ export interface Profile {
   expires_at: string | null
   created_at: string
 }
+
+export interface EventExpense {
+  id: string
+  user_id?: string
+  event_id: string
+  description: string
+  amount: number
+  expense_date: string
+  created_at?: string
+}
+
