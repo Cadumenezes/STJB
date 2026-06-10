@@ -31,6 +31,19 @@ export default function Events() {
   const [seatingSearchQuery, setSeatingSearchQuery] = useState('')
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
 
+  // Estados para Modal de Adicionar Participante
+  const [showAddParticipantModal, setShowAddParticipantModal] = useState(false)
+  const [participantFormData, setParticipantFormData] = useState({
+    student_id: '',
+    payment_method: '',
+    choreography_count: 1,
+    choreography_price: 0,
+    clothes_cost: 0,
+    ticket_quantity: 0,
+    kit: false,
+    installments_count: 1
+  })
+
   // Cálculo do tamanho dinâmico das cadeiras para a visualização prévia
   const maxSeats = Math.max(
     seatsPerRow,
@@ -441,31 +454,75 @@ export default function Events() {
 
   // --- Participant Spreadsheet Logic ---
   
-  async function handleAddParticipant(studentId: string) {
-    if (!activeEventId || !studentId) return
-    const exists = participants.some(p => p.event_id === activeEventId && p.student_id === studentId)
+  const handleModalChoreoCountChange = (count: number) => {
+    if (!activeEvent) return
+    const choreoPrice = count > 0 ? (activeEvent.base_choreography_price || 0) : 0
+    const clothesPrice = count * (activeEvent.base_clothes_cost || 0)
+    setParticipantFormData(prev => ({
+      ...prev,
+      choreography_count: count,
+      choreography_price: choreoPrice,
+      clothes_cost: clothesPrice
+    }))
+  }
+
+  async function handleAddParticipantSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!activeEventId || !participantFormData.student_id) return alert('Selecione um aluno!')
+
+    const exists = participants.some(p => p.event_id === activeEventId && p.student_id === participantFormData.student_id)
     if (exists) return alert('Aluno já está no evento!')
 
-    const activeEvent = events.find(e => e.id === activeEventId)
+    const activeEvent = events.find(ev => ev.id === activeEventId)
+    if (!activeEvent) return
+
+    const choreoPrice = Number(participantFormData.choreography_price) || 0
+    const clothesPrice = Number(participantFormData.clothes_cost) || 0
+    const ticketQty = Number(participantFormData.ticket_quantity) || 0
+    const hasKitSelected = Boolean(participantFormData.kit)
     
+    const kitFee = (activeEvent.has_kit && hasKitSelected) ? (activeEvent.kit_price || 0) : 0
+    const newTotal = choreoPrice + clothesPrice + (ticketQty * (activeEvent.ticket_price || 0)) + kitFee
+
+    // Generate installments if Boleto
+    const installments: Installment[] = []
+    const instCount = Number(participantFormData.installments_count) || 1
+    if (participantFormData.payment_method === 'Boleto' && instCount > 0) {
+      const baseValue = Math.floor((newTotal / instCount) * 100) / 100
+      let sum = 0
+      for (let i = 0; i < instCount; i++) {
+        const val = i === instCount - 1 ? Number((newTotal - sum).toFixed(2)) : baseValue
+        sum += val
+        installments.push({
+          id: crypto.randomUUID(),
+          paid: false,
+          value: val
+        })
+      }
+    }
+
     const payload = {
       event_id: activeEventId,
-      student_id: studentId,
-      has_ticket: false,
-      ticket_quantity: 0,
-      total_value: 0,
+      student_id: participantFormData.student_id,
+      has_ticket: ticketQty > 0,
+      ticket_quantity: ticketQty,
+      total_value: newTotal,
       amount_paid: 0,
-      kit: false,
-      payment_method: null,
-      choreography_count: 0,
-      choreography_price: 0,
-      clothes_cost: 0,
-      installments: []
+      kit: hasKitSelected,
+      payment_method: participantFormData.payment_method || null,
+      choreography_count: Number(participantFormData.choreography_count) || 0,
+      choreography_price: choreoPrice,
+      clothes_cost: clothesPrice,
+      installments
     }
 
     const { error } = await supabase.from('event_participants').insert([payload])
-    if (error) alert('Erro ao adicionar participante')
-    else loadData()
+    if (error) {
+      alert('Erro ao adicionar participante: ' + error.message)
+    } else {
+      setShowAddParticipantModal(false)
+      loadData()
+    }
   }
 
   async function handleRemoveParticipant(id: string) {
@@ -963,29 +1020,25 @@ export default function Events() {
                   <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-black/20 p-4 rounded-3xl border border-white/5">
                     <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
                       {profile?.role !== 'secretary' && (
-                        <div className="flex items-center gap-4 w-full sm:w-auto">
-                          <select 
-                            className="flex-1 sm:w-64 rounded-xl px-4 py-3 text-sm focus:outline-none" 
-                            style={inputStyle}
-                            id="addStudentSelect"
-                          >
-                            <option value="">Selecione um Aluno para Adicionar</option>
-                            {students.map(s => (
-                              <option key={s.id} value={s.id} disabled={currentParticipants.some(p => p.student_id === s.id)}>{s.name}</option>
-                            ))}
-                          </select>
-                          <button 
-                            type="button"
-                            onClick={() => {
-                              const sel = document.getElementById('addStudentSelect') as HTMLSelectElement
-                              handleAddParticipant(sel.value)
-                              sel.value = ''
-                            }}
-                            className="p-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl transition-all"
-                          >
-                            <Plus size={20} />
-                          </button>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setParticipantFormData({
+                              student_id: '',
+                              payment_method: '',
+                              choreography_count: 1,
+                              choreography_price: activeEvent?.base_choreography_price || 0,
+                              clothes_cost: activeEvent?.base_clothes_cost || 0,
+                              ticket_quantity: 0,
+                              kit: false,
+                              installments_count: 1
+                            })
+                            setShowAddParticipantModal(true)
+                          }}
+                          className="px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm transition-all flex items-center gap-2 shadow-lg shadow-purple-600/20 hover:scale-[1.03] active:scale-95 cursor-pointer"
+                        >
+                          <Plus size={16} /> Adicionar Aluno
+                        </button>
                       )}
                       <div className="flex items-center gap-3 rounded-xl px-4 py-3 border w-full sm:w-64" style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border-color)' }}>
                         <Search className="text-white/30 shrink-0" size={18} />
@@ -2180,6 +2233,235 @@ export default function Events() {
             <button type="button" onClick={() => setShowEventModal(false)} className="px-6 py-3 rounded-2xl text-sm font-bold text-white/50 hover:text-white transition-all">Cancelar</button>
             <button type="submit" className="px-8 py-3 rounded-2xl text-sm font-bold text-white transition-all hover:scale-105 shadow-xl" style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}>
               {editEvent ? 'Salvar' : 'Criar Evento'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Modal Adicionar Participante */}
+      <Modal isOpen={showAddParticipantModal} onClose={() => setShowAddParticipantModal(false)} title="Adicionar Aluno ao Evento">
+        <form onSubmit={handleAddParticipantSubmit} className="space-y-4">
+          <div>
+            <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Selecionar Aluno *</label>
+            <select
+              required
+              value={participantFormData.student_id}
+              onChange={e => setParticipantFormData({...participantFormData, student_id: e.target.value})}
+              className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none"
+              style={inputStyle}
+            >
+              <option value="">Selecione um aluno...</option>
+              {students
+                .filter(s => !participants.filter(p => p.event_id === activeEventId).some(p => p.student_id === s.id))
+                .sort((a, b) => a.name.localeCompare(b.name))
+                .map(s => (
+                  <option key={s.id} value={s.id} className="bg-gray-900">{s.name}</option>
+                ))
+              }
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Método de Pagamento</label>
+              <select
+                value={participantFormData.payment_method}
+                onChange={e => setParticipantFormData({...participantFormData, payment_method: e.target.value})}
+                className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none"
+                style={inputStyle}
+              >
+                <option value="" className="bg-gray-900">Selecione...</option>
+                <option value="Boleto" className="bg-gray-900">Boleto</option>
+                <option value="Cartão" className="bg-gray-900">Cartão</option>
+                <option value="Pix" className="bg-gray-900">Pix</option>
+                <option value="Isento" className="bg-gray-900">Isento</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Qtd de Coreografias</label>
+              <input
+                type="number"
+                min="0"
+                value={participantFormData.choreography_count}
+                onChange={e => handleModalChoreoCountChange(parseInt(e.target.value) || 0)}
+                className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none"
+                style={inputStyle}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Taxa de Participação (R$)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={participantFormData.choreography_price}
+                onChange={e => setParticipantFormData({...participantFormData, choreography_price: parseFloat(e.target.value) || 0})}
+                className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none"
+                style={inputStyle}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Custo de Roupa (R$)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                value={participantFormData.clothes_cost}
+                onChange={e => setParticipantFormData({...participantFormData, clothes_cost: parseFloat(e.target.value) || 0})}
+                className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none"
+                style={inputStyle}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Qtd de Convites</label>
+              <input
+                type="number"
+                min="0"
+                value={participantFormData.ticket_quantity}
+                onChange={e => setParticipantFormData({...participantFormData, ticket_quantity: parseInt(e.target.value) || 0})}
+                className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none"
+                style={inputStyle}
+              />
+            </div>
+
+            {participantFormData.payment_method === 'Boleto' ? (
+              <div>
+                <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Qtd de Parcelas *</label>
+                <input
+                  required
+                  type="number"
+                  min="1"
+                  max="24"
+                  value={participantFormData.installments_count}
+                  onChange={e => setParticipantFormData({...participantFormData, installments_count: Math.max(1, parseInt(e.target.value) || 1)})}
+                  className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none"
+                  style={inputStyle}
+                />
+              </div>
+            ) : (
+              activeEvent?.has_kit ? (
+                <div className="flex flex-col">
+                  <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Kit do Evento?</label>
+                  <div className="flex gap-2 h-full">
+                    <button
+                      type="button"
+                      onClick={() => setParticipantFormData({...participantFormData, kit: true})}
+                      className="flex-1 rounded-2xl text-xs font-black uppercase transition-all cursor-pointer"
+                      style={{
+                        backgroundColor: participantFormData.kit ? 'var(--accent-color)' : 'var(--bg-input)',
+                        border: '1px solid var(--border-color)',
+                        color: participantFormData.kit ? '#fff' : 'var(--text-muted)'
+                      }}
+                    >
+                      Sim
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setParticipantFormData({...participantFormData, kit: false})}
+                      className="flex-1 rounded-2xl text-xs font-black uppercase transition-all cursor-pointer"
+                      style={{
+                        backgroundColor: !participantFormData.kit ? 'var(--accent-color)' : 'var(--bg-input)',
+                        border: '1px solid var(--border-color)',
+                        color: !participantFormData.kit ? '#fff' : 'var(--text-muted)'
+                      }}
+                    >
+                      Não
+                    </button>
+                  </div>
+                </div>
+              ) : null
+            )}
+          </div>
+
+          {participantFormData.payment_method === 'Boleto' && activeEvent?.has_kit && (
+            <div className="flex flex-col">
+              <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Kit do Evento?</label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setParticipantFormData({...participantFormData, kit: true})}
+                  className="flex-1 rounded-2xl py-3 text-xs font-black uppercase transition-all cursor-pointer"
+                  style={{
+                    backgroundColor: participantFormData.kit ? 'var(--accent-color)' : 'var(--bg-input)',
+                    border: '1px solid var(--border-color)',
+                    color: participantFormData.kit ? '#fff' : 'var(--text-muted)'
+                  }}
+                >
+                  Sim
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setParticipantFormData({...participantFormData, kit: false})}
+                  className="flex-1 rounded-2xl py-3 text-xs font-black uppercase transition-all cursor-pointer"
+                  style={{
+                    backgroundColor: !participantFormData.kit ? 'var(--accent-color)' : 'var(--bg-input)',
+                    border: '1px solid var(--border-color)',
+                    color: !participantFormData.kit ? '#fff' : 'var(--text-muted)'
+                  }}
+                >
+                  Não
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Resumo Financeiro */}
+          {(() => {
+            const modalChoreoPrice = Number(participantFormData.choreography_price) || 0
+            const modalClothesPrice = Number(participantFormData.clothes_cost) || 0
+            const modalTicketQty = Number(participantFormData.ticket_quantity) || 0
+            const modalKitPrice = (activeEvent?.has_kit && participantFormData.kit) ? (activeEvent.kit_price || 0) : 0
+            const modalTicketPrice = activeEvent ? (activeEvent.ticket_price || 0) : 0
+            const modalTotalValue = modalChoreoPrice + modalClothesPrice + (modalTicketQty * modalTicketPrice) + modalKitPrice
+            
+            return (
+              <div className="p-4 rounded-2xl border border-white/5 space-y-2 mt-4" style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}>
+                <h4 className="text-xs font-black uppercase tracking-wider text-purple-400">Resumo de Valores</h4>
+                <div className="flex justify-between text-xs text-white/70">
+                  <span>Taxa de Participação:</span>
+                  <span>R$ {modalChoreoPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                </div>
+                <div className="flex justify-between text-xs text-white/70">
+                  <span>Custo de Roupa:</span>
+                  <span>R$ {modalClothesPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                </div>
+                {modalTicketQty > 0 && (
+                  <div className="flex justify-between text-xs text-white/70">
+                    <span>Convites ({modalTicketQty}x):</span>
+                    <span>R$ {(modalTicketQty * modalTicketPrice).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                  </div>
+                )}
+                {activeEvent?.has_kit && participantFormData.kit && (
+                  <div className="flex justify-between text-xs text-white/70">
+                    <span>Kit do Evento:</span>
+                    <span>R$ {modalKitPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-sm font-bold border-t border-white/5 pt-2 text-white">
+                  <span>Valor Total Estimado:</span>
+                  <span className="text-purple-400">R$ {modalTotalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                </div>
+                {participantFormData.payment_method === 'Boleto' && (
+                  <div className="text-[10px] text-white/50 text-right mt-1">
+                    Parcelado em {participantFormData.installments_count}x de R$ {(modalTotalValue / participantFormData.installments_count).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </div>
+                )}
+              </div>
+            )
+          })()}
+
+          <div className="flex justify-end gap-3 pt-6 border-t border-white/5">
+            <button type="button" onClick={() => setShowAddParticipantModal(false)} className="px-6 py-3 rounded-2xl text-sm font-bold text-white/50 hover:text-white transition-all">Cancelar</button>
+            <button type="submit" className="px-8 py-3 rounded-2xl text-sm font-bold text-white transition-all hover:scale-105 shadow-xl" style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}>
+              Confirmar
             </button>
           </div>
         </form>
