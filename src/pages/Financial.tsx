@@ -1660,7 +1660,7 @@ export default function Financial() {
             </button>
           </div>
 
-          <div className="space-y-6">
+          <div className={fixedBills.length === 0 ? "space-y-6" : "grid grid-cols-1 md:grid-cols-2 gap-6"}>
             {fixedBills.length === 0 ? (
               <div className="py-12 text-center bg-black/20 rounded-2xl border border-dashed border-white/10">
                 <p className="text-[var(--text-muted)]">Nenhuma conta fixa configurada.</p>
@@ -1776,7 +1776,7 @@ export default function Financial() {
                       {isExpanded && (
                         <div className="px-6 pb-6 border-t border-white/5 pt-4 animate-fade-in">
                           <p className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--text-muted)' }}>Valores por Mês</p>
-                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                             {months.map(month => {
                               const mAmount = getFixedBillAmountForMonth(bill.id, month, bill.amount)
                               const isCurrent = month === currentMonthStr
