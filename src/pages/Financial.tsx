@@ -17,6 +17,7 @@ interface FixedBill {
   category: string
   due_day: number
   active: boolean
+  installments?: number | null
 }
 
 export default function Financial() {
@@ -104,7 +105,10 @@ export default function Financial() {
     amount: '',
     category: '',
     due_day: '1',
+    installments: ''
   })
+
+  const [expandedBills, setExpandedBills] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     loadData()
@@ -527,7 +531,18 @@ export default function Financial() {
     }, 0)
 
   const fixedBillsTotal = fixedBills
-    .filter(bill => bill.active)
+    .filter(bill => {
+      if (!bill.active) return false
+      // Se for parcelamento, verificar se já terminou de pagar em meses anteriores ao atual
+      if (bill.installments) {
+        const totalPaid = entries.filter(e => e.fixed_bill_id === bill.id).length
+        const isPaidThisMonth = entries.some(e => e.fixed_bill_id === bill.id && e.date.startsWith(currentMonthStr))
+        if (totalPaid >= bill.installments && !isPaidThisMonth) {
+          return false // Já totalmente pago e não pago este mês -> não prevê gasto
+        }
+      }
+      return true
+    })
     .reduce((sum, bill) => sum + getFixedBillAmountForMonth(bill.id, currentMonthStr, bill.amount), 0)
 
   const previsaoGastos = fixedBillsTotal + payrollTotal
@@ -560,9 +575,11 @@ export default function Financial() {
   async function handleFixedSubmit(e: React.FormEvent) {
     e.preventDefault()
     const payload = { 
-      ...fixedFormData, 
+      description: fixedFormData.description,
       amount: parseFloat(fixedFormData.amount), 
-      due_day: parseInt(fixedFormData.due_day) 
+      due_day: parseInt(fixedFormData.due_day),
+      category: fixedFormData.category || null,
+      installments: fixedFormData.installments ? parseInt(fixedFormData.installments) : null
     }
     
     const { error } = editFixed
@@ -574,7 +591,7 @@ export default function Financial() {
     } else {
       setShowFixedModal(false)
       setEditFixed(null)
-      setFixedFormData({ description: '', amount: '', category: '', due_day: '1' })
+      setFixedFormData({ description: '', amount: '', category: '', due_day: '1', installments: '' })
       loadData()
     }
   }
@@ -1635,8 +1652,8 @@ export default function Financial() {
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-black uppercase tracking-tighter" style={{ color: 'var(--accent-color)' }}>Minhas Contas Fixas</h2>
             <button
-              onClick={() => { setEditFixed(null); setFixedFormData({ description: '', amount: '', category: '', due_day: '1' }); setShowFixedModal(true) }}
-              className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold text-white bg-purple-600 hover:bg-purple-700 transition-all"
+              onClick={() => { setEditFixed(null); setFixedFormData({ description: '', amount: '', category: '', due_day: '1', installments: '' }); setShowFixedModal(true) }}
+              className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold text-white bg-purple-600 hover:bg-purple-700 transition-all cursor-pointer"
             >
               <Plus size={18} />
               Configurar Conta Fixa
@@ -1649,138 +1666,177 @@ export default function Financial() {
                 <p className="text-[var(--text-muted)]">Nenhuma conta fixa configurada.</p>
               </div>
             ) : (
-              fixedBills.map(bill => {
-                const isPaid = entries.some(e => e.fixed_bill_id === bill.id && e.date.startsWith(currentMonthStr))
-                const currentAmount = getFixedBillAmountForMonth(bill.id, currentMonthStr, bill.amount)
-                
-                // Generate 6 months: 3 past + current + 2 future
-                const months: string[] = []
-                const now = new Date()
-                for (let i = -2; i <= 3; i++) {
-                  const d = new Date(now.getFullYear(), now.getMonth() + i, 1)
-                  months.push(d.toISOString().slice(0, 7))
-                }
+              fixedBills
+                .filter(bill => {
+                  // Se for parcelamento, verificar se já terminou de pagar em meses anteriores
+                  if (bill.installments) {
+                    const totalPaid = entries.filter(e => e.fixed_bill_id === bill.id).length
+                    const isPaidThisMonth = entries.some(e => e.fixed_bill_id === bill.id && e.date.startsWith(currentMonthStr))
+                    if (totalPaid >= bill.installments && !isPaidThisMonth) {
+                      return false // Já está totalmente pago e não tem pagamento este mês -> não exibe
+                    }
+                  }
+                  return true
+                })
+                .map(bill => {
+                  const isPaid = entries.some(e => e.fixed_bill_id === bill.id && e.date.startsWith(currentMonthStr))
+                  const currentAmount = getFixedBillAmountForMonth(bill.id, currentMonthStr, bill.amount)
+                  const totalPaid = entries.filter(e => e.fixed_bill_id === bill.id).length
+                  
+                  // Calcular parcela atual
+                  const currentInstallment = isPaid ? totalPaid : totalPaid + 1
+                  
+                  const isExpanded = expandedBills[bill.id]
+                  
+                  // Generate 6 months: 3 past + current + 2 future
+                  const months: string[] = []
+                  const now = new Date()
+                  for (let i = -2; i <= 3; i++) {
+                    const d = new Date(now.getFullYear(), now.getMonth() + i, 1)
+                    months.push(d.toISOString().slice(0, 7))
+                  }
 
-                return (
-                  <div 
-                    key={bill.id} 
-                    className="rounded-3xl border overflow-hidden transition-all" 
-                    style={{ 
-                      backgroundColor: 'var(--bg-card)', 
-                      borderColor: isPaid ? 'rgba(16,185,129,0.3)' : 'var(--border-color)',
-                      opacity: bill.active ? 1 : 0.6
-                    }}
-                  >
-                    {/* Header */}
-                    <div className="p-6 flex justify-between items-start">
-                      <div className="flex items-center gap-3">
-                        <button 
-                          onClick={() => toggleFixedPaid(bill, isPaid)}
-                          className={`transition-all ${isPaid ? 'text-emerald-400' : 'text-[var(--text-muted)] hover:text-white'}`}
-                        >
-                          {isPaid ? <CheckCircle2 size={32} /> : <Circle size={32} />}
-                        </button>
-                        <div>
-                          <h3 className="font-bold text-lg text-white leading-tight">{bill.description}</h3>
-                          <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider">Vence todo dia {bill.due_day} • Valor base: R$ {Number(bill.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  return (
+                    <div 
+                      key={bill.id} 
+                      className="rounded-3xl border overflow-hidden transition-all" 
+                      style={{ 
+                        backgroundColor: 'var(--bg-card)', 
+                        borderColor: isPaid ? 'rgba(16,185,129,0.3)' : 'var(--border-color)',
+                        opacity: bill.active ? 1 : 0.6
+                      }}
+                    >
+                      {/* Header */}
+                      <div className="p-6 flex justify-between items-start">
+                        <div className="flex items-center gap-3">
+                          <button 
+                            onClick={() => toggleFixedPaid(bill, isPaid)}
+                            className={`transition-all cursor-pointer ${isPaid ? 'text-emerald-400' : 'text-[var(--text-muted)] hover:text-white'}`}
+                          >
+                            {isPaid ? <CheckCircle2 size={32} /> : <Circle size={32} />}
+                          </button>
+                          <div>
+                            <h3 className="font-bold text-lg text-white leading-tight">{bill.description}</h3>
+                            <p className="text-xs text-[var(--text-muted)] uppercase tracking-wider mt-1">
+                              Vence todo dia {bill.due_day} 
+                              {bill.installments ? ` • Parcela ${currentInstallment} de ${bill.installments}` : ` • Valor base: R$ ${Number(bill.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="text-right mr-4">
+                            <p className={`text-lg font-black ${isPaid ? 'text-emerald-400' : 'text-white'}`}>
+                              R$ {currentAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </p>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isPaid ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                              {isPaid ? 'PAGO' : 'PENDENTE'}
+                            </span>
+                          </div>
+                          <button 
+                            onClick={() => {
+                              setEditFixed(bill)
+                              setFixedFormData({
+                                description: bill.description,
+                                amount: bill.amount.toString(),
+                                category: bill.category || '',
+                                due_day: bill.due_day.toString(),
+                                installments: bill.installments ? bill.installments.toString() : ''
+                              })
+                              setShowFixedModal(true)
+                            }}
+                            className="p-2 text-[var(--text-muted)] hover:text-blue-400 transition-colors cursor-pointer"
+                          >
+                            <Edit size={16} />
+                          </button>
+                          <button 
+                            onClick={() => handleDeleteFixed(bill.id)}
+                            className="p-2 text-[var(--text-muted)] hover:text-rose-400 transition-colors cursor-pointer"
+                          >
+                            <Trash2 size={16} />
+                          </button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <div className="text-right mr-4">
-                          <p className={`text-lg font-black ${isPaid ? 'text-emerald-400' : 'text-white'}`}>
-                            R$ {currentAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                          </p>
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isPaid ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
-                            {isPaid ? 'PAGO' : 'PENDENTE'}
+
+                      {/* Expand/Collapse Button */}
+                      <div className="px-6 pb-4 flex justify-between items-center border-t border-white/5 pt-4">
+                        <button
+                          onClick={() => setExpandedBills(prev => ({ ...prev, [bill.id]: !prev[bill.id] }))}
+                          className="text-xs font-bold text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-1 cursor-pointer"
+                        >
+                          {isExpanded ? 'Ocultar Histórico Mensal ↑' : 'Ajustar valores por mês / Histórico ↓'}
+                        </button>
+                        {bill.installments && (
+                          <span className="text-[10px] font-black uppercase text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">
+                            {totalPaid} de {bill.installments} pagas
                           </span>
-                        </div>
-                        <button 
-                          onClick={() => {
-                            setEditFixed(bill)
-                            setFixedFormData({
-                              description: bill.description,
-                              amount: bill.amount.toString(),
-                              category: bill.category || '',
-                              due_day: bill.due_day.toString()
-                            })
-                            setShowFixedModal(true)
-                          }}
-                          className="p-2 text-[var(--text-muted)] hover:text-blue-400 transition-colors"
-                        >
-                          <Edit size={16} />
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteFixed(bill.id)}
-                          className="p-2 text-[var(--text-muted)] hover:text-rose-400 transition-colors"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        )}
                       </div>
-                    </div>
 
-                    {/* Month cards */}
-                    <div className="px-6 pb-6">
-                      <p className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--text-muted)' }}>Valores por Mês</p>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-                        {months.map(month => {
-                          const mAmount = getFixedBillAmountForMonth(bill.id, month, bill.amount)
-                          const isCurrent = month === currentMonthStr
-                          const isEditing = editingMonthBill?.billId === bill.id && editingMonthBill?.month === month
-                          const monthLabel = new Date(month + '-15').toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
-                          const monthPaid = entries.some(e => e.fixed_bill_id === bill.id && e.date.startsWith(month))
+                      {/* Month cards - Colapsável */}
+                      {isExpanded && (
+                        <div className="px-6 pb-6 border-t border-white/5 pt-4 animate-fade-in">
+                          <p className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: 'var(--text-muted)' }}>Valores por Mês</p>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+                            {months.map(month => {
+                              const mAmount = getFixedBillAmountForMonth(bill.id, month, bill.amount)
+                              const isCurrent = month === currentMonthStr
+                              const isEditing = editingMonthBill?.billId === bill.id && editingMonthBill?.month === month
+                              const monthLabel = new Date(month + '-15').toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })
+                              const monthPaid = entries.some(e => e.fixed_bill_id === bill.id && e.date.startsWith(month))
 
-                          return (
-                            <div
-                              key={month}
-                              className={`rounded-2xl p-3 text-center transition-all cursor-pointer hover:scale-105 ${isCurrent ? 'ring-2 ring-purple-500' : ''}`}
-                              style={{
-                                backgroundColor: monthPaid ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.03)',
-                                border: `1px solid ${monthPaid ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.05)'}`,
-                              }}
-                              onClick={() => {
-                                if (!isEditing) {
-                                  setEditingMonthBill({ billId: bill.id, month, amount: mAmount.toString() })
-                                }
-                              }}
-                            >
-                              <p className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${isCurrent ? 'text-purple-400' : ''}`} style={{ color: isCurrent ? undefined : 'var(--text-muted)' }}>
-                                {monthLabel}
-                              </p>
-                              {isEditing ? (
-                                <div className="flex flex-col gap-1" onClick={e => e.stopPropagation()}>
-                                  <input
-                                    type="number"
-                                    step="0.01"
-                                    value={editingMonthBill.amount}
-                                    onChange={e => setEditingMonthBill({ ...editingMonthBill, amount: e.target.value })}
-                                    className="w-full rounded-lg px-2 py-1 text-xs text-center font-bold focus:outline-none focus:ring-1 focus:ring-purple-500"
-                                    style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}
-                                    autoFocus
-                                    onKeyDown={e => {
-                                      if (e.key === 'Enter') saveMonthAmount(bill.id, month, parseFloat(editingMonthBill.amount) || 0)
-                                      if (e.key === 'Escape') setEditingMonthBill(null)
-                                    }}
-                                  />
-                                  <button
-                                    onClick={() => saveMonthAmount(bill.id, month, parseFloat(editingMonthBill.amount) || 0)}
-                                    className="text-[9px] font-bold text-emerald-400 hover:text-emerald-300 transition-colors"
-                                  >
-                                    ✓ Salvar
-                                  </button>
+                              return (
+                                <div
+                                  key={month}
+                                  className={`rounded-2xl p-3 text-center transition-all cursor-pointer hover:scale-105 ${isCurrent ? 'ring-2 ring-purple-500' : ''}`}
+                                  style={{
+                                    backgroundColor: monthPaid ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.03)',
+                                    border: `1px solid ${monthPaid ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.05)'}`,
+                                  }}
+                                  onClick={() => {
+                                    if (!isEditing) {
+                                      setEditingMonthBill({ billId: bill.id, month, amount: mAmount.toString() })
+                                    }
+                                  }}
+                                >
+                                  <p className={`text-[10px] font-bold uppercase tracking-wider mb-1 ${isCurrent ? 'text-purple-400' : ''}`} style={{ color: isCurrent ? undefined : 'var(--text-muted)' }}>
+                                    {monthLabel}
+                                  </p>
+                                  {isEditing ? (
+                                    <div className="flex flex-col gap-1" onClick={e => e.stopPropagation()}>
+                                      <input
+                                        type="number"
+                                        step="0.01"
+                                        value={editingMonthBill.amount}
+                                        onChange={e => setEditingMonthBill({ ...editingMonthBill, amount: e.target.value })}
+                                        className="w-full rounded-lg px-2 py-1 text-xs text-center font-bold focus:outline-none focus:ring-1 focus:ring-purple-500"
+                                        style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}
+                                        autoFocus
+                                        onKeyDown={e => {
+                                          if (e.key === 'Enter') saveMonthAmount(bill.id, month, parseFloat(editingMonthBill.amount) || 0)
+                                          if (e.key === 'Escape') setEditingMonthBill(null)
+                                        }}
+                                      />
+                                      <button
+                                        onClick={() => saveMonthAmount(bill.id, month, parseFloat(editingMonthBill.amount) || 0)}
+                                        className="text-[9px] font-bold text-emerald-400 hover:text-emerald-300 transition-colors"
+                                      >
+                                        ✓ Salvar
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <p className={`text-sm font-black ${monthPaid ? 'text-emerald-400' : 'text-white'}`}>
+                                      R$ {mAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                    </p>
+                                  )}
                                 </div>
-                              ) : (
-                                <p className={`text-sm font-black ${monthPaid ? 'text-emerald-400' : 'text-white'}`}>
-                                  R$ {mAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                </p>
-                              )}
-                            </div>
-                          )
-                        })}
-                      </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                )
-              })
+                  )
+                })
             )}
           </div>
         </div>
@@ -2768,11 +2824,20 @@ export default function Financial() {
                 style={inputStyle}
               />
             </div>
-            <div className="col-span-full">
+            <div>
               <label className="text-sm font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>Categoria</label>
               <input
                 value={fixedFormData.category} onChange={(e) => setFixedFormData({ ...fixedFormData, category: e.target.value })}
                 placeholder="Ex: Operacional, Impostos..."
+                className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>Qtd de Parcelas (Opcional)</label>
+              <input
+                type="number" min="1" value={fixedFormData.installments} onChange={(e) => setFixedFormData({ ...fixedFormData, installments: e.target.value })}
+                placeholder="Ex: 3 (vazio = ilimitado)"
                 className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
                 style={inputStyle}
               />
