@@ -1660,7 +1660,7 @@ export default function Financial() {
             </button>
           </div>
 
-          <div className={fixedBills.length === 0 ? "space-y-6" : "grid grid-cols-1 md:grid-cols-2 gap-6"}>
+          <div className={fixedBills.length === 0 ? "space-y-6" : "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"}>
             {fixedBills.length === 0 ? (
               <div className="py-12 text-center bg-black/20 rounded-2xl border border-dashed border-white/10">
                 <p className="text-[var(--text-muted)]">Nenhuma conta fixa configurada.</p>
@@ -1758,7 +1758,7 @@ export default function Financial() {
                       </div>
 
                       {/* Expand/Collapse Button */}
-                      <div className="px-6 pb-4 flex justify-between items-center border-t border-white/5 pt-4">
+                      <div className="px-6 pb-4 flex flex-col sm:flex-row items-center justify-center gap-3 border-t border-white/5 pt-4 relative">
                         <button
                           onClick={() => setExpandedBills(prev => ({ ...prev, [bill.id]: !prev[bill.id] }))}
                           className="text-xs font-bold text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-1 cursor-pointer"
@@ -1766,7 +1766,7 @@ export default function Financial() {
                           {isExpanded ? 'Ocultar Histórico Mensal ↑' : 'Ajustar valores por mês / Histórico ↓'}
                         </button>
                         {bill.installments && (
-                          <span className="text-[10px] font-black uppercase text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">
+                          <span className="text-[10px] font-black uppercase text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20 sm:absolute sm:right-6">
                             {totalPaid} de {bill.installments} pagas
                           </span>
                         )}
