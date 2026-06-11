@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Save, Settings, Upload, FileText, Calendar, Code, GraduationCap, Shield, Lock, AlertTriangle } from 'lucide-react'
+import { Save, Settings, Upload, FileText, Calendar, Code, GraduationCap, Shield, Lock, AlertTriangle, Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 const DEFAULT_TAX_TEMPLATE = `DECLARAÇÃO DE RENDIMENTOS DE INSTRUÇÃO (IRPF)
@@ -75,6 +75,17 @@ export default function SettingsPage() {
       loadFeedbackAndTickets()
     } catch (err: any) {
       alert('Erro ao atualizar status da sugestão: ' + err.message)
+    }
+  }
+
+  async function deleteTicket(id: string) {
+    if (!window.confirm('Deseja realmente excluir este chamado de suporte?')) return
+    try {
+      const { error } = await supabase.from('support_tickets').delete().eq('id', id)
+      if (error) throw error
+      loadFeedbackAndTickets()
+    } catch (err: any) {
+      alert('Erro ao excluir o chamado: ' + err.message)
     }
   }
 
@@ -1096,12 +1107,36 @@ export default function SettingsPage() {
                           </span>
                           <h4 className="text-sm font-bold mt-2 text-white">{ticket.subject}</h4>
                         </div>
-                        <span className="text-[10px] text-gray-500">{new Date(ticket.created_at).toLocaleDateString('pt-BR')}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] text-gray-500">{new Date(ticket.created_at).toLocaleDateString('pt-BR')}</span>
+                          <button
+                            type="button"
+                            onClick={() => deleteTicket(ticket.id)}
+                            className="p-1 rounded hover:bg-white/5 text-rose-500 hover:text-rose-400 transition-colors cursor-pointer"
+                            title="Excluir Chamado"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       </div>
                       
                       <div className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap p-3 bg-black/40 rounded border border-white/5">
                         {ticket.message}
                       </div>
+
+                      {ticket.admin_response && (
+                        <div className="mt-4 p-4 rounded bg-purple-500/5 border border-purple-500/10 space-y-2">
+                          <div className="flex items-center gap-2 text-[10px] font-black uppercase text-purple-400 tracking-wider">
+                            <Shield size={12} /> Resposta do Suporte DanceFlow
+                            {ticket.responded_at && (
+                              <span className="text-gray-500 font-normal normal-case ml-auto">
+                                {new Date(ticket.responded_at).toLocaleDateString('pt-BR')}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-300 leading-relaxed whitespace-pre-wrap">{ticket.admin_response}</p>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
