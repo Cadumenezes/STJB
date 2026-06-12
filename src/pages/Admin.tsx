@@ -587,9 +587,9 @@ export default function Admin() {
                   className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition-all font-medium"
                 >
                   <option value="gratis" className="bg-gray-900">Grátis (7 Dias)</option>
-                  <option value="bronze" className="bg-gray-900">Bronze (Até 15 Alunos)</option>
-                  <option value="prata" className="bg-gray-900">Prata (Até 25 Alunos)</option>
-                  <option value="ouro" className="bg-gray-900">Ouro (Até 50 Alunos)</option>
+                  <option value="bronze" className="bg-gray-900">Bronze (Até 25 Alunos)</option>
+                  <option value="prata" className="bg-gray-900">Prata (Até 50 Alunos)</option>
+                  <option value="ouro" className="bg-gray-900">Ouro (Até 100 Alunos)</option>
                   <option value="diamante" className="bg-gray-900">Diamante (Ilimitado)</option>
                 </select>
               </div>

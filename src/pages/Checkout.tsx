@@ -161,12 +161,12 @@ export default function Checkout() {
               <p className="text-gray-400 text-xs mb-6 font-semibold">Perfeito para iniciar a organização de turmas.</p>
               
               <div className="mb-8">
-                <span className="text-4xl font-black">R$ 29,99</span>
+                <span className="text-4xl font-black">R$ 39,99</span>
                 <span className="text-gray-400 text-xs"> /mês</span>
               </div>
 
               <ul className="space-y-3 mb-8">
-                {['Limite de até 15 Alunos', 'Controle Financeiro Completo', 'Controle de Contas Fixas', 'Gestão de Chamadas & Turmas', 'Módulo Épico de Eventos', 'Controle de Estoque & Vendas', 'Suporte Prioritário VIP 24/7'].map((item, i) => (
+                {['Limite de até 25 Alunos', 'Controle Financeiro Completo', 'Controle de Contas Fixas', 'Gestão de Chamadas & Turmas', 'Módulo Épico de Eventos', 'Controle de Estoque & Vendas', 'Suporte Prioritário VIP 24/7'].map((item, i) => (
                   <li key={i} className="flex items-center gap-2 text-gray-300 text-[11px] leading-snug">
                     <CheckCircle2 size={14} className="text-amber-500 shrink-0" />
                     <span>{item}</span>
@@ -203,12 +203,12 @@ export default function Checkout() {
               <p className="text-gray-400 text-xs mb-6 font-semibold">Excelente para escolas em início de jornada.</p>
               
               <div className="mb-8">
-                <span className="text-4xl font-black">R$ 49,99</span>
+                <span className="text-4xl font-black">R$ 69,99</span>
                 <span className="text-gray-400 text-xs"> /mês</span>
               </div>
 
               <ul className="space-y-3 mb-8">
-                {['Limite de até 25 Alunos', 'Controle Financeiro Completo', 'Controle de Contas Fixas', 'Gestão de Chamadas & Turmas', 'Módulo Épico de Eventos', 'Controle de Estoque & Vendas', 'Suporte Prioritário VIP 24/7'].map((item, i) => (
+                {['Limite de até 50 Alunos', 'Controle Financeiro Completo', 'Controle de Contas Fixas', 'Gestão de Chamadas & Turmas', 'Módulo Épico de Eventos', 'Controle de Estoque & Vendas', 'Suporte Prioritário VIP 24/7'].map((item, i) => (
                   <li key={i} className="flex items-center gap-2 text-gray-300 text-[11px] leading-snug">
                     <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
                     <span>{item}</span>
@@ -246,15 +246,15 @@ export default function Checkout() {
               <div className="flex justify-between items-start mb-2">
                 <h3 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-400">Plano Ouro</h3>
               </div>
-              <p className="text-gray-400 text-xs mb-6 font-semibold font-medium">O melhor equilíbrio para crescer sem barreiras.</p>
+              <p className="text-gray-400 text-xs mb-6 font-semibold font-medium font-medium">O melhor equilíbrio para crescer sem barreiras.</p>
               
               <div className="mb-8">
-                <span className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-100 to-pink-100">R$ 99,99</span>
+                <span className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-100 to-pink-100">R$ 109,99</span>
                 <span className="text-gray-400 text-xs"> /mês</span>
               </div>
 
               <ul className="space-y-3 mb-8">
-                {['Limite de até 50 Alunos', 'Controle Financeiro Completo', 'Controle de Contas Fixas', 'Gestão de Chamadas & Turmas', 'Módulo Épico de Eventos', 'Controle de Estoque & Vendas', 'Suporte Prioritário VIP 24/7'].map((item, i) => (
+                {['Limite de até 100 Alunos', 'Controle Financeiro Completo', 'Controle de Contas Fixas', 'Gestão de Chamadas & Turmas', 'Módulo Épico de Eventos', 'Controle de Estoque & Vendas', 'Suporte Prioritário VIP 24/7'].map((item, i) => (
                   <li key={i} className="flex items-center gap-2 text-gray-300 text-[11px] leading-snug">
                     <CheckCircle2 size={14} className="text-purple-400 shrink-0" />
                     <span className="font-medium">{item}</span>
@@ -291,7 +291,7 @@ export default function Checkout() {
               <p className="text-gray-400 text-xs mb-6 font-semibold">Liberdade total sem qualquer limite de alunos.</p>
               
               <div className="mb-8">
-                <span className="text-4xl font-black">R$ 199,99</span>
+                <span className="text-4xl font-black">R$ 209,99</span>
                 <span className="text-gray-400 text-xs"> /mês</span>
               </div>
 

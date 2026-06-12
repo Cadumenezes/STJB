@@ -54,16 +54,16 @@ serve(async (req) => {
     }
 
     // Configure details based on plan
-    let price = 29.99
+    let price = 39.99
     let title = "DanceFlow - Plano Bronze"
     if (plan === 'prata') {
-      price = 49.99
+      price = 69.99
       title = "DanceFlow - Plano Prata"
     } else if (plan === 'ouro') {
-      price = 99.99
+      price = 109.99
       title = "DanceFlow - Plano Ouro"
     } else if (plan === 'diamante') {
-      price = 199.99
+      price = 209.99
       title = "DanceFlow - Plano Diamante"
     }
 

@@ -1269,10 +1269,10 @@ export default function SettingsPage() {
                     </h4>
                     <span className="text-xs text-[var(--text-secondary)]">
                       {profile.plan === 'gratis' ? '(R$ 0,00)' :
-                       profile.plan === 'bronze' ? '(R$ 29,99/mês)' :
-                       profile.plan === 'prata' ? '(R$ 49,99/mês)' :
-                       profile.plan === 'ouro' ? '(R$ 99,99/mês)' :
-                       profile.plan === 'diamante' ? '(R$ 199,99/mês)' : ''}
+                       profile.plan === 'bronze' ? '(R$ 39,99/mês)' :
+                       profile.plan === 'prata' ? '(R$ 69,99/mês)' :
+                       profile.plan === 'ouro' ? '(R$ 109,99/mês)' :
+                       profile.plan === 'diamante' ? '(R$ 209,99/mês)' : ''}
                     </span>
                   </div>
                   <p className="text-xs text-[var(--text-secondary)] leading-relaxed">

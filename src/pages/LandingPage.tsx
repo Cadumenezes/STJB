@@ -416,10 +416,10 @@ export default function LandingPage() {
                 <h3 className="text-lg font-bold mb-1">Plano Bronze</h3>
                 <p className="text-gray-400 text-xs mb-6 font-semibold">Perfeito para iniciar a organização.</p>
                 <div className="mb-8">
-                  <span className="text-3xl font-black">R$ 29,99</span><span className="text-gray-400 text-xs">/mês</span>
+                  <span className="text-3xl font-black">R$ 39,99</span><span className="text-gray-400 text-xs">/mês</span>
                 </div>
                 <ul className="space-y-4 mb-8">
-                  {['Limite de até 15 Alunos', 'Controle Financeiro Completo', 'Controle de Contas Fixas', 'Gestão de Chamadas & Turmas', 'Módulo Épico de Eventos', 'Controle de Estoque & Vendas', 'Suporte Prioritário VIP 24/7'].map((item, i) => (
+                  {['Limite de até 25 Alunos', 'Controle Financeiro Completo', 'Controle de Contas Fixas', 'Gestão de Chamadas & Turmas', 'Módulo Épico de Eventos', 'Controle de Estoque & Vendas', 'Suporte Prioritário VIP 24/7'].map((item, i) => (
                     <li key={i} className="flex items-center gap-2 text-gray-300 text-[10px] leading-snug">
                       <CheckCircle2 size={14} className="text-amber-500 shrink-0" />
                       <span>{item}</span>
@@ -438,10 +438,10 @@ export default function LandingPage() {
                 <h3 className="text-lg font-bold mb-1">Plano Prata</h3>
                 <p className="text-gray-400 text-xs mb-6 font-semibold">Excelente para escolas em início.</p>
                 <div className="mb-8">
-                  <span className="text-3xl font-black">R$ 49,99</span><span className="text-gray-400 text-xs">/mês</span>
+                  <span className="text-3xl font-black">R$ 69,99</span><span className="text-gray-400 text-xs">/mês</span>
                 </div>
                 <ul className="space-y-4 mb-8">
-                  {['Limite de até 25 Alunos', 'Controle Financeiro Completo', 'Controle de Contas Fixas', 'Gestão de Chamadas & Turmas', 'Módulo Épico de Eventos', 'Controle de Estoque & Vendas', 'Suporte Prioritário VIP 24/7'].map((item, i) => (
+                  {['Limite de até 50 Alunos', 'Controle Financeiro Completo', 'Controle de Contas Fixas', 'Gestão de Chamadas & Turmas', 'Módulo Épico de Eventos', 'Controle de Estoque & Vendas', 'Suporte Prioritário VIP 24/7'].map((item, i) => (
                     <li key={i} className="flex items-center gap-2 text-gray-300 text-[10px] leading-snug">
                       <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
                       <span>{item}</span>
@@ -463,10 +463,10 @@ export default function LandingPage() {
                 <h3 className="text-lg font-bold mb-1 text-purple-400">Plano Ouro</h3>
                 <p className="text-gray-400 text-xs mb-6 font-semibold font-medium">O melhor equilíbrio para crescer.</p>
                 <div className="mb-8">
-                  <span className="text-3xl font-black">R$ 99,99</span><span className="text-gray-400 text-xs">/mês</span>
+                  <span className="text-3xl font-black">R$ 109,99</span><span className="text-gray-400 text-xs">/mês</span>
                 </div>
                 <ul className="space-y-4 mb-8">
-                  {['Limite de até 50 Alunos', 'Controle Financeiro Completo', 'Controle de Contas Fixas', 'Gestão de Chamadas & Turmas', 'Módulo Épico de Eventos', 'Controle de Estoque & Vendas', 'Suporte Prioritário VIP 24/7'].map((item, i) => (
+                  {['Limite de até 100 Alunos', 'Controle Financeiro Completo', 'Controle de Contas Fixas', 'Gestão de Chamadas & Turmas', 'Módulo Épico de Eventos', 'Controle de Estoque & Vendas', 'Suporte Prioritário VIP 24/7'].map((item, i) => (
                     <li key={i} className="flex items-center gap-2 text-gray-300 text-[10px] leading-snug">
                       <CheckCircle2 size={14} className="text-purple-400 shrink-0" />
                       <span className="font-medium">{item}</span>
@@ -485,7 +485,7 @@ export default function LandingPage() {
                 <h3 className="text-lg font-bold mb-1">Plano Diamante</h3>
                 <p className="text-gray-400 text-xs mb-6 font-semibold">Liberdade total sem limite de alunos.</p>
                 <div className="mb-8">
-                  <span className="text-3xl font-black">R$ 199,99</span><span className="text-gray-400 text-xs">/mês</span>
+                  <span className="text-3xl font-black">R$ 209,99</span><span className="text-gray-400 text-xs">/mês</span>
                 </div>
                 <ul className="space-y-4 mb-8">
                   {['Alunos Ilimitados (Sem Limites)', 'Controle Financeiro Completo', 'Controle de Contas Fixas', 'Gestão de Chamadas & Turmas', 'Módulo Épico de Eventos', 'Controle de Estoque & Vendas', 'Suporte Prioritário VIP 24/7'].map((item, i) => (
