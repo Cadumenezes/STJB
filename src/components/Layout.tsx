@@ -155,13 +155,13 @@ const manualChapters = [
   },
   {
     title: '9. Controle Financeiro',
-    description: 'Acompanhe a saúde financeira da escola: visualize o fluxo de caixa, cadastre contas fixas recorrentes e projete o pagamento dos professores (com o desconto automático de passagens em feriados).',
-    images: ['/screenshots/10a_financial_flow.png', '/screenshots/10c_financial_fixed_after_insert.png', '/screenshots/10d_financial_payroll.png'],
+    description: 'Acompanhe a saúde financeira da escola: veja o fluxo de caixa, controle contas fixas e parceladas (com visual compacto responsivo e centralização de histórico) e gerencie a folha de pagamento da equipe.',
+    images: ['/screenshots/10a_financial_flow.png', '/screenshots/real_financial_fixed_bills.png', '/screenshots/10d_financial_payroll.png'],
     accessPath: 'Menu Lateral > Financeiro',
     steps: [
       'Acesse o Financeiro para ver o Fluxo de Caixa.',
-      'Entre na sub-aba "Contas Fixas" e clique em "Configurar Conta Fixa" para registrar despesas mensais recorrentes (aluguel, água, energia, etc.).',
-      'Entre em "Pagamentos Equipe" para ver a folha calculada automaticamente com base nas aulas dadas e regras de feriados do mês.'
+      'Entre na sub-aba "Contas Fixas" e clique em "Configurar Conta Fixa" para registrar despesas recorrentes ou parceladas. Os cards são colapsados por padrão; clique no botão centralizado para abrir o histórico.',
+      'Entre em "Pagamentos Equipe" para ver a folha de ponto e o salário/hora-aula calculados automaticamente (incluindo tratamento de feriados).'
     ]
   },
   {
@@ -181,6 +181,34 @@ const manualChapters = [
     accessPath: 'Menu Lateral > Visão Geral',
     steps: [
       'Ao entrar no DanceFlow, confira os cards de sumário para obter insights instantâneos do dia.'
+    ]
+  },
+  {
+    title: '12. Conformidade LGPD & Cookies',
+    description: 'O DanceFlow está em total conformidade com a LGPD. Gerencie o consentimento de cookies essenciais e termos de aceite no cadastro de novas escolas.',
+    images: [],
+    accessPath: 'Rodapé do Site & Tela de Cadastro',
+    steps: [
+      'Consentimento de Cookies: Ao acessar pela primeira vez, um banner inferior solicita a aceitação dos cookies técnicos e essenciais.',
+      'Políticas de Privacidade: O usuário pode ler os Termos de Uso e Políticas a qualquer momento clicando no link do banner.',
+      'Aceite Obrigatório: Novas escolas confirmam expressamente o aceite às políticas antes de concluir o cadastro.'
+    ]
+  },
+  {
+    title: '13. Assinatura & Faturamento',
+    description: 'Como diretor, acompanhe os detalhes do seu plano (Bronze, Prata, Ouro, Diamante), altere dados de faturamento, realize o cancelamento com pesquisa de churn e reative seu plano com 1 clique.',
+    images: [
+      '/screenshots/real_settings_billing_tab.png',
+      '/screenshots/real_settings_billing_cancelled.png',
+      '/screenshots/real_admin_clients_tag.png',
+      '/screenshots/real_admin_churn_feedbacks.png'
+    ],
+    accessPath: 'Menu Lateral > Configurações > Assinatura & Plano',
+    steps: [
+      'Consulte seu faturamento: Veja o plano contratado, valor cobrado e a data de vencimento/renovação do plano.',
+      'Modifique seu plano: Clique em "Alterar Plano / Mudar Pagamento" para ir ao checkout e reconfigurar cartões ou migrar de oferta.',
+      'Cancele de forma programada: Clique em "Cancelar Assinatura" e preencha a pesquisa de motivos (churn survey). Seu acesso permanecerá ativo até o final do período já pago.',
+      'Reative em 1 clique: Se mudar de ideia antes da expiração, clique em "Reativar Assinatura" para suspender o cancelamento e continuar faturando normalmente.'
     ]
   }
 ];
