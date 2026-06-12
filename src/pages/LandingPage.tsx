@@ -134,42 +134,9 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Premium Spotlight Section 1: Financial */}
+      {/* Premium Spotlight Section 1: Class Management */}
       <section className="relative z-10 py-36 border-t border-white/5 w-full flex justify-center">
         <div className="w-full max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center gap-16">
-          <div className="flex-1 space-y-6 text-center md:text-left flex flex-col items-center md:items-start">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 font-bold text-xs uppercase tracking-wider">
-              ⚡ Controle Absoluto
-            </div>
-            <h2 className="text-3xl sm:text-4xl font-black tracking-tight leading-tight">
-              Faturamento Automatizado e Conciliação Universal
-            </h2>
-            <p className="text-gray-400 text-base leading-relaxed">
-              Não mude de banco! O DanceFlow se conecta de forma segura e oficial à sua própria conta do <a href="https://www.cora.com.br" target="_blank" rel="noopener noreferrer" className="text-pink-400 hover:text-pink-300 underline font-bold transition-all">Banco Cora</a> ou <a href="https://www.asaas.com" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 underline font-bold transition-all">Asaas</a> (permitindo receber em qualquer banco com repasses automáticos via Pix). E se você usa outro banco convencional (Itaú, Bradesco, Nubank, Inter, etc.), basta arrastar o extrato bancário (OFX ou CSV) na plataforma para o sistema fazer o cruzamento inteligente e dar baixa automática em lote nos alunos.
-            </p>
-            <div className="pt-2">
-              <Link to="/auth" className="inline-flex items-center gap-3 px-6 py-3.5 bg-white/5 border border-white/10 hover:border-white/20 text-white font-bold rounded-xl transition-all hover:-translate-y-0.5 group text-sm">
-                Conhecer Recursos Financeiros
-                <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </div>
-          </div>
-          <div className="flex-1 w-full max-w-md md:max-w-none relative flex justify-center items-center">
-            <div className="absolute w-[80%] h-[80%] rounded-full bg-purple-500/5 blur-[100px]" />
-            <div className="relative z-10 w-full overflow-hidden rounded-3xl border border-white/5 bg-white/5 backdrop-blur-3xl p-4 shadow-2xl hover:border-white/10 transition-all hover:scale-[1.01] group">
-              <img 
-                src={financialMockupImg} 
-                alt="Financeiro Avançado DanceFlow" 
-                className="w-full h-auto rounded-2xl object-cover object-center shadow-lg"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Premium Spotlight Section 2: Class Management */}
-      <section className="relative z-10 py-36 border-t border-white/5 bg-black/10 w-full flex justify-center">
-        <div className="w-full max-w-6xl mx-auto px-6 flex flex-col md:flex-row-reverse items-center gap-16">
           <div className="flex-1 space-y-6 text-center md:text-left flex flex-col items-center md:items-start">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-400 font-bold text-xs uppercase tracking-wider">
               🩰 Praticidade no Dia a Dia
@@ -200,9 +167,9 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Premium Spotlight Section 3: Student Profile & IR Declaration */}
-      <section className="relative z-10 py-36 border-t border-white/5 w-full flex justify-center">
-        <div className="w-full max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center gap-16">
+      {/* Premium Spotlight Section 2: Student Profile & IR Declaration */}
+      <section className="relative z-10 py-36 border-t border-white/5 bg-black/10 w-full flex justify-center">
+        <div className="w-full max-w-6xl mx-auto px-6 flex flex-col md:flex-row-reverse items-center gap-16">
           <div className="flex-1 space-y-6 text-center md:text-left flex flex-col items-center md:items-start">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 font-bold text-xs uppercase tracking-wider">
               ⭐ Ficha Completa & Documentos
@@ -233,9 +200,9 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Premium Spotlight Section 4: Holidays & Hybrid Payroll Forecast */}
-      <section className="relative z-10 py-36 border-t border-white/5 bg-black/10 w-full flex justify-center">
-        <div className="w-full max-w-6xl mx-auto px-6 flex flex-col md:flex-row-reverse items-center gap-16">
+      {/* Premium Spotlight Section 3: Holidays & Hybrid Payroll Forecast */}
+      <section className="relative z-10 py-36 border-t border-white/5 w-full flex justify-center">
+        <div className="w-full max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center gap-16">
           <div className="flex-1 space-y-6 text-center md:text-left flex flex-col items-center md:items-start">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 font-bold text-xs uppercase tracking-wider">
               🎉 Feriados & Previsão Inteligente
@@ -259,6 +226,39 @@ export default function LandingPage() {
               <img 
                 src={hybridForecastImg} 
                 alt="Previsão de Gastos Inteligente DanceFlow" 
+                className="w-full h-auto rounded-2xl object-cover object-center shadow-lg"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Premium Spotlight Section 4: Financial */}
+      <section className="relative z-10 py-36 border-t border-white/5 bg-black/10 w-full flex justify-center">
+        <div className="w-full max-w-6xl mx-auto px-6 flex flex-col md:flex-row-reverse items-center gap-16">
+          <div className="flex-1 space-y-6 text-center md:text-left flex flex-col items-center md:items-start">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 font-bold text-xs uppercase tracking-wider">
+              ⚡ Controle Absoluto
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-black tracking-tight leading-tight">
+              Faturamento Automatizado e Conciliação Universal
+            </h2>
+            <p className="text-gray-400 text-base leading-relaxed">
+              Não mude de banco! O DanceFlow se conecta de forma segura e oficial à sua própria conta do <a href="https://www.cora.com.br" target="_blank" rel="noopener noreferrer" className="text-pink-400 hover:text-pink-300 underline font-bold transition-all">Banco Cora</a> ou <a href="https://www.asaas.com" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 underline font-bold transition-all">Asaas</a> (permitindo receber em qualquer banco com repasses automáticos via Pix). E se você usa outro banco convencional (Itaú, Bradesco, Nubank, Inter, etc.), basta arrastar o extrato bancário (OFX ou CSV) na plataforma para o sistema fazer o cruzamento inteligente e dar baixa automática em lote nos alunos.
+            </p>
+            <div className="pt-2">
+              <Link to="/auth" className="inline-flex items-center gap-3 px-6 py-3.5 bg-white/5 border border-white/10 hover:border-white/20 text-white font-bold rounded-xl transition-all hover:-translate-y-0.5 group text-sm">
+                Conhecer Recursos Financeiros
+                <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
+          </div>
+          <div className="flex-1 w-full max-w-md md:max-w-none relative flex justify-center items-center">
+            <div className="absolute w-[80%] h-[80%] rounded-full bg-purple-500/5 blur-[100px]" />
+            <div className="relative z-10 w-full overflow-hidden rounded-3xl border border-white/5 bg-white/5 backdrop-blur-3xl p-4 shadow-2xl hover:border-white/10 transition-all hover:scale-[1.01] group">
+              <img 
+                src={financialMockupImg} 
+                alt="Financeiro Avançado DanceFlow" 
                 className="w-full h-auto rounded-2xl object-cover object-center shadow-lg"
               />
             </div>
