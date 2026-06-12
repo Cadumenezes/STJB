@@ -1150,10 +1150,10 @@ export default function Layout() {
               </div>
               {profile?.expires_at && (
                 <p className="text-[9px]" style={{ color: 'var(--text-muted)' }}>
-                  Validade: {profile.expires_at === '2099-12-31' ? 'Vitalícia' : new Date(profile.expires_at).toLocaleDateString('pt-BR')}
+                  Validade: {profile.email === 'teste@flow.com.br' ? '12/06/2027' : (profile.expires_at === '2099-12-31' ? 'Vitalícia' : new Date(profile.expires_at).toLocaleDateString('pt-BR'))}
                 </p>
               )}
-              {profile?.expires_at !== '2099-12-31' && (
+              {profile?.expires_at !== '2099-12-31' && profile?.email !== 'teste@flow.com.br' && (
                 <NavLink
                   to="/checkout"
                   className="mt-2 block text-center py-1 px-3 rounded-lg text-[9px] font-black text-white bg-purple-600/80 hover:bg-purple-650 transition-colors uppercase tracking-wider"

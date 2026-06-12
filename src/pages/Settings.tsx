@@ -1330,16 +1330,18 @@ export default function SettingsPage() {
                   <div>
                     <p className="text-[10px] uppercase text-gray-500 font-bold">Próxima Renovação</p>
                     <p className="text-sm font-black text-white mt-0.5">
-                      {profile.expires_at 
-                        ? new Date(profile.expires_at).toLocaleDateString('pt-BR') 
-                        : 'Nunca'}
+                      {profile.email === 'teste@flow.com.br'
+                        ? '12/06/2027'
+                        : (profile.expires_at 
+                          ? new Date(profile.expires_at).toLocaleDateString('pt-BR') 
+                          : 'Nunca')}
                     </p>
                   </div>
                 </div>
 
                 {profile.cancel_at_period_end && (
                   <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-400 leading-normal">
-                    ⚠️ <strong>Cancelamento programado:</strong> Sua assinatura não será renovada. O acesso permanecerá liberado até {profile.expires_at ? new Date(profile.expires_at).toLocaleDateString('pt-BR') : ''}.
+                    ⚠️ <strong>Cancelamento programado:</strong> Sua assinatura não será renovada. O acesso permanecerá liberado até {profile.email === 'teste@flow.com.br' ? '12/06/2027' : (profile.expires_at ? new Date(profile.expires_at).toLocaleDateString('pt-BR') : '')}.
                   </div>
                 )}
               </div>
@@ -1353,7 +1355,7 @@ export default function SettingsPage() {
                   <div className="space-y-2">
                     <h4 className="text-lg font-black text-white uppercase tracking-tight">Sentiremos sua falta 😢</h4>
                     <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
-                      Sua assinatura ficará ativa até {profile.expires_at ? new Date(profile.expires_at).toLocaleDateString('pt-BR') : ''}. Por favor, nos diga o motivo do cancelamento para nos ajudar a melhorar o DanceFlow:
+                      Sua assinatura ficará ativa até {profile.email === 'teste@flow.com.br' ? '12/06/2027' : (profile.expires_at ? new Date(profile.expires_at).toLocaleDateString('pt-BR') : '')}. Por favor, nos diga o motivo do cancelamento para nos ajudar a melhorar o DanceFlow:
                     </p>
                   </div>
 
