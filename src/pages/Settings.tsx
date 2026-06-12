@@ -245,46 +245,46 @@ export default function SettingsPage() {
 
   async function loadSettings() {
     setLoading(true)
-    const { data } = await supabase.from('school_settings').select('*').limit(1).single()
-    if (data) {
-      setSettingsId(data.id)
-      const hasMenuCol = 'bg_menu' in data
-      setHasBgMenuColumn(hasMenuCol)
-      setFormData({
-        school_name: data.school_name || 'DanceFlow',
-        logo_url: data.logo_url || '',
-        bg_color: data.bg_color || '#0a0a0f',
-        bg_card: data.bg_card || '#1a1a2e',
-        bg_menu: data.bg_menu || data.bg_card || '#1a1a2e',
-        text_color: data.text_color || '#f0f0ff',
-        accent_color: data.accent_color || '#8b5cf6',
-        title_font_size: data.title_font_size || 32,
-        subtitle_font_size: data.subtitle_font_size || 16,
-        cnpj: data.cnpj || '',
-        address: data.address || '',
-        director: data.director || '',
-        discount_due_day: data.discount_due_day !== undefined ? data.discount_due_day : 10,
-        pay_on_holidays: data.pay_on_holidays !== undefined ? data.pay_on_holidays : true,
-        open_on_holidays: data.open_on_holidays !== undefined ? data.open_on_holidays : false,
-        gateway_type: (data.gateway_type || 'none') as 'none' | 'asaas' | 'cora',
-        gateway_api_key: data.gateway_api_key || '',
-        cora_client_id: data.cora_client_id || '',
-        cora_client_secret: data.cora_client_secret || '',
-        tax_declaration_template: data.tax_declaration_template || localStorage.getItem('tax_declaration_template') || DEFAULT_TAX_TEMPLATE,
-        activity_declaration_template: data.activity_declaration_template || localStorage.getItem('activity_declaration_template') || DEFAULT_ACTIVITY_TEMPLATE,
-      })
-    } else {
-      const { error } = await supabase.from('school_settings').select('bg_menu').limit(1)
-      setHasBgMenuColumn(!error)
-      setFormData(prev => ({
-        ...prev,
-        tax_declaration_template: localStorage.getItem('tax_declaration_template') || DEFAULT_TAX_TEMPLATE,
-        activity_declaration_template: localStorage.getItem('activity_declaration_template') || DEFAULT_ACTIVITY_TEMPLATE,
-      }))
-    }
-
-    // Carregar informações do perfil
     try {
+      const { data } = await supabase.from('school_settings').select('*').limit(1).single()
+      if (data) {
+        setSettingsId(data.id)
+        const hasMenuCol = 'bg_menu' in data
+        setHasBgMenuColumn(hasMenuCol)
+        setFormData({
+          school_name: data.school_name || 'DanceFlow',
+          logo_url: data.logo_url || '',
+          bg_color: data.bg_color || '#0a0a0f',
+          bg_card: data.bg_card || '#1a1a2e',
+          bg_menu: data.bg_menu || data.bg_card || '#1a1a2e',
+          text_color: data.text_color || '#f0f0ff',
+          accent_color: data.accent_color || '#8b5cf6',
+          title_font_size: data.title_font_size || 32,
+          subtitle_font_size: data.subtitle_font_size || 16,
+          cnpj: data.cnpj || '',
+          address: data.address || '',
+          director: data.director || '',
+          discount_due_day: data.discount_due_day !== undefined ? data.discount_due_day : 10,
+          pay_on_holidays: data.pay_on_holidays !== undefined ? data.pay_on_holidays : true,
+          open_on_holidays: data.open_on_holidays !== undefined ? data.open_on_holidays : false,
+          gateway_type: (data.gateway_type || 'none') as 'none' | 'asaas' | 'cora',
+          gateway_api_key: data.gateway_api_key || '',
+          cora_client_id: data.cora_client_id || '',
+          cora_client_secret: data.cora_client_secret || '',
+          tax_declaration_template: data.tax_declaration_template || localStorage.getItem('tax_declaration_template') || DEFAULT_TAX_TEMPLATE,
+          activity_declaration_template: data.activity_declaration_template || localStorage.getItem('activity_declaration_template') || DEFAULT_ACTIVITY_TEMPLATE,
+        })
+      } else {
+        const { error } = await supabase.from('school_settings').select('bg_menu').limit(1)
+        setHasBgMenuColumn(!error)
+        setFormData(prev => ({
+          ...prev,
+          tax_declaration_template: localStorage.getItem('tax_declaration_template') || DEFAULT_TAX_TEMPLATE,
+          activity_declaration_template: localStorage.getItem('activity_declaration_template') || DEFAULT_ACTIVITY_TEMPLATE,
+        }))
+      }
+
+      // Carregar informações do perfil
       const { data: authData } = await supabase.auth.getUser()
       if (authData?.user) {
         const { data: profData } = await supabase.from('profiles').select('*').eq('id', authData.user.id).single()
@@ -292,12 +292,13 @@ export default function SettingsPage() {
           setProfile(profData)
         }
       }
+      
+      await loadMfaStatus()
     } catch (err) {
-      console.error('Error loading profile:', err)
+      console.error('Error loading settings/profile:', err)
+    } finally {
+      setLoading(false)
     }
-
-    await loadMfaStatus()
-    setLoading(false)
   }
 
   async function handleCancelSubscription() {

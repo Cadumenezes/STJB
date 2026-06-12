@@ -228,8 +228,10 @@ test.describe('DanceFlow User Journey', () => {
     // Adicionar João
     console.log(`Adicionando ${student1Name} ao evento...`);
     try {
-      await page.locator('select#addStudentSelect').selectOption({ label: student1Name });
-      await page.locator('select#addStudentSelect + button').click();
+      await page.getByRole('button', { name: /Adicionar Aluno/i }).first().click();
+      await page.waitForTimeout(500);
+      await page.locator('form select').first().selectOption({ label: student1Name });
+      await page.getByRole('button', { name: 'Confirmar' }).click();
       await page.waitForTimeout(1500);
     } catch(e) {
       console.log('Erro ao adicionar João como participante:', e);
@@ -238,8 +240,10 @@ test.describe('DanceFlow User Journey', () => {
     // Adicionar Maria
     console.log(`Adicionando ${student2Name} ao evento...`);
     try {
-      await page.locator('select#addStudentSelect').selectOption({ label: student2Name });
-      await page.locator('select#addStudentSelect + button').click();
+      await page.getByRole('button', { name: /Adicionar Aluno/i }).first().click();
+      await page.waitForTimeout(500);
+      await page.locator('form select').first().selectOption({ label: student2Name });
+      await page.getByRole('button', { name: 'Confirmar' }).click();
       await page.waitForTimeout(1500);
     } catch(e) {
       console.log('Erro ao adicionar Maria como participante:', e);

@@ -58,14 +58,14 @@ test.describe('DanceFlow Real Screenshots for Help Center', () => {
     await page.locator('select').selectOption('preço_alto');
     await page.locator('textarea').fill('Teste automatizado: Preço está um pouco acima do orçamento neste mês.');
     
-    // Confirmar cancelamento
-    await page.getByRole('button', { name: 'Confirmar Cancelamento' }).click();
-    
-    // Capturar o alerta nativo e aceitar
+    // Registrar o listener antes do clique que abre o dialog
     page.once('dialog', dialog => {
       console.log('Dialog message:', dialog.message());
       dialog.accept();
     });
+    
+    // Confirmar cancelamento
+    await page.getByRole('button', { name: 'Confirmar Cancelamento' }).click();
     await page.waitForTimeout(2000);
 
     // Tirar screenshot do painel de faturamento indicando cancelamento programado
@@ -90,17 +90,22 @@ test.describe('DanceFlow Real Screenshots for Help Center', () => {
     await page.screenshot({ path: `${artifactDir}real_admin_churn_feedbacks.png`, fullPage: false });
 
     // 6. Voltar nas configurações para Reativar Assinatura do usuário (limpar estado de teste)
-    console.log('Limpando estado de teste: Reativando assinatura...');
+    console.log('Limpando estado de teste: Reativando assinatura se necessário...');
     await page.goto('/settings');
     await page.waitForTimeout(2000);
     await page.getByRole('button', { name: 'Assinatura & Plano' }).click();
     await page.waitForTimeout(1000);
-    await page.getByRole('button', { name: 'Reativar Assinatura' }).click();
     
-    page.once('dialog', dialog => {
-      dialog.accept();
-    });
-    await page.waitForTimeout(2000);
-    console.log('Assinatura reativada e banco limpo com sucesso!');
+    const reactivateBtn = page.getByRole('button', { name: 'Reativar Assinatura' });
+    if (await reactivateBtn.isVisible()) {
+      page.once('dialog', dialog => {
+        dialog.accept();
+      });
+      await reactivateBtn.click();
+      await page.waitForTimeout(2000);
+      console.log('Assinatura reativada e banco limpo com sucesso!');
+    } else {
+      console.log('Assinatura não estava cancelada (não foi necessário reativar).');
+    }
   });
 });
