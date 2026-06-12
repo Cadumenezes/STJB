@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { Profile } from '../types'
-import { Shield, CheckCircle, XCircle, Search, AlertTriangle, Key, Edit, Calendar, Trash2, MessageSquare, Clock, CornerDownRight } from 'lucide-react'
+import { Shield, CheckCircle, XCircle, Search, AlertTriangle, Key, Edit, Calendar, Trash2, MessageSquare, Clock, CornerDownRight, FileText } from 'lucide-react'
 import Modal from '../components/Modal'
 
 export default function Admin() {
@@ -16,17 +16,44 @@ export default function Admin() {
   })
 
   // Suporte Tickets States
-  const [activeTab, setActiveTab] = useState<'clients' | 'tickets'>('clients')
+  const [activeTab, setActiveTab] = useState<'clients' | 'tickets' | 'feedbacks'>('clients')
   const [tickets, setTickets] = useState<any[]>([])
   const [loadingTickets, setLoadingTickets] = useState(false)
   const [replyingTicket, setReplyingTicket] = useState<any | null>(null)
   const [adminResponse, setAdminResponse] = useState('')
   const [ticketStatus, setTicketStatus] = useState<'open' | 'in_progress' | 'resolved'>('open')
 
+  // Feedbacks de Cancelamento
+  const [feedbacks, setFeedbacks] = useState<any[]>([])
+  const [loadingFeedbacks, setLoadingFeedbacks] = useState(false)
+
   useEffect(() => {
     loadProfiles()
     loadTickets()
+    loadFeedbacks()
   }, [])
+
+  useEffect(() => {
+    if (activeTab === 'feedbacks') {
+      loadFeedbacks()
+    }
+  }, [activeTab])
+
+  async function loadFeedbacks() {
+    setLoadingFeedbacks(true)
+    try {
+      const { data, error } = await supabase
+        .from('cancellation_feedbacks')
+        .select('*')
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      setFeedbacks(data || [])
+    } catch (err) {
+      console.error('Error loading cancellation feedbacks:', err)
+    } finally {
+      setLoadingFeedbacks(false)
+    }
+  }
 
   async function loadProfiles() {
     setLoading(true)
@@ -220,9 +247,22 @@ export default function Admin() {
         >
           <MessageSquare size={14} /> Chamados de Suporte ({tickets.filter(t => t.status === 'open').length} abertos)
         </button>
+        <button
+          onClick={() => { setActiveTab('feedbacks'); setSearch(''); }}
+          className="px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer flex items-center gap-2"
+          style={{
+            backgroundColor: 'var(--bg-card)',
+            color: 'var(--text-primary)',
+            border: activeTab === 'feedbacks' ? '2px solid var(--accent-color)' : '1px solid var(--border-color)',
+            boxShadow: activeTab === 'feedbacks' ? '0 0 10px var(--accent-color)' : 'none',
+            opacity: activeTab === 'feedbacks' ? 1 : 0.6
+          }}
+        >
+          <FileText size={14} /> Motivos de Cancelamento ({feedbacks.length})
+        </button>
       </div>
 
-      {activeTab === 'clients' ? (
+      {activeTab === 'clients' && (
         <>
           {/* Search Clientes */}
           <div className="flex items-center gap-3 rounded-none px-4 py-4 border" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
@@ -263,7 +303,16 @@ export default function Admin() {
                   ) : (
                     filteredProfiles.map(p => (
                       <tr key={p.id} className="hover:bg-white/5 transition-colors">
-                        <td className="p-4 font-medium text-white">{p.email}</td>
+                        <td className="p-4 font-medium text-white">
+                          <div className="flex flex-col gap-1">
+                            <span>{p.email}</span>
+                            {p.cancel_at_period_end && (
+                              <span className="w-fit text-[8px] font-black uppercase text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                                ⚠️ Cancelamento Programado
+                              </span>
+                            )}
+                          </div>
+                        </td>
                         <td className="p-4 text-gray-300">{p.phone || '-'}</td>
                         <td className="p-4 text-center">
                           <span className={`inline-flex px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
@@ -327,7 +376,9 @@ export default function Admin() {
             </div>
           </div>
         </>
-      ) : (
+      )}
+
+      {activeTab === 'tickets' && (
         <>
           {/* Search Tickets */}
           <div className="flex items-center gap-3 rounded-none px-4 py-4 border" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
@@ -426,6 +477,81 @@ export default function Admin() {
                     </div>
                   </div>
                 ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {activeTab === 'feedbacks' && (
+        <>
+          {/* Search Feedbacks */}
+          <div className="flex items-center gap-3 rounded-none px-4 py-4 border" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+            <Search className="text-gray-400 shrink-0" size={20} />
+            <input 
+              type="text"
+              placeholder="Buscar feedbacks por e-mail, motivo ou comentário..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full bg-transparent text-white focus:outline-none placeholder:text-gray-500 text-sm"
+            />
+          </div>
+
+          {/* Feedbacks List */}
+          {loadingFeedbacks ? (
+            <div className="text-center py-20 text-sm text-gray-400">Carregando feedbacks...</div>
+          ) : feedbacks.length === 0 ? (
+            <div className="text-center py-20 text-sm text-gray-400 bg-[var(--bg-card)] border border-[var(--border-color)]">
+              Nenhum feedback de cancelamento registrado.
+            </div>
+          ) : (
+            <div className="rounded-none overflow-hidden shadow-2xl" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm whitespace-nowrap">
+                  <thead style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}>
+                    <tr>
+                      <th className="p-4 font-black text-[11px] uppercase tracking-wider text-gray-400">Diretor (E-mail)</th>
+                      <th className="p-4 font-black text-[11px] uppercase tracking-wider text-gray-400">Motivo do Cancelamento</th>
+                      <th className="p-4 font-black text-[11px] uppercase tracking-wider text-gray-400">Observações adicionais</th>
+                      <th className="p-4 font-black text-[11px] uppercase tracking-wider text-gray-400 text-right">Data</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {feedbacks
+                      .filter(f => 
+                        f.email.toLowerCase().includes(search.toLowerCase()) ||
+                        f.reason.toLowerCase().includes(search.toLowerCase()) ||
+                        (f.comments && f.comments.toLowerCase().includes(search.toLowerCase()))
+                      )
+                      .map((feed) => {
+                        // Traduzir motivo do cancelamento
+                        const translateReason = (r: string) => {
+                          switch (r) {
+                            case 'preço_alto': return '💰 Preço muito alto / Sem orçamento';
+                            case 'falta_recursos': return '⚙️ Falta de recursos necessários';
+                            case 'dificuldade_uso': return '🧭 Dificuldade de usar a plataforma';
+                            case 'fechamento_escola': return '🚪 Escola de dança fechou';
+                            case 'mudanca_sistema': return '🔄 Migrando para outro sistema';
+                            case 'outro': return '❓ Outro motivo';
+                            default: return r;
+                          }
+                        };
+
+                        return (
+                          <tr key={feed.id} className="hover:bg-white/5 transition-colors">
+                            <td className="p-4 font-semibold text-white">{feed.email}</td>
+                            <td className="p-4 text-purple-400 font-bold">{translateReason(feed.reason)}</td>
+                            <td className="p-4 text-gray-300 max-w-xs truncate animate-fade-in" style={{ textOverflow: 'ellipsis', overflow: 'hidden' }} title={feed.comments || ''}>
+                              {feed.comments || '-'}
+                            </td>
+                            <td className="p-4 text-right text-gray-400 text-xs">
+                              {new Date(feed.created_at).toLocaleDateString('pt-BR')} {new Date(feed.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </>

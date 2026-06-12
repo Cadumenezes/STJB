@@ -222,6 +222,7 @@ export interface Profile {
   status: 'pending' | 'active' | 'suspended'
   plan: 'gratis' | 'bronze' | 'prata' | 'ouro' | 'diamante' | 'starter' | 'pro'
   expires_at: string | null
+  cancel_at_period_end?: boolean | null
   created_at: string
 }
 

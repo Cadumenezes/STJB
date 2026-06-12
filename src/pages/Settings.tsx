@@ -36,12 +36,20 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [settingsId, setSettingsId] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'general' | 'gateways' | 'templates' | 'security' | 'feedback'>('general')
+  const [activeTab, setActiveTab] = useState<'general' | 'gateways' | 'templates' | 'security' | 'feedback' | 'billing'>('general')
   
+  // Perfil do Titular logado
+  const [profile, setProfile] = useState<any | null>(null)
+
   // Feedback & Support States
   const [suggestions, setSuggestions] = useState<any[]>([])
   const [tickets, setTickets] = useState<any[]>([])
   const [loadingFeedback, setLoadingFeedback] = useState(false)
+
+  // Estados para faturamento e cancelamento
+  const [showCancelModal, setShowCancelModal] = useState(false)
+  const [cancelReason, setCancelReason] = useState('')
+  const [cancelComments, setCancelComments] = useState('')
 
   async function loadFeedbackAndTickets() {
     setLoadingFeedback(true)
@@ -274,8 +282,81 @@ export default function SettingsPage() {
         activity_declaration_template: localStorage.getItem('activity_declaration_template') || DEFAULT_ACTIVITY_TEMPLATE,
       }))
     }
+
+    // Carregar informações do perfil
+    try {
+      const { data: authData } = await supabase.auth.getUser()
+      if (authData?.user) {
+        const { data: profData } = await supabase.from('profiles').select('*').eq('id', authData.user.id).single()
+        if (profData) {
+          setProfile(profData)
+        }
+      }
+    } catch (err) {
+      console.error('Error loading profile:', err)
+    }
+
     await loadMfaStatus()
     setLoading(false)
+  }
+
+  async function handleCancelSubscription() {
+    if (!cancelReason) {
+      alert('Por favor, selecione um motivo para o cancelamento.')
+      return
+    }
+    setSaving(true)
+    try {
+      const { data: authData } = await supabase.auth.getUser()
+      if (!authData?.user) throw new Error('Usuário não autenticado.')
+
+      // 1. Gravar feedback de cancelamento
+      const { error: feedErr } = await supabase.from('cancellation_feedbacks').insert([{
+        user_id: authData.user.id,
+        email: profile?.email || authData.user.email || '',
+        reason: cancelReason,
+        comments: cancelComments
+      }])
+      if (feedErr) throw feedErr
+
+      // 2. Atualizar cancel_at_period_end no perfil
+      const { error: profErr } = await supabase.from('profiles').update({
+        cancel_at_period_end: true
+      }).eq('id', authData.user.id)
+      if (profErr) throw profErr
+
+      alert('Sua assinatura foi cancelada com sucesso. A renovação automática foi suspensa.')
+      setShowCancelModal(false)
+      setCancelReason('')
+      setCancelComments('')
+      await loadSettings()
+    } catch (err: any) {
+      console.error('Cancel Subscription Error:', err)
+      alert('Erro ao cancelar assinatura: ' + err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleReactivateSubscription() {
+    setSaving(true)
+    try {
+      const { data: authData } = await supabase.auth.getUser()
+      if (!authData?.user) throw new Error('Usuário não autenticado.')
+
+      const { error } = await supabase.from('profiles').update({
+        cancel_at_period_end: false
+      }).eq('id', authData.user.id)
+      if (error) throw error
+
+      alert('Assinatura reativada com sucesso! A renovação automática foi restaurada.')
+      await loadSettings()
+    } catch (err: any) {
+      console.error('Reactivate Subscription Error:', err)
+      alert('Erro ao reativar assinatura: ' + err.message)
+    } finally {
+      setSaving(false)
+    }
   }
 
   function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -498,6 +579,21 @@ export default function SettingsPage() {
             }}
           >
             Segurança (MFA)
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('billing')}
+            className={`px-8 py-3.5 text-sm font-bold transition-all rounded-xl shadow-md border cursor-pointer ${
+              activeTab === 'billing' ? 'font-black scale-105' : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`}
+            style={{
+              backgroundColor: activeTab === 'billing' ? 'var(--bg-card)' : 'rgba(0, 0, 0, 0.2)',
+              borderColor: activeTab === 'billing' ? 'var(--accent-color)' : 'transparent',
+              color: activeTab === 'billing' ? '#fff' : 'var(--text-primary)',
+              boxShadow: activeTab === 'billing' ? '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 0 8px var(--accent-color)' : 'none'
+            }}
+          >
+            Assinatura & Plano
           </button>
           <button
             type="button"
@@ -1142,6 +1238,178 @@ export default function SettingsPage() {
                 </div>
               )}
             </div>
+
+          </div>
+        )}
+
+        {activeTab === 'billing' && profile && (
+          <div className="rounded-none p-8 sm:p-10 space-y-8 animate-fade-in" style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
+            
+            <div className="flex items-center gap-3">
+              <div className="h-6 w-2 rounded-full bg-purple-500" />
+              <h3 className="text-sm font-bold text-purple-400 uppercase tracking-wider">Minha Assinatura & Faturamento</h3>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              
+              {/* Card Plano Atual */}
+              <div className="p-6 rounded-2xl bg-black/40 border border-white/5 space-y-4 relative overflow-hidden flex flex-col justify-between md:col-span-2">
+                <div className="absolute top-[-30%] right-[-10%] w-[50%] h-[120%] rounded-full bg-purple-600/5 blur-[80px] pointer-events-none" />
+                <div className="space-y-2 relative z-10">
+                  <span className="text-[10px] font-black uppercase text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">
+                    Plano Vigente
+                  </span>
+                  <div className="flex items-baseline gap-2 mt-1">
+                    <h4 className="text-2xl font-black text-white capitalize">
+                      {profile.plan === 'gratis' ? '🌱 Grátis' : 
+                       profile.plan === 'bronze' ? '🥉 Bronze' :
+                       profile.plan === 'prata' ? '🥈 Prata' :
+                       profile.plan === 'ouro' ? '🥇 Ouro' :
+                       profile.plan === 'diamante' ? '💎 Diamante' : `✨ ${profile.plan}`}
+                    </h4>
+                    <span className="text-xs text-[var(--text-secondary)]">
+                      {profile.plan === 'gratis' ? '(R$ 0,00)' :
+                       profile.plan === 'bronze' ? '(R$ 29,99/mês)' :
+                       profile.plan === 'prata' ? '(R$ 49,99/mês)' :
+                       profile.plan === 'ouro' ? '(R$ 99,99/mês)' :
+                       profile.plan === 'diamante' ? '(R$ 199,99/mês)' : ''}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+                    Sua assinatura lhe dá acesso a todas as funcionalidades de gestão escolar de dança, chamadas, faturamento Pix/Boleto e controle de teatros.
+                  </p>
+                </div>
+
+                <div className="pt-4 border-t border-white/5 flex flex-col sm:flex-row gap-3 relative z-10">
+                  <button
+                    onClick={() => navigate('/checkout')}
+                    className="flex-1 rounded-xl px-5 py-3 text-xs font-black uppercase tracking-wider text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 hover:shadow-[0_0_20px_rgba(168,85,247,0.3)] transition-all cursor-pointer text-center"
+                  >
+                    Alterar Plano / Mudar Pagamento
+                  </button>
+                  
+                  {!profile.cancel_at_period_end ? (
+                    <button
+                      onClick={() => setShowCancelModal(true)}
+                      className="rounded-xl px-5 py-3 text-xs font-bold text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-all cursor-pointer text-center"
+                    >
+                      Cancelar Assinatura
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handleReactivateSubscription}
+                      disabled={saving}
+                      className="rounded-xl px-5 py-3 text-xs font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 transition-all cursor-pointer text-center"
+                    >
+                      Reativar Assinatura
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Status do Ciclo */}
+              <div className="p-6 rounded-2xl bg-black/40 border border-white/5 space-y-4 flex flex-col justify-between">
+                <div className="space-y-3">
+                  <span className="text-[10px] font-black uppercase text-[var(--text-secondary)]">
+                    Faturamento & Ciclo
+                  </span>
+                  
+                  <div>
+                    <p className="text-[10px] uppercase text-gray-500 font-bold">Status do Acesso</p>
+                    <p className="text-sm font-black text-white mt-0.5">
+                      {profile.status === 'active' ? (
+                        <span className="text-emerald-400 flex items-center gap-1.5">● Ativo</span>
+                      ) : profile.status === 'suspended' ? (
+                        <span className="text-rose-400 flex items-center gap-1.5">● Suspenso</span>
+                      ) : (
+                        <span className="text-yellow-400 flex items-center gap-1.5">● Pendente</span>
+                      )}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-[10px] uppercase text-gray-500 font-bold">Próxima Renovação</p>
+                    <p className="text-sm font-black text-white mt-0.5">
+                      {profile.expires_at 
+                        ? new Date(profile.expires_at).toLocaleDateString('pt-BR') 
+                        : 'Nunca'}
+                    </p>
+                  </div>
+                </div>
+
+                {profile.cancel_at_period_end && (
+                  <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-400 leading-normal">
+                    ⚠️ <strong>Cancelamento programado:</strong> Sua assinatura não será renovada. O acesso permanecerá liberado até {profile.expires_at ? new Date(profile.expires_at).toLocaleDateString('pt-BR') : ''}.
+                  </div>
+                )}
+              </div>
+
+            </div>
+
+            {/* Modal de Feedback de Cancelamento */}
+            {showCancelModal && (
+              <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                <div className="relative w-full max-w-md bg-[#0a0a0f] border border-white/10 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl animate-scale-up">
+                  <div className="space-y-2">
+                    <h4 className="text-lg font-black text-white uppercase tracking-tight">Sentiremos sua falta 😢</h4>
+                    <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
+                      Sua assinatura ficará ativa até {profile.expires_at ? new Date(profile.expires_at).toLocaleDateString('pt-BR') : ''}. Por favor, nos diga o motivo do cancelamento para nos ajudar a melhorar o DanceFlow:
+                    </p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Motivo Principal</label>
+                      <select
+                        value={cancelReason}
+                        onChange={(e) => setCancelReason(e.target.value)}
+                        className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500/50"
+                      >
+                        <option value="">-- Selecione uma opção --</option>
+                        <option value="preço_alto">Preço muito alto / Falta de orçamento</option>
+                        <option value="falta_recursos">Falta de recursos necessários</option>
+                        <option value="dificuldade_uso">Dificuldade de usar a plataforma</option>
+                        <option value="fechamento_escola">Minha escola de dança fechou</option>
+                        <option value="mudanca_sistema">Migrando para outro sistema</option>
+                        <option value="outro">Outro motivo</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-wider block">Conte-nos mais (Opcional)</label>
+                      <textarea
+                        value={cancelComments}
+                        onChange={(e) => setCancelComments(e.target.value)}
+                        placeholder="Quais recursos faltaram? Tem alguma sugestão?"
+                        rows={3}
+                        className="w-full bg-black/30 border border-white/10 rounded-xl p-4 text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500/50"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 pt-2">
+                    <button
+                      onClick={handleCancelSubscription}
+                      disabled={saving}
+                      className="flex-1 rounded-xl px-4 py-3 text-xs font-black uppercase tracking-wider bg-rose-600 hover:bg-rose-700 text-white transition-all cursor-pointer text-center disabled:opacity-50"
+                    >
+                      {saving ? 'Cancelando...' : 'Confirmar Cancelamento'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowCancelModal(false)
+                        setCancelReason('')
+                        setCancelComments('')
+                      }}
+                      disabled={saving}
+                      className="flex-1 rounded-xl px-4 py-3 text-xs font-bold bg-white/5 hover:bg-white/10 border border-white/10 text-white transition-all cursor-pointer text-center"
+                    >
+                      Voltar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
           </div>
         )}
