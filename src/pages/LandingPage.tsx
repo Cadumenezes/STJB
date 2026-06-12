@@ -304,29 +304,61 @@ export default function LandingPage() {
         <div className="w-full max-w-6xl mx-auto px-6 flex flex-col items-center gap-8 md:gap-12">
           <h2 className="text-2xl sm:text-3xl font-black text-center">Histórias de sucesso de quem usa</h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto w-full">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto w-full">
             {[
               { 
                 name: 'Carolina Souza', 
                 role: 'Diretora Artística', 
                 image: carolinaImg,
+                initials: 'CS',
                 quote: 'A gestão do nosso espetáculo de fim de ano com roupas e convites era caótica. O DanceFlow organizou e automatizou tudo!' 
               },
               { 
                 name: 'Ricardo Mendes', 
-                role: 'Proprietário', 
+                role: 'Proprietário de Escola', 
                 image: ricardoImg,
+                initials: 'RM',
                 quote: 'O design é simplesmente maravilhoso e a facilidade de ver quem pagou a mensalidade pelo gráfico me poupa horas de trabalho semanal.' 
+              },
+              { 
+                name: 'Juliana Kapor', 
+                role: 'Diretora de Ballet', 
+                initials: 'JK',
+                quote: 'O mapa de assentos para os nossos espetáculos no teatro municipal mudou a nossa história. Vendemos tudo numerado em poucas horas e sem filas.' 
+              },
+              { 
+                name: 'Alziro Menezes', 
+                role: 'Gestor Financeiro', 
+                initials: 'AM',
+                quote: 'A conciliação bancária por extrato OFX facilitou muito o nosso controle. O que antes levava um dia inteiro para conferir agora é feito em minutos.' 
+              },
+              { 
+                name: 'Mariana Dias', 
+                role: 'Secretária Geral', 
+                initials: 'MD',
+                quote: 'O controle de frequência dos alunos e a ficha médica integrada ajudaram a secretaria a ter tudo organizado em um só lugar. Indispensável!' 
+              },
+              { 
+                name: 'Gustavo Lins', 
+                role: 'Professor de Dança', 
+                initials: 'GL',
+                quote: 'Com o controle de estoque integrado, ficou muito mais simples gerenciar a venda de sapatilhas e uniformes direto na recepção.' 
               }
             ].map((t, i) => (
-              <div key={i} className="p-8 sm:p-10 rounded-3xl bg-white/[0.02] border border-white/5 flex flex-col items-center text-center justify-between">
+              <div key={i} className="p-8 sm:p-10 rounded-3xl bg-white/[0.02] border border-white/5 flex flex-col items-center text-center justify-between hover:border-white/10 transition-all hover:scale-[1.02] duration-300">
                 <p className="text-gray-300 text-sm italic leading-relaxed mb-8">"{t.quote}"</p>
                 <div className="flex flex-col items-center gap-4">
-                  <img 
-                    src={t.image} 
-                    alt={t.name} 
-                    className="h-12 w-12 rounded-full object-cover object-center border-2 border-purple-500/20 shadow-md"
-                  />
+                  {t.image ? (
+                    <img 
+                      src={t.image} 
+                      alt={t.name} 
+                      className="h-12 w-12 rounded-full object-cover object-center border-2 border-purple-500/20 shadow-md"
+                    />
+                  ) : (
+                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-purple-600/30 to-pink-500/30 border-2 border-purple-500/20 shadow-md flex items-center justify-center font-bold text-sm text-purple-200">
+                      {t.initials}
+                    </div>
+                  )}
                   <div className="flex flex-col items-center">
                     <h4 className="font-bold text-sm text-white">{t.name}</h4>
                     <span className="text-xs text-purple-400 font-bold uppercase tracking-wider mt-0.5">{t.role}</span>
