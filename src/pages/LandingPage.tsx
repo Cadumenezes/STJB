@@ -5,6 +5,10 @@ import feature1Image from '../assets/dance_black_ballerina.png'
 import feature2Image from '../assets/dance_esmeralda_ballerina.png'
 import carolinaImg from '../assets/director_carolina.png'
 import ricardoImg from '../assets/director_ricardo.png'
+import julianaImg from '../assets/director_juliana.png'
+import alziroImg from '../assets/manager_alziro.png'
+import marianaImg from '../assets/secretary_mariana.png'
+import gustavoImg from '../assets/teacher_gustavo.png'
 import hybridForecastImg from '../assets/hybrid_forecast_mockup.png'
 import theaterMapImg from '../assets/theater_map_mockup.png'
 import financialMockupImg from '../assets/financial_dashboard_mockup.png'
@@ -323,24 +327,28 @@ export default function LandingPage() {
               { 
                 name: 'Juliana Kapor', 
                 role: 'Diretora de Ballet', 
+                image: julianaImg,
                 initials: 'JK',
                 quote: 'O mapa de assentos para os nossos espetáculos no teatro municipal mudou a nossa história. Vendemos tudo numerado em poucas horas e sem filas.' 
               },
               { 
                 name: 'Alziro Menezes', 
                 role: 'Gestor Financeiro', 
+                image: alziroImg,
                 initials: 'AM',
                 quote: 'A conciliação bancária por extrato OFX facilitou muito o nosso controle. O que antes levava um dia inteiro para conferir agora é feito em minutos.' 
               },
               { 
                 name: 'Mariana Dias', 
                 role: 'Secretária Geral', 
+                image: marianaImg,
                 initials: 'MD',
                 quote: 'O controle de frequência dos alunos e a ficha médica integrada ajudaram a secretaria a ter tudo organizado em um só lugar. Indispensável!' 
               },
               { 
                 name: 'Gustavo Lins', 
                 role: 'Professor de Dança', 
+                image: gustavoImg,
                 initials: 'GL',
                 quote: 'Com o controle de estoque integrado, ficou muito mais simples gerenciar a venda de sapatilhas e uniformes direto na recepção.' 
               }
