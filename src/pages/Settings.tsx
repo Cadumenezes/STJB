@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase'
 
 const DEFAULT_TAX_TEMPLATE = `DECLARAÇÃO DE RENDIMENTOS DE INSTRUÇÃO (IRPF)
 
-Declaramos para os devidos fins de comprovação de despesas com instrução, de acordo com as diretrizes da Receita Federal, que a instituição de ensino {escola}, inscrita no CNPJ sob o nº {cnpj}, sediada em {endereco}, recebeu do(a) responsável financeiro(a) {responsavel} (CPF: {cpf_responsavel}), referente ao(à) aluno(a) beneficiário(a) {aluno} (CPF: {cpf_aluno}), os valores abaixo discriminados correspondentes às atividades escolares quitadas durante o ano-calendário de {ano}:
+Declaramos para os devidos fins de comprovação de despesas com instrução, de acordo com as diretrizes da Receita Federal, que a instituição de ensino {escola}, inscrita no CNPJ sob o nº {cnpj}, sediada em {endereco}, recebeu do(a) responsável financeiro(a) {responsavel} (CPF: {cpf_responsavel}), referente ao(à) aluno(a) beneficiário(a) {aluno}, os valores abaixo discriminados correspondentes às atividades escolares quitadas durante o ano-calendário de {ano}:
 
 {mensalidades}
 
@@ -18,7 +18,7 @@ Direção Geral`;
 
 const DEFAULT_ACTIVITY_TEMPLATE = `DECLARAÇÃO DE MATRÍCULA E FREQUÊNCIA
 
-Declaramos para os devidos fins que o(a) aluno(a) {aluno} (CPF: {cpf_aluno}), representado(a) por seu responsável legal {responsavel} (CPF: {cpf_responsavel}), encontra-se regularmente matriculado(a) e frequentando ativamente as aulas e atividades de dança na escola {escola}.
+Declaramos para os devidos fins que o(a) aluno(a) {aluno}, representado(a) por seu responsável legal {responsavel} (CPF: {cpf_responsavel}), encontra-se regularmente matriculado(a) e frequentando ativamente as aulas e atividades de dança na escola {escola}.
 
 O(a) referido discente realiza suas atividades nas seguintes turmas:
 

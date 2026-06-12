@@ -4,7 +4,7 @@ import {
   DollarSign, TrendingUp, TrendingDown, Plus, Trash2, Edit,
   Wallet, ArrowUpCircle, ArrowDownCircle, Pin, CheckCircle2, Circle, Users,
   UploadCloud, Check, AlertCircle, HelpCircle, RefreshCw, FileText,
-  Copy, ExternalLink, QrCode, CreditCard
+  Copy, ExternalLink, QrCode, CreditCard, Printer
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { FinancialEntry, Student, MonthlyPayment } from '../types'
@@ -91,6 +91,11 @@ export default function Financial() {
   const [filter, setFilter] = useState<'all' | 'income' | 'expense'>('all')
   const [profile, setProfile] = useState<any>(null)
   const [schoolAdminId, setSchoolAdminId] = useState<string | null>(null)
+  const [showReportModal, setShowReportModal] = useState(false)
+  const [reportType, setReportType] = useState<'monthly' | 'annual'>('monthly')
+  const [reportMonth, setReportMonth] = useState<string>((new Date().getMonth() + 1).toString().padStart(2, '0'))
+  const [reportYear, setReportYear] = useState<number>(new Date().getFullYear())
+  const [schoolInfo, setSchoolInfo] = useState<any>(null)
   
   const [formData, setFormData] = useState({
     type: 'income' as 'income' | 'expense',
@@ -270,10 +275,11 @@ export default function Financial() {
       }
 
       // Load settings (to get discount_due_day, pay_on_holidays, open_on_holidays) and students for payment forecast
-      const { data: settingsData } = await supabase.from('school_settings').select('discount_due_day, pay_on_holidays, open_on_holidays, gateway_type').limit(1).maybeSingle()
+      const { data: settingsData } = await supabase.from('school_settings').select('discount_due_day, pay_on_holidays, open_on_holidays, gateway_type, school_name, cnpj, address, director, logo_url').limit(1).maybeSingle()
       let payHolidaysVal = true
       let openHolidaysVal = false
       if (settingsData) {
+        setSchoolInfo(settingsData)
         setDiscountDueDay(settingsData.discount_due_day || 10)
         payHolidaysVal = settingsData.pay_on_holidays !== undefined ? settingsData.pay_on_holidays : true
         openHolidaysVal = settingsData.open_on_holidays !== undefined ? settingsData.open_on_holidays : false
@@ -667,6 +673,91 @@ export default function Financial() {
     backgroundColor: 'var(--bg-input)',
     border: '1px solid var(--border-color)',
     color: 'var(--text-primary)',
+  }
+
+  // Cálculos do Relatório de Fluxo de Caixa
+  const reportMonthsNames = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ]
+
+  // Relatório Mensal
+  const reportMonthStr = `${reportYear}-${reportMonth.padStart(2, '0')}`
+  const reportEntriesMonthly = entries.filter(e => e.date && e.date.startsWith(reportMonthStr))
+  
+  const reportIncomeMonthly = reportEntriesMonthly
+    .filter(e => e.type === 'income')
+    .reduce((acc, e) => acc + e.amount, 0)
+    
+  const reportExpenseMonthly = reportEntriesMonthly
+    .filter(e => e.type === 'expense')
+    .reduce((acc, e) => acc + e.amount, 0)
+    
+  const reportNetMonthly = reportIncomeMonthly - reportExpenseMonthly
+
+  const reportMonthlyIncomeCategories = reportEntriesMonthly
+    .filter(e => e.type === 'income')
+    .reduce((acc, e) => {
+      const cat = e.category || 'Sem Categoria'
+      acc[cat] = (acc[cat] || 0) + e.amount
+      return acc
+    }, {} as Record<string, number>)
+
+  const reportMonthlyExpenseCategories = reportEntriesMonthly
+    .filter(e => e.type === 'expense')
+    .reduce((acc, e) => {
+      const cat = e.category || 'Sem Categoria'
+      acc[cat] = (acc[cat] || 0) + e.amount
+      return acc
+    }, {} as Record<string, number>)
+
+  // Relatório Anual
+  const reportEntriesAnnual = entries.filter(e => e.date && e.date.startsWith(reportYear.toString()))
+  
+  const reportIncomeAnnual = reportEntriesAnnual
+    .filter(e => e.type === 'income')
+    .reduce((acc, e) => acc + e.amount, 0)
+    
+  const reportExpenseAnnual = reportEntriesAnnual
+    .filter(e => e.type === 'expense')
+    .reduce((acc, e) => acc + e.amount, 0)
+    
+  const reportNetAnnual = reportIncomeAnnual - reportExpenseAnnual
+
+  const reportAnnualMonthsData = Array.from({ length: 12 }, (_, i) => {
+    const monthStr = `${reportYear}-${(i + 1).toString().padStart(2, '0')}`
+    const monthEntries = reportEntriesAnnual.filter(e => e.date && e.date.startsWith(monthStr))
+    const income = monthEntries.filter(e => e.type === 'income').reduce((acc, e) => acc + e.amount, 0)
+    const expense = monthEntries.filter(e => e.type === 'expense').reduce((acc, e) => acc + e.amount, 0)
+    return {
+      monthName: reportMonthsNames[i],
+      income,
+      expense,
+      net: income - expense
+    }
+  })
+
+  const reportAnnualIncomeCategories = reportEntriesAnnual
+    .filter(e => e.type === 'income')
+    .reduce((acc, e) => {
+      const cat = e.category || 'Sem Categoria'
+      acc[cat] = (acc[cat] || 0) + e.amount
+      return acc
+    }, {} as Record<string, number>)
+
+  const reportAnnualExpenseCategories = reportEntriesAnnual
+    .filter(e => e.type === 'expense')
+    .reduce((acc, e) => {
+      const cat = e.category || 'Sem Categoria'
+      acc[cat] = (acc[cat] || 0) + e.amount
+      return acc
+    }, {} as Record<string, number>)
+
+  const handlePrint = () => {
+    setShowReportModal(false)
+    setTimeout(() => {
+      window.print()
+    }, 150)
   }
 
   const summaryCards = [
@@ -1379,6 +1470,16 @@ export default function Financial() {
             </p>
           </div>
           <div className="flex gap-3">
+            {profile?.role !== 'secretary' && (
+              <button
+                onClick={() => setShowReportModal(true)}
+                className="flex items-center gap-2 rounded-2xl px-8 py-4 text-sm font-bold text-[var(--text-primary)] hover:text-white transition-all hover:scale-105 active:scale-95 shadow-xl border border-white/10"
+                style={{ backgroundColor: 'var(--bg-card)' }}
+              >
+                <Printer size={26} />
+                Emitir Relatório
+              </button>
+            )}
             <button
               onClick={() => { resetForm(); setEditEntry(null); setShowModal(true) }}
               className="flex items-center gap-2 rounded-2xl px-8 py-4 text-sm font-bold text-white transition-all hover:scale-105 active:scale-95 shadow-xl shadow-purple-500/20"
@@ -2862,6 +2963,377 @@ export default function Financial() {
           </div>
         </form>
       </Modal>
+
+      {/* Modal de Emissão do Relatório de Fluxo de Caixa */}
+      <Modal 
+        isOpen={showReportModal} 
+        onClose={() => setShowReportModal(false)} 
+        title="Emitir Relatório de Fluxo de Caixa"
+      >
+        <div className="space-y-6">
+          <div>
+            <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>
+              Tipo de Relatório
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setReportType('monthly')}
+                className={`py-3 rounded-xl border text-sm font-bold transition-all ${
+                  reportType === 'monthly'
+                    ? 'border-[var(--accent-color)] text-white'
+                    : 'border-white/10 text-[var(--text-secondary)] hover:text-white hover:bg-white/5'
+                }`}
+                style={{
+                  backgroundColor: reportType === 'monthly' ? 'rgba(139, 92, 246, 0.1)' : 'transparent',
+                }}
+              >
+                Mensal
+              </button>
+              <button
+                type="button"
+                onClick={() => setReportType('annual')}
+                className={`py-3 rounded-xl border text-sm font-bold transition-all ${
+                  reportType === 'annual'
+                    ? 'border-[var(--accent-color)] text-white'
+                    : 'border-white/10 text-[var(--text-secondary)] hover:text-white hover:bg-white/5'
+                }`}
+                style={{
+                  backgroundColor: reportType === 'annual' ? 'rgba(139, 92, 246, 0.1)' : 'transparent',
+                }}
+              >
+                Anual
+              </button>
+            </div>
+          </div>
+
+          {reportType === 'monthly' ? (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>Mês *</label>
+                <select
+                  value={reportMonth}
+                  onChange={(e) => setReportMonth(e.target.value)}
+                  className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                  style={inputStyle}
+                >
+                  {reportMonthsNames.map((name, idx) => (
+                    <option key={name} value={(idx + 1).toString().padStart(2, '0')} className="bg-[#1e1b4b] text-white">
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>Ano *</label>
+                <select
+                  value={reportYear}
+                  onChange={(e) => setReportYear(Number(e.target.value))}
+                  className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                  style={inputStyle}
+                >
+                  {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(year => (
+                    <option key={year} value={year} className="bg-[#1e1b4b] text-white">
+                      {year}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <label className="text-sm font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>Ano de Referência *</label>
+              <select
+                value={reportYear}
+                onChange={(e) => setReportYear(Number(e.target.value))}
+                className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                style={inputStyle}
+              >
+                {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map(year => (
+                  <option key={year} value={year} className="bg-[#1e1b4b] text-white">
+                    {year}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
+            <button
+              type="button"
+              onClick={() => setShowReportModal(false)}
+              className="rounded-xl px-5 py-2.5 text-sm font-medium"
+              style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-secondary)', border: '1px solid var(--border-color)' }}
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium text-white transition-all hover:opacity-90 shadow-lg"
+              style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}
+            >
+              <Printer size={16} />
+              Imprimir Relatório
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Estilos para Impressão */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @media print {
+          body * { visibility: hidden; }
+          #printable-cashflow-report, #printable-cashflow-report * { visibility: visible; }
+          #printable-cashflow-report {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            padding: 24px;
+            background: white !important;
+            color: black !important;
+            font-family: 'Inter', sans-serif;
+          }
+          .no-print { display: none !important; }
+        }
+      `}} />
+
+      {/* Template de Impressão (Oculto na UI normal, exibido apenas na impressão) */}
+      <div id="printable-cashflow-report" className="hidden print:block text-black">
+        {/* Cabeçalho da Escola */}
+        <div className="flex items-center justify-between border-b-2 border-gray-800 pb-6 mb-8">
+          <div className="flex items-center gap-6">
+            {schoolInfo?.logo_url && (
+              <img src={schoolInfo.logo_url} alt="Logotipo" className="w-20 h-20 object-contain" />
+            )}
+            <div>
+              <h1 className="text-2xl font-black uppercase tracking-tight">{schoolInfo?.school_name || 'Escola de Dança'}</h1>
+              <p className="text-xs text-gray-500 font-medium">Relatório Oficial de Fluxo de Caixa</p>
+              {schoolInfo?.cnpj && <p className="text-[10px] text-gray-600 mt-1"><b>CNPJ:</b> {schoolInfo.cnpj}</p>}
+              {schoolInfo?.address && <p className="text-[10px] text-gray-600"><b>Endereço:</b> {schoolInfo.address}</p>}
+              {schoolInfo?.director && <p className="text-[10px] text-gray-600"><b>Diretor Responsável:</b> {schoolInfo.director}</p>}
+            </div>
+          </div>
+          <div className="text-right text-xs text-gray-500">
+            <p><b>Data de Emissão:</b> {new Date().toLocaleDateString('pt-BR')}</p>
+            <p><b>Sistema:</b> DanceFlow</p>
+          </div>
+        </div>
+
+        {/* Detalhes do Relatório */}
+        <div className="mb-6">
+          <h2 className="text-xl font-bold uppercase tracking-wide border-b border-gray-300 pb-2 mb-4">
+            {reportType === 'monthly' 
+              ? `Demonstrativo Mensal: ${reportMonthsNames[Number(reportMonth) - 1]} de ${reportYear}`
+              : `Demonstrativo Anual: Exercício de ${reportYear}`
+            }
+          </h2>
+
+          {/* Cards de Resumo */}
+          <div className="grid grid-cols-3 gap-4 mb-8">
+            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <span className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Total de Entradas</span>
+              <span className="text-lg font-bold text-emerald-600">
+                R$ {(reportType === 'monthly' ? reportIncomeMonthly : reportIncomeAnnual).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <span className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Total de Saídas</span>
+              <span className="text-lg font-bold text-rose-600">
+                R$ {(reportType === 'monthly' ? reportExpenseMonthly : reportExpenseAnnual).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <span className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Saldo Líquido</span>
+              <span className={`text-lg font-bold ${(reportType === 'monthly' ? reportNetMonthly : reportNetAnnual) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                R$ {(reportType === 'monthly' ? reportNetMonthly : reportNetAnnual).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+          </div>
+
+          {/* Seção Relatório Mensal */}
+          {reportType === 'monthly' && (
+            <div className="space-y-6">
+              {/* Resumo por Categoria */}
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">Consolidado por Categoria</h3>
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="text-[11px] font-bold uppercase text-emerald-600 border-b border-emerald-100 pb-1 mb-2">Receitas</h4>
+                    {Object.keys(reportMonthlyIncomeCategories).length > 0 ? (
+                      <table className="w-full text-xs">
+                        <tbody>
+                          {Object.entries(reportMonthlyIncomeCategories).map(([cat, amt]) => (
+                            <tr key={cat} className="border-b border-gray-100">
+                              <td className="py-1 text-gray-600">{cat}</td>
+                              <td className="py-1 text-right font-semibold">R$ {amt.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <p className="text-[11px] text-gray-400 italic">Nenhuma receita registrada.</p>
+                    )}
+                  </div>
+                  <div>
+                    <h4 className="text-[11px] font-bold uppercase text-rose-600 border-b border-rose-100 pb-1 mb-2">Despesas</h4>
+                    {Object.keys(reportMonthlyExpenseCategories).length > 0 ? (
+                      <table className="w-full text-xs">
+                        <tbody>
+                          {Object.entries(reportMonthlyExpenseCategories).map(([cat, amt]) => (
+                            <tr key={cat} className="border-b border-gray-100">
+                              <td className="py-1 text-gray-600">{cat}</td>
+                              <td className="py-1 text-right font-semibold">R$ {amt.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <p className="text-[11px] text-gray-400 italic">Nenhuma despesa registrada.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Tabela de Lançamentos */}
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">Histórico de Lançamentos</h3>
+                {reportEntriesMonthly.length > 0 ? (
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="border-b-2 border-gray-300">
+                        <th className="py-2 font-bold text-gray-700">Data</th>
+                        <th className="py-2 font-bold text-gray-700">Tipo</th>
+                        <th className="py-2 font-bold text-gray-700">Categoria</th>
+                        <th className="py-2 font-bold text-gray-700">Descrição</th>
+                        <th className="py-2 text-right font-bold text-gray-700">Valor</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {reportEntriesMonthly
+                        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                        .map((entry) => (
+                          <tr key={entry.id} className="border-b border-gray-200">
+                            <td className="py-2 text-gray-600">{new Date(entry.date).toLocaleDateString('pt-BR')}</td>
+                            <td className={`py-2 font-semibold ${entry.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                              {entry.type === 'income' ? 'Entrada' : 'Saída'}
+                            </td>
+                            <td className="py-2 text-gray-600">{entry.category || 'Sem Categoria'}</td>
+                            <td className="py-2 text-gray-600">{entry.description || '-'}</td>
+                            <td className={`py-2 text-right font-bold ${entry.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                              R$ {entry.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <p className="text-xs text-gray-400 italic">Nenhum lançamento no período selecionado.</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Seção Relatório Anual */}
+          {reportType === 'annual' && (
+            <div className="space-y-6">
+              {/* Consolidado Mês a Mês */}
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">Consolidado Mês a Mês</h3>
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="border-b-2 border-gray-300">
+                      <th className="py-2 font-bold text-gray-700">Mês</th>
+                      <th className="py-2 font-bold text-emerald-600 text-right">Entradas (Receitas)</th>
+                      <th className="py-2 font-bold text-rose-600 text-right">Saídas (Despesas)</th>
+                      <th className="py-2 font-bold text-gray-700 text-right">Saldo Mensal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reportAnnualMonthsData.map((row) => (
+                      <tr key={row.monthName} className="border-b border-gray-200">
+                        <td className="py-2 font-semibold text-gray-700">{row.monthName}</td>
+                        <td className="py-2 text-right text-emerald-600 font-medium">R$ {row.income.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                        <td className="py-2 text-right text-rose-600 font-medium">R$ {row.expense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                        <td className={`py-2 text-right font-bold ${row.net >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                          R$ {row.net.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                    ))}
+                    <tr className="border-t-2 border-gray-800 bg-gray-50 font-bold">
+                      <td className="py-3 text-gray-800">Total do Exercício</td>
+                      <td className="py-3 text-right text-emerald-600 font-bold">R$ {reportIncomeAnnual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                      <td className="py-3 text-right text-rose-600 font-bold">R$ {reportExpenseAnnual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                      <td className={`py-3 text-right font-black ${(reportNetAnnual) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                        R$ {reportNetAnnual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Consolidado Anual por Categoria */}
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-3">Acumulado Anual por Categoria</h3>
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="text-[11px] font-bold uppercase text-emerald-600 border-b border-emerald-100 pb-1 mb-2">Receitas (Ano)</h4>
+                    {Object.keys(reportAnnualIncomeCategories).length > 0 ? (
+                      <table className="w-full text-xs">
+                        <tbody>
+                          {Object.entries(reportAnnualIncomeCategories)
+                            .sort((a, b) => b[1] - a[1])
+                            .map(([cat, amt]) => (
+                              <tr key={cat} className="border-b border-gray-100">
+                                <td className="py-1 text-gray-600">{cat}</td>
+                                <td className="py-1 text-right font-semibold text-emerald-600">R$ {amt.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <p className="text-[11px] text-gray-400 italic">Nenhuma receita registrada.</p>
+                    )}
+                  </div>
+                  <div>
+                    <h4 className="text-[11px] font-bold uppercase text-rose-600 border-b border-rose-100 pb-1 mb-2">Despesas (Ano)</h4>
+                    {Object.keys(reportAnnualExpenseCategories).length > 0 ? (
+                      <table className="w-full text-xs">
+                        <tbody>
+                          {Object.entries(reportAnnualExpenseCategories)
+                            .sort((a, b) => b[1] - a[1])
+                            .map(([cat, amt]) => (
+                              <tr key={cat} className="border-b border-gray-100">
+                                <td className="py-1 text-gray-600">{cat}</td>
+                                <td className="py-1 text-right font-semibold text-rose-600">R$ {amt.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <p className="text-[11px] text-gray-400 italic">Nenhuma despesa registrada.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Assinatura */}
+          <div className="mt-16 pt-8 border-t border-dashed border-gray-400 flex justify-between text-xs text-gray-600">
+            <div>
+              <p className="font-bold">__________________________________________</p>
+              <p className="mt-1">{schoolInfo?.director || 'Diretor Responsável'}</p>
+              <p className="text-[10px] text-gray-400">Assinatura do Emitente</p>
+            </div>
+            <div className="text-right">
+              <p className="italic">Documento gerado eletronicamente.</p>
+              <p className="text-[9px] text-gray-400 mt-1">DanceFlow System • Relatório Financeiro</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

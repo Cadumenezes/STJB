@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 
 const DEFAULT_TAX_TEMPLATE = `DECLARAÇÃO DE RENDIMENTOS DE INSTRUÇÃO (IRPF)
 
-Declaramos para os devidos fins de comprovação de despesas com instrução, de acordo com as diretrizes da Receita Federal, que a instituição de ensino {escola}, inscrita no CNPJ sob o nº {cnpj}, sediada em {endereco}, recebeu do(a) responsável financeiro(a) {responsavel} (CPF: {cpf_responsavel}), referente ao(à) aluno(a) beneficiário(a) {aluno} (CPF: {cpf_aluno}), os valores abaixo discriminados correspondentes às atividades escolares quitadas durante o ano-calendário de {ano}:
+Declaramos para os devidos fins de comprovação de despesas com instrução, de acordo com as diretrizes da Receita Federal, que a instituição de ensino {escola}, inscrita no CNPJ sob o nº {cnpj}, sediada em {endereco}, recebeu do(a) responsável financeiro(a) {responsavel} (CPF: {cpf_responsavel}), referente ao(à) aluno(a) beneficiário(a) {aluno}, os valores abaixo discriminados correspondentes às atividades escolares quitadas durante o ano-calendário de {ano}:
 
 {mensalidades}
 
@@ -16,7 +16,7 @@ Direção Geral`;
 
 const DEFAULT_ACTIVITY_TEMPLATE = `DECLARAÇÃO DE MATRÍCULA E FREQUÊNCIA
 
-Declaramos para os devidos fins que o(a) aluno(a) {aluno} (CPF: {cpf_aluno}), representado(a) por seu responsável legal {responsavel} (CPF: {cpf_responsavel}), encontra-se regularmente matriculado(a) e frequentando ativamente as aulas e atividades de dança na escola {escola}.
+Declaramos para os devidos fins que o(a) aluno(a) {aluno}, representado(a) por seu responsável legal {responsavel} (CPF: {cpf_responsavel}), encontra-se regularmente matriculado(a) e frequentando ativamente as aulas e atividades de dança na escola {escola}.
 
 O(a) referido discente realiza suas atividades nas seguintes turmas:
 
@@ -624,8 +624,8 @@ export default function Students() {
   function renderTemplate(template: string, student: Student, school: any, type: 'tax' | 'activity', paymentsData?: any[]) {
     if (!template) return null
 
-    // Replace details (new & old tags)
-    let text = template
+    // Remove o CPF do aluno do template (com parênteses e espaços extras ao redor)
+    let text = template.replace(/\s*\(?CPF:\s*{cpf_aluno}\)?/g, '')
       .replace(/{nome_escola}/g, school.school_name || 'DanceFlow')
       .replace(/{escola}/g, school.school_name || 'DanceFlow')
       .replace(/{cnpj_escola}/g, school.cnpj || 'Não cadastrado')
@@ -636,10 +636,10 @@ export default function Students() {
       .replace(/{diretor}/g, school.director || 'Direção Geral')
       .replace(/{nome_aluno}/g, student.name)
       .replace(/{aluno}/g, student.name)
-      .replace(/{cpf_aluno}/g, student.cpf || 'Não informado')
+      .replace(/{cpf_aluno}/g, student.cpf || '')
       .replace(/{nome_responsavel}/g, student.guardian_name || student.name)
       .replace(/{responsavel}/g, student.guardian_name || student.name)
-      .replace(/{cpf_responsavel}/g, student.cpf || 'Não informado')
+      .replace(/{cpf_responsavel}/g, student.cpf || '')
       .replace(/{data_atual}/g, new Date().toLocaleDateString('pt-BR'))
       .replace(/{data}/g, new Date().toLocaleDateString('pt-BR'))
       .replace(/{ano_letivo}/g, String(new Date().getFullYear()))
