@@ -22,6 +22,8 @@ import Checkout from './pages/Checkout'
 import Schedule from './pages/Schedule'
 import Shop from './pages/Shop'
 import MfaChallenge from './components/MfaChallenge'
+import CookieBanner from './components/CookieBanner'
+import PrivacyPolicyModal from './components/PrivacyPolicyModal'
 
 function PendingApproval({ status, onSignOut }: { status: string, onSignOut: () => void }) {
   return (
@@ -69,6 +71,20 @@ export default function App() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const [mfaRequired, setMfaRequired] = useState(false)
+  
+  // Estados para conformidade LGPD / Políticas
+  const [policyModalOpen, setPolicyModalOpen] = useState(false)
+  const [policyInitialTab, setPolicyInitialTab] = useState<'terms' | 'privacy'>('terms')
+
+  const openTerms = () => {
+    setPolicyInitialTab('terms')
+    setPolicyModalOpen(true)
+  }
+
+  const openPrivacy = () => {
+    setPolicyInitialTab('privacy')
+    setPolicyModalOpen(true)
+  }
 
   useEffect(() => {
     // Fetch profile function
@@ -160,29 +176,33 @@ export default function App() {
   }
 
   return (
-    <Routes>
-      <Route path="/auth" element={(!session || isResettingPassword) ? <Auth /> : <Navigate to="/" />} />
-      <Route path="/checkout" element={session ? <Checkout /> : <Navigate to="/auth" />} />
-      
-      <Route path="/" element={!session ? <LandingPage /> : (profile?.status === 'active' && !isExpired ? <Layout /> : <Navigate to="/auth" />)}>
-        <Route index element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Dashboard />} />
-        <Route path="students" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Students />} />
-        <Route path="trials" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <TrialClasses />} />
-        <Route path="financial" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Financial />} />
-        <Route path="classes" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Classes />} />
-        <Route path="events" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Events />} />
-        <Route path="theaters" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Theaters />} />
-        <Route path="attendance" element={<AttendancePage />} />
-        <Route path="schedule" element={<Schedule />} />
-        <Route path="inventory" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : (profile?.role === 'secretary' ? <Navigate to="/" /> : <Inventory />)} />
-        <Route path="team" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : (profile?.role === 'secretary' ? <Navigate to="/" /> : <Team />)} />
-        <Route path="ai-consultant" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <AiConsultant />} />
-        <Route path="settings" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : (profile?.role === 'secretary' ? <Navigate to="/" /> : <SettingsPage />)} />
-        <Route path="shop" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Shop />} />
-        <Route path="admin" element={profile?.role === 'admin' ? <Admin /> : <Navigate to="/" />} />
-      </Route>
+    <>
+      <Routes>
+        <Route path="/auth" element={(!session || isResettingPassword) ? <Auth /> : <Navigate to="/" />} />
+        <Route path="/checkout" element={session ? <Checkout /> : <Navigate to="/auth" />} />
+        
+        <Route path="/" element={!session ? <LandingPage /> : (profile?.status === 'active' && !isExpired ? <Layout /> : <Navigate to="/auth" />)}>
+          <Route index element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Dashboard />} />
+          <Route path="students" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Students />} />
+          <Route path="trials" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <TrialClasses />} />
+          <Route path="financial" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Financial />} />
+          <Route path="classes" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Classes />} />
+          <Route path="events" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Events />} />
+          <Route path="theaters" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Theaters />} />
+          <Route path="attendance" element={<AttendancePage />} />
+          <Route path="schedule" element={<Schedule />} />
+          <Route path="inventory" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : (profile?.role === 'secretary' ? <Navigate to="/" /> : <Inventory />)} />
+          <Route path="team" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : (profile?.role === 'secretary' ? <Navigate to="/" /> : <Team />)} />
+          <Route path="ai-consultant" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <AiConsultant />} />
+          <Route path="settings" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : (profile?.role === 'secretary' ? <Navigate to="/" /> : <SettingsPage />)} />
+          <Route path="shop" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Shop />} />
+          <Route path="admin" element={profile?.role === 'admin' ? <Admin /> : <Navigate to="/" />} />
+        </Route>
 
-      <Route path="*" element={<Navigate to="/" />} />
-    </Routes>
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+      <CookieBanner onOpenTerms={openTerms} onOpenPrivacy={openPrivacy} />
+      <PrivacyPolicyModal isOpen={policyModalOpen} onClose={() => setPolicyModalOpen(false)} initialTab={policyInitialTab} />
+    </>
   )
 }

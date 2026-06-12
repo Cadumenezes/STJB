@@ -4,6 +4,7 @@ import { Mail, Lock, Phone, ArrowRight, Sparkles } from 'lucide-react'
 import loginBgImage from '../assets/dance_auth_login.png'
 import danceLoginJazz from '../assets/dance_login_jazz.png'
 import danceLoginKids from '../assets/dance_login_kids.png'
+import PrivacyPolicyModal from '../components/PrivacyPolicyModal'
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true)
@@ -17,6 +18,11 @@ export default function Auth() {
   const [forgotMode, setForgotMode] = useState(false)
   const [isResetting, setIsResetting] = useState(false)
   const [confirmPassword, setConfirmPassword] = useState('')
+
+  // Estados de conformidade LGPD
+  const [acceptTerms, setAcceptTerms] = useState(false)
+  const [policyOpen, setPolicyOpen] = useState(false)
+  const [policyTab, setPolicyTab] = useState<'terms' | 'privacy'>('terms')
 
   useEffect(() => {
     // Detecta se o usuário veio a partir de um link de recuperação de senha do Supabase
@@ -39,6 +45,9 @@ export default function Auth() {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
       } else {
+        if (!acceptTerms) {
+          throw new Error('Você precisa ler e concordar com os Termos de Uso e a Política de Privacidade para se cadastrar.')
+        }
         const cleanPhone = phone.replace(/\D/g, '')
         if (cleanPhone.length < 10 || cleanPhone.length > 11) {
           throw new Error('Por favor, insira um número de telefone com DDD válido (10 ou 11 dígitos).')
@@ -379,6 +388,38 @@ export default function Auth() {
                   )}
                 </div>
 
+                {!isLogin && (
+                  <div className="flex items-start gap-2.5 pb-2">
+                    <input
+                      type="checkbox"
+                      id="acceptTerms"
+                      required
+                      checked={acceptTerms}
+                      onChange={(e) => setAcceptTerms(e.target.checked)}
+                      className="mt-0.5 rounded border-white/10 bg-black/30 text-purple-600 focus:ring-purple-500/50 cursor-pointer animate-fade-in"
+                    />
+                    <label htmlFor="acceptTerms" className="text-[11px] text-gray-400 leading-normal select-none cursor-pointer">
+                      Li e concordo com os{' '}
+                      <button
+                        type="button"
+                        onClick={() => { setPolicyTab('terms'); setPolicyOpen(true); }}
+                        className="text-purple-400 hover:text-purple-300 font-bold hover:underline cursor-pointer"
+                      >
+                        Termos de Uso
+                      </button>{' '}
+                      e a{' '}
+                      <button
+                        type="button"
+                        onClick={() => { setPolicyTab('privacy'); setPolicyOpen(true); }}
+                        className="text-purple-400 hover:text-purple-300 font-bold hover:underline cursor-pointer"
+                      >
+                        Política de Privacidade
+                      </button>{' '}
+                      do DanceFlow.
+                    </label>
+                  </div>
+                )}
+
                 <button
                   type="submit"
                   disabled={loading}
@@ -453,7 +494,8 @@ export default function Auth() {
         {/* Subtle Bottom Glow */}
         <div className="absolute bottom-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-pink-600/5 blur-[120px] pointer-events-none -z-10" />
       </div>
-      
+
+      <PrivacyPolicyModal isOpen={policyOpen} onClose={() => setPolicyOpen(false)} initialTab={policyTab} />
     </div>
   )
 }
