@@ -186,7 +186,7 @@ const manualChapters = [
   {
     title: '12. Conformidade LGPD & Cookies',
     description: 'O DanceFlow está em total conformidade com a LGPD. Gerencie o consentimento de cookies essenciais e termos de aceite no cadastro de novas escolas.',
-    images: [],
+    images: ['/screenshots/real_lgpd_cookies.png', '/screenshots/real_lgpd_policies.png'],
     accessPath: 'Rodapé do Site & Tela de Cadastro',
     steps: [
       'Consentimento de Cookies: Ao acessar pela primeira vez, um banner inferior solicita a aceitação dos cookies técnicos e essenciais.',
@@ -1450,15 +1450,17 @@ export default function Layout() {
                         <div className="space-y-3 pt-2">
                           <h4 className="text-xs font-bold uppercase tracking-wider text-white">Captura de Tela do Sistema:</h4>
                           <div className="grid grid-cols-1 gap-4">
-                            {chapter.images.map((imgUrl, imgIdx) => (
-                              <div key={imgIdx} className="rounded-xl overflow-hidden border border-white/10 shadow-lg bg-black/30">
-                                <img 
-                                  src={imgUrl} 
-                                  alt={`Tela ${chapter.title}`} 
-                                  className="w-full h-auto object-contain max-h-[300px]"
-                                />
-                              </div>
-                            ))}
+                            {chapter.images
+                              .filter(imgUrl => profile?.role === 'admin' || !imgUrl.includes('real_admin_'))
+                              .map((imgUrl, imgIdx) => (
+                                <div key={imgIdx} className="rounded-xl overflow-hidden border border-white/10 shadow-lg bg-black/30">
+                                  <img 
+                                    src={imgUrl} 
+                                    alt={`Tela ${chapter.title}`} 
+                                    className="w-full h-auto object-contain max-h-[300px]"
+                                  />
+                                </div>
+                              ))}
                           </div>
                         </div>
                       </div>
