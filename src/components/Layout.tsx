@@ -24,6 +24,7 @@ import {
   Pause,
   Volume2,
   Map,
+  GraduationCap,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
@@ -43,6 +44,7 @@ const navItems = [
   { path: '/financial', label: 'Financeiro', icon: DollarSign },
   { path: '/classes', label: 'Turmas', icon: Music },
   { path: '/attendance', label: 'Chamada', icon: ClipboardCheck },
+  { path: '/evaluations', label: 'Avaliações', icon: GraduationCap },
   { path: '/schedule', label: 'Agenda', icon: CalendarDays },
   { path: '/events', label: 'Eventos', icon: Calendar },
   { path: '/theaters', label: 'Teatros', icon: Map },
@@ -208,7 +210,25 @@ const manualChapters = [
       'Consulte seu faturamento: Veja o plano contratado, valor cobrado e a data de vencimento/renovação do plano.',
       'Modifique seu plano: Clique em "Alterar Plano / Mudar Pagamento" para ir ao checkout e reconfigurar cartões ou migrar de oferta.',
       'Cancele de forma programada: Clique em "Cancelar Assinatura" e preencha a pesquisa de motivos (churn survey). Seu acesso permanecerá ativo até o final do período já pago.',
-      'Reative em 1 clique: Se mudar de ideia antes da expiração, clique em "Reativar Assinatura" para suspender o cancelamento e continuar faturando normalmente.'
+      'Reative in 1 clique: Se mudar de ideia antes da expiração, clique em "Reativar Assinatura" para suspender o cancelamento e continuar faturando normalmente.'
+    ]
+  },
+  {
+    title: '14. Provas e Avaliações',
+    description: 'Acompanhe o desenvolvimento artístico e técnico dos alunos. Crie exames pela direção e lance notas, conceitos e pareceres pedagógicos em lote. Permite a impressão de fichas de avaliação individuais formatadas em A4.',
+    images: [
+      '/screenshots/14_evaluations_manage.png',
+      '/screenshots/14_evaluations_grades.png',
+      '/screenshots/14_evaluations_print.png'
+    ],
+    accessPath: 'Menu Lateral > Avaliações',
+    steps: [
+      'Acesse Avaliações no menu lateral.',
+      'Na aba "Gerenciar Provas" (restrita à Direção), crie avaliações associadas às turmas informando nome, data e ementa.',
+      'Na aba "Lançar Notas", filtre por turma e prova para visualizar todos os alunos matriculados de uma só vez.',
+      'Preencha as Notas (0 a 10), os Conceitos (Excelente, Bom, Regular, Insuficiente) e as observações/feedback pedagógico individualizado.',
+      'Clique em "Salvar Notas da Turma" para persistir as avaliações de todos os alunos no banco de dados.',
+      'Diretores e Secretários podem emitir a Ficha de Avaliação Individual em formato A4 oficial clicando no ícone de impressora ao lado de cada aluno.'
     ]
   }
 ];

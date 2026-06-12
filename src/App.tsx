@@ -21,6 +21,7 @@ import LandingPage from './pages/LandingPage'
 import Checkout from './pages/Checkout'
 import Schedule from './pages/Schedule'
 import Shop from './pages/Shop'
+import Evaluations from './pages/Evaluations'
 import MfaChallenge from './components/MfaChallenge'
 import CookieBanner from './components/CookieBanner'
 import PrivacyPolicyModal from './components/PrivacyPolicyModal'
@@ -191,6 +192,7 @@ export default function App() {
           <Route path="theaters" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Theaters />} />
           <Route path="attendance" element={<AttendancePage />} />
           <Route path="schedule" element={<Schedule />} />
+          <Route path="evaluations" element={<Evaluations />} />
           <Route path="inventory" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : (profile?.role === 'secretary' ? <Navigate to="/" /> : <Inventory />)} />
           <Route path="team" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : (profile?.role === 'secretary' ? <Navigate to="/" /> : <Team />)} />
           <Route path="ai-consultant" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <AiConsultant />} />

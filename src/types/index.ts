@@ -236,3 +236,25 @@ export interface EventExpense {
   created_at?: string
 }
 
+export interface Exam {
+  id: string
+  user_id?: string
+  class_id: string
+  name: string
+  description?: string | null
+  date: string
+  created_at?: string
+}
+
+export interface ExamGrade {
+  id: string
+  user_id?: string
+  exam_id: string
+  student_id: string
+  grade?: number | null
+  concept?: string | null
+  feedback?: string | null
+  created_at?: string
+  updated_at?: string
+}
+
