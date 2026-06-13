@@ -197,6 +197,7 @@ export interface Installment {
   payment_url?: string
   pix_code?: string
   barcode?: string
+  due_date?: string
 }
 
 export interface EventParticipant {

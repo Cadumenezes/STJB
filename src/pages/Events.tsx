@@ -571,13 +571,23 @@ export default function Events() {
     if (participantFormData.payment_method === 'Boleto' && instCount > 0) {
       const baseValue = Math.floor((newTotal / instCount) * 100) / 100
       let sum = 0
+      
+      const today = new Date()
+      today.setDate(today.getDate() + 5) // 5 days from today for first installment
+      
       for (let i = 0; i < instCount; i++) {
         const val = i === instCount - 1 ? Number((newTotal - sum).toFixed(2)) : baseValue
         sum += val
+        
+        const d = new Date(today)
+        d.setMonth(d.getMonth() + i)
+        const dueStr = d.toISOString().split('T')[0]
+        
         installments.push({
           id: crypto.randomUUID(),
           paid: false,
-          value: val
+          value: val,
+          due_date: dueStr
         })
       }
     }
@@ -718,8 +728,20 @@ export default function Events() {
     let updatedInstallments = [...(p.installments || [])]
     
     if (count > updatedInstallments.length) {
+      const today = new Date()
+      today.setDate(today.getDate() + 5) // 5 days from today
       while (updatedInstallments.length < count) {
-        updatedInstallments.push({ id: crypto.randomUUID(), value: 0, paid: false })
+        const i = updatedInstallments.length
+        const d = new Date(today)
+        d.setMonth(d.getMonth() + i)
+        const dueStr = d.toISOString().split('T')[0]
+        
+        updatedInstallments.push({ 
+          id: crypto.randomUUID(), 
+          value: 0, 
+          paid: false,
+          due_date: dueStr
+        })
       }
     } else if (count < updatedInstallments.length) {
       updatedInstallments = updatedInstallments.slice(0, count)
@@ -747,7 +769,7 @@ export default function Events() {
   }
 
   async function handleUpdateInstallment(p: EventParticipant, installmentId: string, field: keyof Installment, value: any) {
-    if (value === '') value = 0;
+    if (value === '' && field !== 'due_date') value = 0;
     let updatedInstallments = (p.installments || []).map(inst => 
       inst.id === installmentId ? { ...inst, [field]: value } : inst
     )
@@ -830,8 +852,12 @@ export default function Events() {
 
     setGeneratingBillingId(installmentId)
     try {
+      const part = participants.find(p => p.id === eventParticipantId)
+      const inst = part?.installments?.find(i => i.id === installmentId)
+      const dueDate = inst?.due_date
+
       const { data, error } = await supabase.functions.invoke('create-billing', {
-        body: { eventParticipantId, installmentId }
+        body: { eventParticipantId, installmentId, dueDate }
       })
       if (error) {
         let errorMsg = error.message
@@ -1422,6 +1448,17 @@ export default function Events() {
                                               onChange={(e) => handleUpdateInstallment(p, inst.id, 'value', e.target.value)}
                                               disabled={profile?.role === 'secretary'}
                                               className="w-16 text-right bg-transparent border-none px-1 py-0.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-purple-500 rounded ml-auto disabled:opacity-50"
+                                            />
+                                          </div>
+
+                                          <div className="flex items-center gap-2 mt-1">
+                                            <span className="text-[9px] text-[var(--text-muted)] font-bold">Vencimento:</span>
+                                            <input 
+                                              type="date"
+                                              value={inst.due_date || ''}
+                                              onChange={(e) => handleUpdateInstallment(p, inst.id, 'due_date', e.target.value)}
+                                              disabled={profile?.role === 'secretary' || !!inst.payment_url}
+                                              className="bg-transparent border border-white/10 rounded px-1.5 py-0.5 text-[10px] focus:outline-none focus:ring-1 focus:ring-purple-500 text-white disabled:opacity-50"
                                             />
                                           </div>
                                           
