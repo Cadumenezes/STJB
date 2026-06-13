@@ -116,7 +116,8 @@ const manualChapters = [
       'Acesse Eventos e clique em "Novo Evento".',
       'Escolha um Teatro para o evento ou digite o local manualmente. Clique em "Criar Evento".',
       'Na aba do evento, utilize o menu "Selecione um Aluno para Adicionar" para cadastrar participantes.',
-      'Alterne para a sub-aba "Mapa de Assentos" para reservar poltronas clicando nelas após selecionar um aluno na lista.'
+      'Alterne para a sub-aba "Mapa de Assentos" para reservar poltronas clicando nelas após selecionar um aluno na lista.',
+      'Para alunos com pagamento por Boleto, você pode gerar cobranças individuais (Boleto/Pix) integradas ao gateway Asaas/Cora para cada parcela direto pela planilha.'
     ]
   },
   {

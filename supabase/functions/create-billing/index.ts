@@ -37,29 +37,69 @@ serve(async (req) => {
     }
 
     // Read payload
-    const { paymentId } = await req.json()
-    if (!paymentId) {
+    const bodyPayload = await req.json()
+    const { paymentId, eventParticipantId, installmentId, dueDate } = bodyPayload
+
+    if (!paymentId && (!eventParticipantId || !installmentId)) {
       return new Response(
-        JSON.stringify({ error: 'ID da mensalidade (paymentId) ausente' }),
+        JSON.stringify({ error: 'paymentId ou (eventParticipantId e installmentId) são obrigatórios.' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Fetch the monthly payment and student details
-    const { data: payment, error: payError } = await supabase
-      .from('monthly_payments')
-      .select('*, students(*)')
-      .eq('id', paymentId)
-      .single()
+    let student: any = null
+    let event: any = null
+    let installments: any[] = []
+    let installmentIndex = -1
+    let targetInstallment: any = null
 
-    if (payError || !payment) {
-      return new Response(
-        JSON.stringify({ error: 'Mensalidade não encontrada' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+    let payment: any = null
+
+    if (paymentId) {
+      // Fetch the monthly payment and student details
+      const { data: payData, error: payError } = await supabase
+        .from('monthly_payments')
+        .select('*, students(*)')
+        .eq('id', paymentId)
+        .single()
+
+      if (payError || !payData) {
+        return new Response(
+          JSON.stringify({ error: 'Mensalidade não encontrada' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+      payment = payData
+      student = payData.students
+    } else {
+      // Fetch the event participant, student and event details
+      const { data: participant, error: partError } = await supabase
+        .from('event_participants')
+        .select('*, students(*), events(*)')
+        .eq('id', eventParticipantId)
+        .single()
+
+      if (partError || !participant) {
+        return new Response(
+          JSON.stringify({ error: 'Participante do evento não encontrado' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      student = participant.students
+      event = participant.events
+      installments = participant.installments as any[] || []
+      installmentIndex = installments.findIndex(inst => inst.id === installmentId)
+      
+      if (installmentIndex === -1) {
+        return new Response(
+          JSON.stringify({ error: 'Parcela do evento não encontrada' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+      targetInstallment = installments[installmentIndex]
     }
 
-    const student = payment.students
     if (!student) {
       return new Response(
         JSON.stringify({ error: 'Aluno associado não encontrado' }),
@@ -106,6 +146,38 @@ serve(async (req) => {
       )
     }
 
+    // Unified variables for gateway creation
+    const billingValue = paymentId ? payment.amount : targetInstallment.value
+    const billingDueDate = paymentId 
+      ? payment.due_date 
+      : (dueDate || event?.date || new Date(Date.now() + 5*24*60*60*1000).toISOString().split('T')[0])
+    const billingDescription = paymentId 
+      ? `Mensalidade DanceFlow - Ref: ${payment.reference_month}`
+      : `Inscrição Evento: ${event?.name || 'Evento'} - Parcela ${installmentIndex + 1}`
+    const billingCode = paymentId ? paymentId : `${eventParticipantId}_${installmentId}`
+
+    // Database save helper
+    const saveBillingResult = async (updatePayload: { gateway_id: string, payment_url: string, pix_code: string | null, barcode: string | null }) => {
+      if (paymentId) {
+        const { error } = await supabase
+          .from('monthly_payments')
+          .update(updatePayload)
+          .eq('id', paymentId)
+        if (error) throw error
+      } else {
+        const updatedInstallments = [...installments]
+        updatedInstallments[installmentIndex] = {
+          ...targetInstallment,
+          ...updatePayload
+        }
+        const { error } = await supabase
+          .from('event_participants')
+          .update({ installments: updatedInstallments })
+          .eq('id', eventParticipantId)
+        if (error) throw error
+      }
+    }
+
     // ----------------------------------------------------
     // INTEGRATION: ASAAS
     // ----------------------------------------------------
@@ -140,7 +212,7 @@ serve(async (req) => {
         method: 'GET',
         headers: { 'access_token': apiKey, 'Content-Type': 'application/json' }
       }
-      const { response: searchRes, isSandbox } = await callAsaas(`/customers?cpfCnpj=${studentCpf}`, customerSearchOpt)
+      const { response: searchRes } = await callAsaas(`/customers?cpfCnpj=${studentCpf}`, customerSearchOpt)
       let customerId = ''
 
       if (searchRes.ok) {
@@ -174,16 +246,17 @@ serve(async (req) => {
       }
 
       // 2. Create Payment in Asaas (hybrid Boleto + Pix by default)
-      console.log(`[Asaas] Criando cobrança de R$ ${payment.amount} para vencimento em ${payment.due_date}...`)
+      console.log(`[Asaas] Criando cobrança de R$ ${billingValue} para vencimento em ${billingDueDate}...`)
       const paymentCreateOpt = {
         method: 'POST',
         headers: { 'access_token': apiKey, 'Content-Type': 'application/json' },
         body: JSON.stringify({
           customer: customerId,
           billingType: 'UNDEFINED', // UNDEFINED supports both Boleto and Pix
-          value: payment.amount,
-          dueDate: payment.due_date,
-          description: `Mensalidade DanceFlow - Ref: ${payment.reference_month}`,
+          value: billingValue,
+          dueDate: billingDueDate,
+          description: billingDescription,
+          externalReference: billingCode,
           postalService: false
         })
       }
@@ -208,7 +281,7 @@ serve(async (req) => {
         pixCode = pixData.payload
       }
 
-      // Update Supabase Monthly Payment details
+      // Update Supabase Database
       const updatePayload = {
         gateway_id: paymentData.id,
         payment_url: paymentData.bankSlipUrl || paymentData.invoiceUrl,
@@ -216,14 +289,7 @@ serve(async (req) => {
         barcode: paymentData.identificationField || null
       }
 
-      const { error: updateError } = await supabase
-        .from('monthly_payments')
-        .update(updatePayload)
-        .eq('id', paymentId)
-
-      if (updateError) {
-        throw new Error(`Erro ao salvar dados de cobrança no banco: ${updateError.message}`)
-      }
+      await saveBillingResult(updatePayload)
 
       return new Response(
         JSON.stringify({ success: true, ...updatePayload }),
@@ -281,9 +347,9 @@ serve(async (req) => {
         : 'https://api.cora.com.br'
 
       // Create hybrid Bank Slip in Cora
-      console.log(`[Cora] Criando boleto para vencimento em ${payment.due_date}...`)
+      console.log(`[Cora] Criando boleto para vencimento em ${billingDueDate}...`)
       const invoicePayload = {
-        code: paymentId,
+        code: billingCode,
         customer: {
           name: studentName,
           email: studentEmail,
@@ -293,12 +359,12 @@ serve(async (req) => {
           }
         },
         payment_method: 'BANK_SLIP',
-        amount: Math.round(payment.amount * 100), // Cora expects amount in cents
-        due_date: payment.due_date,
+        amount: Math.round(billingValue * 100), // Cora expects amount in cents
+        due_date: billingDueDate,
         services: [
           {
-            name: `Mensalidade DanceFlow - Ref: ${payment.reference_month}`,
-            amount: Math.round(payment.amount * 100)
+            name: billingDescription,
+            amount: Math.round(billingValue * 100)
           }
         ]
       }
@@ -332,14 +398,7 @@ serve(async (req) => {
         barcode: barcode
       }
 
-      const { error: updateError } = await supabase
-        .from('monthly_payments')
-        .update(updatePayload)
-        .eq('id', paymentId)
-
-      if (updateError) {
-        throw new Error(`Erro ao salvar dados de cobrança Cora no banco: ${updateError.message}`)
-      }
+      await saveBillingResult(updatePayload)
 
       return new Response(
         JSON.stringify({ success: true, ...updatePayload }),

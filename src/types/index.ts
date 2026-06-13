@@ -193,6 +193,10 @@ export interface Installment {
   id: string
   value: number
   paid: boolean
+  gateway_id?: string
+  payment_url?: string
+  pix_code?: string
+  barcode?: string
 }
 
 export interface EventParticipant {

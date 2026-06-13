@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Plus, Edit, Trash2, Calendar, MapPin, DollarSign, Users, Download, PlusCircle, CheckCircle, CreditCard, Box, Search, Printer, Map } from 'lucide-react'
+import { Plus, Edit, Trash2, Calendar, MapPin, DollarSign, Users, Download, PlusCircle, CheckCircle, CreditCard, Box, Search, Printer, Map, ExternalLink, Copy, Loader2, QrCode } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { Event, EventParticipant, Student, Installment, Profile, EventSession, SeatingMapConfig, Theater, EventExpense } from '../types'
 import Modal from '../components/Modal'
@@ -18,6 +18,8 @@ export default function Events() {
   const [searchQuery, setSearchQuery] = useState('')
   const [profile, setProfile] = useState<Profile | null>(null)
   const [reportSchoolData, setReportSchoolData] = useState<any | null>(null)
+  const [gatewayType, setGatewayType] = useState<'none' | 'asaas' | 'cora'>('none')
+  const [generatingBillingId, setGeneratingBillingId] = useState<string | null>(null)
 
   // Estados e Funções para Mapa de Teatro
   const [showMapModal, setShowMapModal] = useState(false)
@@ -304,6 +306,16 @@ export default function Events() {
 
     const { data: expensesData } = await supabase.from('event_expenses').select('*').order('expense_date', { ascending: false })
     setEventExpenses(expensesData || [])
+    
+    // Carregar configurações de gateway da escola
+    const { data: settings } = await supabase
+      .from('school_settings')
+      .select('gateway_type')
+      .limit(1)
+      .maybeSingle()
+    if (settings) {
+      setGatewayType(settings.gateway_type || 'none')
+    }
     
     setLoading(false)
   }
@@ -769,6 +781,62 @@ export default function Events() {
     }
   }
 
+  async function handleGenerateEventBilling(eventParticipantId: string, installmentId: string) {
+    setGeneratingBillingId(installmentId)
+    try {
+      const { data, error } = await supabase.functions.invoke('create-billing', {
+        body: { eventParticipantId, installmentId }
+      })
+      if (error) {
+        let errorMsg = error.message
+        const errObj = error as any
+        if (errObj.context) {
+          try {
+            const text = typeof errObj.context.text === 'function' ? await errObj.context.text() : null
+            if (text) {
+              try {
+                const body = JSON.parse(text)
+                errorMsg = body.error || text
+              } catch (e) {
+                errorMsg = text
+              }
+            }
+          } catch (e) {
+            console.error('Error reading context text:', e)
+          }
+        }
+        throw new Error(errorMsg)
+      }
+
+      if (data && data.success) {
+        setParticipants(prev => prev.map(part => {
+          if (part.id === eventParticipantId) {
+            const updatedInstallments = (part.installments || []).map(inst => {
+              if (inst.id === installmentId) {
+                return {
+                  ...inst,
+                  gateway_id: data.gateway_id,
+                  payment_url: data.payment_url,
+                  pix_code: data.pix_code,
+                  barcode: data.barcode
+                }
+              }
+              return inst
+            })
+            return { ...part, installments: updatedInstallments }
+          }
+          return part
+        }))
+        alert('Cobrança (Boleto/Pix) gerada com sucesso via gateway!')
+      }
+    } catch (err: any) {
+      console.error('Error generating event billing:', err)
+      alert(`Falha ao gerar cobrança: ${err.message}`)
+    } finally {
+      setGeneratingBillingId(null)
+    }
+  }
+
   const activeEvent = events.find(e => e.id === activeEventId)
   const currentParticipants = participants.filter(p => p.event_id === activeEventId)
 
@@ -1203,7 +1271,14 @@ export default function Events() {
                             
                             return (
                               <tr key={p.id} className="hover:bg-white/[0.02] transition-colors">
-                                <td className="pl-5 pr-8 py-3.5 font-bold text-white max-w-[200px] truncate text-xs">{student?.name}</td>
+                                <td className="pl-5 pr-8 py-3.5 max-w-[200px] text-xs">
+                                  <div className="font-bold text-white truncate">{student?.name}</div>
+                                  {student?.guardian_name && (
+                                    <div className="text-[10px] text-[var(--text-muted)] mt-0.5 truncate font-medium">
+                                      Resp: {student.guardian_name}
+                                    </div>
+                                  )}
+                                </td>
                                 
                                 {/* Payment Method */}
                                 <td className="px-4 py-3.5 text-center text-xs">
@@ -1283,24 +1358,74 @@ export default function Events() {
                                         />
                                       </div>
                                       {(p.installments || []).map((inst, i) => (
-                                        <div key={inst.id} className="flex items-center gap-2 bg-black/20 p-1.5 rounded-lg border border-white/5">
-                                          <span className="text-[10px] text-[var(--text-muted)] font-bold w-4">{i + 1}º</span>
-                                          <button 
-                                            type="button"
-                                            onClick={() => handleUpdateInstallment(p, inst.id, 'paid', !inst.paid)}
-                                            className={`p-1 rounded transition-all ${inst.paid ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/5 text-white/20'}`}
-                                          >
-                                            <CheckCircle size={14} />
-                                          </button>
-                                          <span className="text-[10px] text-white/30">R$</span>
-                                          <input 
-                                            type="number" 
-                                            step="0.01"
-                                            value={inst.value} 
-                                            onChange={(e) => handleUpdateInstallment(p, inst.id, 'value', e.target.value)}
-                                            disabled={profile?.role === 'secretary'}
-                                            className="w-20 text-right bg-transparent border-none px-1 py-0.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-purple-500 rounded ml-auto disabled:opacity-50"
-                                          />
+                                        <div key={inst.id} className="flex flex-col gap-1.5 bg-black/25 p-2 rounded-xl border border-white/5">
+                                          <div className="flex items-center gap-2">
+                                            <span className="text-[10px] text-[var(--text-muted)] font-bold w-4">{i + 1}º</span>
+                                            <button 
+                                              type="button"
+                                              onClick={() => handleUpdateInstallment(p, inst.id, 'paid', !inst.paid)}
+                                              className={`p-1 rounded transition-all ${inst.paid ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/5 text-white/20'}`}
+                                            >
+                                              <CheckCircle size={14} />
+                                            </button>
+                                            <span className="text-[10px] text-white/30">R$</span>
+                                            <input 
+                                              type="number" 
+                                              step="0.01"
+                                              value={inst.value} 
+                                              onChange={(e) => handleUpdateInstallment(p, inst.id, 'value', e.target.value)}
+                                              disabled={profile?.role === 'secretary'}
+                                              className="w-16 text-right bg-transparent border-none px-1 py-0.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-purple-500 rounded ml-auto disabled:opacity-50"
+                                            />
+                                          </div>
+                                          
+                                          {/* Ações da cobrança de boleto */}
+                                          <div className="flex gap-2 justify-end mt-1 border-t border-white/5 pt-1.5">
+                                            {inst.payment_url ? (
+                                              <>
+                                                <a
+                                                  href={inst.payment_url}
+                                                  target="_blank"
+                                                  rel="noopener noreferrer"
+                                                  title="Abrir Boleto Bancário"
+                                                  className="flex items-center gap-1 text-[9px] font-bold text-blue-400 hover:text-blue-300 transition-all bg-blue-500/10 px-2.5 py-1 rounded"
+                                                >
+                                                  <ExternalLink size={10} />
+                                                  Boleto
+                                                </a>
+                                                {inst.pix_code && (
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                      navigator.clipboard.writeText(inst.pix_code || '')
+                                                      alert('Chave Pix Copia e Cola copiada com sucesso!')
+                                                    }}
+                                                    title="Copiar Pix Copia e Cola"
+                                                    className="flex items-center gap-1 text-[9px] font-bold text-emerald-400 hover:text-emerald-300 transition-all bg-emerald-500/10 px-2.5 py-1 rounded cursor-pointer"
+                                                  >
+                                                    <Copy size={10} />
+                                                    Pix
+                                                  </button>
+                                                )}
+                                              </>
+                                            ) : (
+                                              gatewayType !== 'none' && (
+                                                <button
+                                                  type="button"
+                                                  onClick={() => handleGenerateEventBilling(p.id, inst.id)}
+                                                  disabled={generatingBillingId === inst.id || inst.paid}
+                                                  className="flex items-center gap-1 text-[9px] font-bold text-purple-400 hover:text-purple-300 disabled:opacity-50 transition-all bg-purple-500/10 px-2 py-1 rounded cursor-pointer"
+                                                >
+                                                  {generatingBillingId === inst.id ? (
+                                                    <Loader2 size={10} className="animate-spin" />
+                                                  ) : (
+                                                    <QrCode size={10} />
+                                                  )}
+                                                  Gerar Boleto/Pix
+                                                </button>
+                                              )
+                                            )}
+                                          </div>
                                         </div>
                                       ))}
                                     </div>
