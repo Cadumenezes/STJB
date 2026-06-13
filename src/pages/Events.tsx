@@ -782,6 +782,52 @@ export default function Events() {
   }
 
   async function handleGenerateEventBilling(eventParticipantId: string, installmentId: string) {
+    if (gatewayType === 'none') {
+      const confirmDemo = confirm(
+        "Automação Financeira Inativa:\n" +
+        "Nenhum gateway de pagamento (Asaas ou Cora PJ) está configurado nas Configurações da sua escola.\n\n" +
+        "Deseja simular a geração de um boleto fictício para fins de teste?"
+      )
+      if (!confirmDemo) return
+      
+      setGeneratingBillingId(installmentId)
+      await new Promise(resolve => setTimeout(resolve, 800)) // Efeito visual de loading
+      
+      try {
+        const demoData = {
+          gateway_id: `demo_${crypto.randomUUID()}`,
+          payment_url: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+          pix_code: "00020101021226870014br.gov.bcb.pix2565pix-h.asaas.com/qr/v2/demo-key-danceflow5802BR5920DanceFlow%20Demo%20School6009Sao%20Paulo62070503***63041A2F",
+          barcode: "34191.79001 01043.513184 91020.150008 7 90280000010000"
+        }
+        
+        const part = participants.find(pt => pt.id === eventParticipantId)
+        if (part) {
+          const updatedInstallments = (part.installments || []).map(inst => {
+            if (inst.id === installmentId) {
+              return { ...inst, ...demoData }
+            }
+            return inst
+          })
+          
+          const { error } = await supabase
+            .from('event_participants')
+            .update({ installments: updatedInstallments })
+            .eq('id', eventParticipantId)
+            
+          if (error) throw error
+          
+          setParticipants(prev => prev.map(p => p.id === eventParticipantId ? { ...p, installments: updatedInstallments } : p))
+          alert("Boleto/Pix fictício gerado com sucesso!")
+        }
+      } catch (err: any) {
+        alert("Erro ao salvar simulação: " + err.message)
+      } finally {
+        setGeneratingBillingId(null)
+      }
+      return
+    }
+
     setGeneratingBillingId(installmentId)
     try {
       const { data, error } = await supabase.functions.invoke('create-billing', {
@@ -1409,21 +1455,19 @@ export default function Events() {
                                                 )}
                                               </>
                                             ) : (
-                                              gatewayType !== 'none' && (
-                                                <button
-                                                  type="button"
-                                                  onClick={() => handleGenerateEventBilling(p.id, inst.id)}
-                                                  disabled={generatingBillingId === inst.id || inst.paid}
-                                                  className="flex items-center gap-1 text-[9px] font-bold text-purple-400 hover:text-purple-300 disabled:opacity-50 transition-all bg-purple-500/10 px-2 py-1 rounded cursor-pointer"
-                                                >
-                                                  {generatingBillingId === inst.id ? (
-                                                    <Loader2 size={10} className="animate-spin" />
-                                                  ) : (
-                                                    <QrCode size={10} />
-                                                  )}
-                                                  Gerar Boleto/Pix
-                                                </button>
-                                              )
+                                              <button
+                                                type="button"
+                                                onClick={() => handleGenerateEventBilling(p.id, inst.id)}
+                                                disabled={generatingBillingId === inst.id || inst.paid}
+                                                className="flex items-center gap-1 text-[9px] font-bold text-purple-400 hover:text-purple-300 disabled:opacity-50 transition-all bg-purple-500/10 px-2 py-1 rounded cursor-pointer"
+                                              >
+                                                {generatingBillingId === inst.id ? (
+                                                  <Loader2 size={10} className="animate-spin" />
+                                                ) : (
+                                                  <QrCode size={10} />
+                                                )}
+                                                Gerar Boleto/Pix
+                                              </button>
                                             )}
                                           </div>
                                         </div>
