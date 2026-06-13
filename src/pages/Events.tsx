@@ -208,7 +208,8 @@ export default function Events() {
     photos: '',
     sessions: [] as EventSession[],
     theater_id: '' as string | null,
-    sessions_count: 0
+    sessions_count: 0,
+    due_date: ''
   })
 
   useEffect(() => {
@@ -437,7 +438,8 @@ export default function Events() {
       base_clothes_cost: eventFormData.base_clothes_cost,
       has_kit: eventFormData.has_kit,
       kit_price: eventFormData.kit_price,
-      photo_urls: photoUrlsArray
+      photo_urls: photoUrlsArray,
+      due_date: eventFormData.due_date || null
     }
     
     if (eventFormData.sessions.length > 0) {
@@ -488,7 +490,8 @@ export default function Events() {
         photos: '',
         sessions: [] as EventSession[],
         theater_id: '',
-        sessions_count: 0
+        sessions_count: 0,
+        due_date: ''
       })
       loadData()
     }
@@ -528,7 +531,8 @@ export default function Events() {
       photos: ev.photo_urls ? ev.photo_urls.join(', ') : '',
       sessions: ev.sessions || [],
       theater_id: ev.theater_id || '',
-      sessions_count: ev.sessions ? ev.sessions.length : 0
+      sessions_count: ev.sessions ? ev.sessions.length : 0,
+      due_date: ev.due_date || ''
     })
     setShowEventModal(true)
   }
@@ -572,8 +576,13 @@ export default function Events() {
       const baseValue = Math.floor((newTotal / instCount) * 100) / 100
       let sum = 0
       
-      const today = new Date()
-      today.setDate(today.getDate() + 5) // 5 days from today for first installment
+      let today: Date
+      if (activeEvent.due_date) {
+        today = new Date(activeEvent.due_date + 'T00:00:00')
+      } else {
+        today = new Date()
+        today.setDate(today.getDate() + 5) // 5 days from today for first installment
+      }
       
       for (let i = 0; i < instCount; i++) {
         const val = i === instCount - 1 ? Number((newTotal - sum).toFixed(2)) : baseValue
@@ -728,8 +737,14 @@ export default function Events() {
     let updatedInstallments = [...(p.installments || [])]
     
     if (count > updatedInstallments.length) {
-      const today = new Date()
-      today.setDate(today.getDate() + 5) // 5 days from today
+      const activeEvent = events.find(ev => ev.id === p.event_id)
+      let today: Date
+      if (activeEvent?.due_date) {
+        today = new Date(activeEvent.due_date + 'T00:00:00')
+      } else {
+        today = new Date()
+        today.setDate(today.getDate() + 5) // 5 days from today
+      }
       while (updatedInstallments.length < count) {
         const i = updatedInstallments.length
         const d = new Date(today)
@@ -1004,7 +1019,7 @@ export default function Events() {
                 onClick={() => {
                   setEditEvent(null)
                   setUploadedPhotos([])
-                  setEventFormData({ name: '', date: new Date().toISOString().split('T')[0], location: '', description: '', ticket_price: 0, cost: 0, base_choreography_price: 0, base_clothes_cost: 0, has_kit: false, kit_price: 0, photos: '', sessions: [], theater_id: '', sessions_count: 0 })
+                  setEventFormData({ name: '', date: new Date().toISOString().split('T')[0], location: '', description: '', ticket_price: 0, cost: 0, base_choreography_price: 0, base_clothes_cost: 0, has_kit: false, kit_price: 0, photos: '', sessions: [], theater_id: '', sessions_count: 0, due_date: '' })
                   setShowEventModal(true)
                 }}
                 className="flex items-center gap-2 rounded-2xl px-8 py-4 text-sm font-bold text-white transition-all hover:scale-105 shadow-xl cursor-pointer"
@@ -2363,9 +2378,15 @@ export default function Events() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Data *</label>
+              <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Data do Evento *</label>
               <input required type="date" value={eventFormData.date} onChange={e => setEventFormData({...eventFormData, date: e.target.value})} className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none" style={inputStyle} />
             </div>
+            <div>
+              <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Vencimento Padrão do Boleto</label>
+              <input type="date" value={eventFormData.due_date} onChange={e => setEventFormData({...eventFormData, due_date: e.target.value})} className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none" style={inputStyle} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Quantidade de Sessões</label>
               <input
@@ -2378,6 +2399,7 @@ export default function Events() {
                 style={inputStyle}
               />
             </div>
+            <div></div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>

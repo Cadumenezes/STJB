@@ -186,6 +186,7 @@ export interface Event {
   seating_map?: SeatingMapConfig | null
   sessions?: EventSession[] | null
   theater_id?: string | null
+  due_date?: string
   created_at: string
 }
 
