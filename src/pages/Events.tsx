@@ -1432,8 +1432,8 @@ export default function Events() {
                                 {/* Parcelas */}
                                 <td className="px-4 py-3.5 text-xs">
                                   {p.payment_method === 'Boleto' ? (
-                                    <div className="flex flex-col gap-2 min-w-[180px]">
-                                      <div className="flex items-center gap-2 mb-2 bg-white/5 p-2 rounded-xl">
+                                    <div className="flex flex-col gap-2 min-w-[320px]">
+                                      <div className="flex items-center gap-2 mb-1 bg-white/5 p-2 rounded-xl">
                                         <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">Qtd Parcelas:</span>
                                         <input 
                                           type="number" 
@@ -1444,86 +1444,90 @@ export default function Events() {
                                           className="w-12 bg-transparent border border-white/10 rounded-lg px-2 py-1 text-xs font-bold text-emerald-400 focus:outline-none focus:ring-1 focus:ring-purple-500 text-center ml-auto disabled:opacity-50"
                                         />
                                       </div>
-                                      {(p.installments || []).map((inst, i) => (
-                                        <div key={inst.id} className="flex flex-col gap-1.5 bg-black/25 p-2 rounded-xl border border-white/5">
-                                          <div className="flex items-center gap-2">
-                                            <span className="text-[10px] text-[var(--text-muted)] font-bold w-4">{i + 1}º</span>
+                                      
+                                      <div className="flex flex-col gap-1.5 max-h-[150px] overflow-y-auto pr-1">
+                                        {(p.installments || []).map((inst, i) => (
+                                          <div key={inst.id} className="flex items-center gap-2 bg-black/25 p-1.5 rounded-lg border border-white/5 text-xs">
+                                            <span className="text-[10px] text-[var(--text-muted)] font-bold w-4 shrink-0">{i + 1}º</span>
+                                            
+                                            {/* Check Pago */}
                                             <button 
                                               type="button"
                                               onClick={() => handleUpdateInstallment(p, inst.id, 'paid', !inst.paid)}
-                                              className={`p-1 rounded transition-all ${inst.paid ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/5 text-white/20'}`}
+                                              className={`p-1 rounded transition-all shrink-0 ${inst.paid ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/5 text-white/20'}`}
                                             >
-                                              <CheckCircle size={14} />
+                                              <CheckCircle size={12} />
                                             </button>
-                                            <span className="text-[10px] text-white/30">R$</span>
-                                            <input 
-                                              type="number" 
-                                              step="0.01"
-                                              value={inst.value} 
-                                              onChange={(e) => handleUpdateInstallment(p, inst.id, 'value', e.target.value)}
-                                              disabled={profile?.role === 'secretary'}
-                                              className="w-16 text-right bg-transparent border-none px-1 py-0.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-purple-500 rounded ml-auto disabled:opacity-50"
-                                            />
-                                          </div>
+                                            
+                                            {/* Valor */}
+                                            <div className="flex items-center gap-0.5 shrink-0 bg-white/5 px-1.5 py-0.5 rounded border border-white/5">
+                                              <span className="text-[9px] text-white/30">R$</span>
+                                              <input 
+                                                type="number" 
+                                                step="0.01"
+                                                value={inst.value} 
+                                                onChange={(e) => handleUpdateInstallment(p, inst.id, 'value', e.target.value)}
+                                                disabled={profile?.role === 'secretary'}
+                                                className="w-14 text-right bg-transparent border-none p-0 text-xs font-bold focus:outline-none text-white disabled:opacity-50"
+                                              />
+                                            </div>
 
-                                          <div className="flex items-center gap-2 mt-1">
-                                            <span className="text-[9px] text-[var(--text-muted)] font-bold">Vencimento:</span>
+                                            {/* Vencimento */}
                                             <input 
                                               type="date"
                                               value={inst.due_date || ''}
                                               onChange={(e) => handleUpdateInstallment(p, inst.id, 'due_date', e.target.value)}
                                               disabled={profile?.role === 'secretary' || !!inst.payment_url}
-                                              className="bg-transparent border border-white/10 rounded px-1.5 py-0.5 text-[10px] focus:outline-none focus:ring-1 focus:ring-purple-500 text-white disabled:opacity-50"
+                                              className="bg-transparent border border-white/10 rounded px-1 py-0.5 text-[10px] focus:outline-none focus:ring-1 focus:ring-purple-500 text-white disabled:opacity-50 shrink-0 w-28 text-center"
+                                              title="Data de Vencimento"
                                             />
-                                          </div>
-                                          
-                                          {/* Ações da cobrança de boleto */}
-                                          <div className="flex gap-2 justify-end mt-1 border-t border-white/5 pt-1.5">
-                                            {inst.payment_url ? (
-                                              <>
-                                                <a
-                                                  href={inst.payment_url}
-                                                  target="_blank"
-                                                  rel="noopener noreferrer"
-                                                  title="Abrir Boleto Bancário"
-                                                  className="flex items-center gap-1 text-[9px] font-bold text-blue-400 hover:text-blue-300 transition-all bg-blue-500/10 px-2.5 py-1 rounded"
-                                                >
-                                                  <ExternalLink size={10} />
-                                                  Boleto
-                                                </a>
-                                                {inst.pix_code && (
-                                                  <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                      navigator.clipboard.writeText(inst.pix_code || '')
-                                                      alert('Chave Pix Copia e Cola copiada com sucesso!')
-                                                    }}
-                                                    title="Copiar Pix Copia e Cola"
-                                                    className="flex items-center gap-1 text-[9px] font-bold text-emerald-400 hover:text-emerald-300 transition-all bg-emerald-500/10 px-2.5 py-1 rounded cursor-pointer"
+
+                                            {/* Ações da cobrança de boleto */}
+                                            <div className="flex gap-1 shrink-0 ml-auto">
+                                              {inst.payment_url ? (
+                                                <>
+                                                  <a
+                                                    href={inst.payment_url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    title="Abrir Boleto Bancário (PDF)"
+                                                    className="flex items-center justify-center p-1 rounded text-blue-400 hover:text-blue-300 transition-all bg-blue-500/10 hover:bg-blue-500/20"
                                                   >
-                                                    <Copy size={10} />
-                                                    Pix
-                                                  </button>
-                                                )}
-                                              </>
-                                            ) : (
-                                              <button
-                                                type="button"
-                                                onClick={() => handleGenerateEventBilling(p.id, inst.id)}
-                                                disabled={generatingBillingId === inst.id || inst.paid}
-                                                className="flex items-center gap-1 text-[9px] font-bold text-purple-400 hover:text-purple-300 disabled:opacity-50 transition-all bg-purple-500/10 px-2 py-1 rounded cursor-pointer"
-                                              >
-                                                {generatingBillingId === inst.id ? (
-                                                  <Loader2 size={10} className="animate-spin" />
-                                                ) : (
-                                                  <QrCode size={10} />
-                                                )}
-                                                Gerar Boleto/Pix
-                                              </button>
-                                            )}
+                                                    <ExternalLink size={12} />
+                                                  </a>
+                                                  {inst.pix_code && (
+                                                    <button
+                                                      type="button"
+                                                      onClick={() => {
+                                                        navigator.clipboard.writeText(inst.pix_code || '')
+                                                        alert('Chave Pix Copia e Cola copiada com sucesso!')
+                                                      }}
+                                                      title="Copiar Pix Copia e Cola"
+                                                      className="flex items-center justify-center p-1 rounded text-emerald-400 hover:text-emerald-300 transition-all bg-emerald-500/10 hover:bg-emerald-500/20 cursor-pointer"
+                                                    >
+                                                      <Copy size={12} />
+                                                    </button>
+                                                  )}
+                                                </>
+                                              ) : (
+                                                <button
+                                                  type="button"
+                                                  onClick={() => handleGenerateEventBilling(p.id, inst.id)}
+                                                  disabled={generatingBillingId === inst.id || inst.paid}
+                                                  title="Gerar Boleto/Pix"
+                                                  className="flex items-center justify-center p-1 rounded text-purple-400 hover:text-purple-300 disabled:opacity-50 transition-all bg-purple-500/10 hover:bg-purple-500/20 cursor-pointer animate-pulse"
+                                                >
+                                                  {generatingBillingId === inst.id ? (
+                                                    <Loader2 size={12} className="animate-spin" />
+                                                  ) : (
+                                                    <QrCode size={12} />
+                                                  )}
+                                                </button>
+                                              )}
+                                            </div>
                                           </div>
-                                        </div>
-                                      ))}
+                                        ))}
+                                      </div>
                                     </div>
                                   ) : (
                                     <div className="text-center text-[10px] text-[var(--text-muted)] p-2">
