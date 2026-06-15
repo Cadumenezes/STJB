@@ -945,8 +945,10 @@ export default function Events() {
       
       // Filter by Search Query
       if (searchQuery) {
-        const matchesQuery = student.name.toLowerCase().includes(searchQuery.toLowerCase())
-        if (!matchesQuery) return false
+        const query = searchQuery.toLowerCase()
+        const matchesStudent = student.name.toLowerCase().includes(query)
+        const matchesGuardian = student.guardian_name ? student.guardian_name.toLowerCase().includes(query) : false
+        if (!matchesStudent && !matchesGuardian) return false
       }
       
       // Filter by Payment Status
