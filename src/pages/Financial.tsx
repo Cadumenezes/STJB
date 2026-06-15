@@ -371,7 +371,7 @@ export default function Financial() {
                 const dayOfWeek = date.getDay()
                 const dayName = dayMap[dayOfWeek]
                 
-                if (weeklyCounts[dayName] > 0) {
+                if (weeklyCounts[dayName] > 0 && !allWorkedDates.has(dateStr)) {
                   classesCount += weeklyCounts[dayName]
                 }
               }
@@ -1402,11 +1402,9 @@ export default function Financial() {
             const dayOfWeek = date.getDay()
             const dayName = dayMap[dayOfWeek]
             
-            if (weeklyClassCounts[dayName] > 0) {
+            if (weeklyClassCounts[dayName] > 0 && !allWorkedDates.has(dateStr)) {
               horas += weeklyClassCounts[dayName]
-              if (!allWorkedDates.has(dateStr)) {
-                dias += 1 // Conta o feriado na exibição se não foi trabalhado (não estava em allWorkedDates)
-              }
+              dias += 1 // Conta o feriado na exibição se não foi trabalhado (não estava em allWorkedDates)
             }
           }
         }
