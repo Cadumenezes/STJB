@@ -1287,8 +1287,8 @@ export default function Events() {
               {activeSubTab === 'spreadsheet' ? (
                 <>
                   {/* Event Actions & Add Participant */}
-                  <div className="flex flex-col lg:flex-row justify-between items-center gap-4 bg-black/20 p-4 rounded-3xl border border-white/5">
-                    <div className="flex flex-col sm:flex-row flex-wrap items-center gap-4 w-full sm:w-auto">
+                  <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 bg-black/20 p-4 rounded-3xl border border-white/5">
+                    <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full lg:w-auto">
                       {profile?.role !== 'secretary' && (
                         <button
                           type="button"
@@ -1305,12 +1305,12 @@ export default function Events() {
                             })
                             setShowAddParticipantModal(true)
                           }}
-                          className="px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm transition-all flex items-center gap-2 shadow-lg shadow-purple-600/20 hover:scale-[1.03] active:scale-95 cursor-pointer"
+                          className="px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-purple-600/20 hover:scale-[1.03] active:scale-95 cursor-pointer w-full sm:w-auto shrink-0"
                         >
                           <Plus size={16} /> Adicionar Aluno
                         </button>
                       )}
-                      <div className="flex items-center gap-3 rounded-xl px-4 py-3 border w-full sm:w-64" style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border-color)' }}>
+                      <div className="flex items-center gap-3 rounded-xl px-4 py-3 border w-full sm:w-64 shrink-0" style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border-color)' }}>
                         <Search className="text-white/30 shrink-0" size={18} />
                         <input 
                           type="text" 
@@ -1322,14 +1322,14 @@ export default function Events() {
                       </div>
 
                       {/* Filtros de Pagamento */}
-                      <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 gap-1 shrink-0">
+                      <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 gap-1 w-full sm:w-auto justify-between sm:justify-start shrink-0">
                         <button
                           type="button"
                           onClick={() => {
                             setPaymentFilter('all')
                             setPendingInstallmentFilter(null)
                           }}
-                          className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${paymentFilter === 'all' ? 'bg-purple-600 text-white shadow' : 'text-white hover:text-purple-300 hover:bg-purple-600/10'}`}
+                          className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer text-center justify-center ${paymentFilter === 'all' ? 'bg-purple-600 text-white shadow' : 'text-white hover:text-purple-300 hover:bg-purple-600/10'}`}
                         >
                           Todos
                         </button>
@@ -1339,7 +1339,7 @@ export default function Events() {
                             setPaymentFilter('paid')
                             setPendingInstallmentFilter(null)
                           }}
-                          className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${paymentFilter === 'paid' ? 'bg-emerald-400 text-slate-950 shadow' : 'text-white hover:text-emerald-400 hover:bg-emerald-400/10'}`}
+                          className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer text-center justify-center ${paymentFilter === 'paid' ? 'bg-emerald-400 text-slate-950 shadow' : 'text-white hover:text-emerald-400 hover:bg-emerald-400/10'}`}
                         >
                           Pago
                         </button>
@@ -1349,7 +1349,7 @@ export default function Events() {
                             setPaymentFilter('pending')
                             setPendingInstallmentFilter(null)
                           }}
-                          className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${paymentFilter === 'pending' && pendingInstallmentFilter === null ? 'bg-amber-400 text-slate-950 shadow' : 'text-white hover:text-amber-400 hover:bg-amber-400/10'}`}
+                          className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer text-center justify-center ${paymentFilter === 'pending' && pendingInstallmentFilter === null ? 'bg-amber-400 text-slate-950 shadow' : 'text-white hover:text-amber-400 hover:bg-amber-400/10'}`}
                         >
                           Falta Pagar
                         </button>
@@ -1357,7 +1357,7 @@ export default function Events() {
 
                       {/* Filtros de Parcela Específica */}
                       {paymentFilter === 'pending' && (
-                        <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 gap-1 shrink-0">
+                        <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 gap-1 w-full sm:w-auto overflow-x-auto no-scrollbar justify-start sm:justify-start shrink-0">
                           {[1, 2, 3, 4, 5].map((num) => (
                             <button
                               key={num}
@@ -1369,7 +1369,7 @@ export default function Events() {
                                   setPendingInstallmentFilter(num)
                                 }
                               }}
-                              className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${pendingInstallmentFilter === num ? 'bg-amber-500 text-slate-950 shadow' : 'text-white hover:text-amber-400 hover:bg-amber-500/10'}`}
+                              className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer text-center justify-center whitespace-nowrap ${pendingInstallmentFilter === num ? 'bg-amber-500 text-slate-950 shadow' : 'text-white hover:text-amber-400 hover:bg-amber-500/10'}`}
                             >
                               Falta {num}ª
                             </button>
@@ -1378,14 +1378,14 @@ export default function Events() {
                       )}
                     </div>
                      {profile?.role !== 'secretary' && (
-                        <div className="flex gap-2">
-                          <button type="button" onClick={handlePrintReport} className="px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm transition-all flex items-center gap-2 shadow-lg shadow-emerald-600/20 hover:scale-[1.03] active:scale-95 cursor-pointer">
+                        <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto justify-stretch sm:justify-end">
+                          <button type="button" onClick={handlePrintReport} className="w-full sm:w-auto px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 hover:scale-[1.03] active:scale-95 cursor-pointer">
                             <Printer size={16} /> Imprimir Relatório
                           </button>
-                          <button type="button" onClick={() => openEventEdit(activeEvent)} className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all flex items-center gap-2 shadow-lg shadow-blue-600/20 hover:scale-[1.03] active:scale-95 cursor-pointer">
+                          <button type="button" onClick={() => openEventEdit(activeEvent)} className="w-full sm:w-auto px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 hover:scale-[1.03] active:scale-95 cursor-pointer">
                             <Edit size={16} /> Detalhes do Evento
                           </button>
-                          <button type="button" onClick={() => handleDeleteEvent(activeEvent.id)} className="px-6 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm transition-all flex items-center gap-2 shadow-lg shadow-rose-600/20 hover:scale-[1.03] active:scale-95 cursor-pointer">
+                          <button type="button" onClick={() => handleDeleteEvent(activeEvent.id)} className="w-full sm:w-auto px-6 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-rose-600/20 hover:scale-[1.03] active:scale-95 cursor-pointer">
                             <Trash2 size={16} /> Excluir Evento
                           </button>
                         </div>
