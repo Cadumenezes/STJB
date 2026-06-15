@@ -1329,7 +1329,7 @@ export default function Events() {
                             setPaymentFilter('all')
                             setPendingInstallmentFilter(null)
                           }}
-                          className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${paymentFilter === 'all' ? 'bg-purple-600 text-white shadow' : 'text-white/85 hover:text-white'}`}
+                          className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${paymentFilter === 'all' ? 'bg-purple-600 text-white shadow' : 'text-white hover:text-purple-300 hover:bg-purple-600/10'}`}
                         >
                           Todos
                         </button>
@@ -1339,7 +1339,7 @@ export default function Events() {
                             setPaymentFilter('paid')
                             setPendingInstallmentFilter(null)
                           }}
-                          className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${paymentFilter === 'paid' ? 'bg-emerald-400 text-slate-950 shadow' : 'text-white/85 hover:text-white'}`}
+                          className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${paymentFilter === 'paid' ? 'bg-emerald-400 text-slate-950 shadow' : 'text-white hover:text-emerald-400 hover:bg-emerald-400/10'}`}
                         >
                           Pago
                         </button>
@@ -1349,7 +1349,7 @@ export default function Events() {
                             setPaymentFilter('pending')
                             setPendingInstallmentFilter(null)
                           }}
-                          className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${paymentFilter === 'pending' && pendingInstallmentFilter === null ? 'bg-amber-400 text-slate-950 shadow' : 'text-white/85 hover:text-white'}`}
+                          className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${paymentFilter === 'pending' && pendingInstallmentFilter === null ? 'bg-amber-400 text-slate-950 shadow' : 'text-white hover:text-amber-400 hover:bg-amber-400/10'}`}
                         >
                           Falta Pagar
                         </button>
@@ -1362,8 +1362,14 @@ export default function Events() {
                             <button
                               key={num}
                               type="button"
-                              onClick={() => setPendingInstallmentFilter(num)}
-                              className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${pendingInstallmentFilter === num ? 'bg-amber-500 text-slate-950 shadow' : 'text-white/60 hover:text-white'}`}
+                              onClick={() => {
+                                if (pendingInstallmentFilter === num) {
+                                  setPendingInstallmentFilter(null)
+                                } else {
+                                  setPendingInstallmentFilter(num)
+                                }
+                              }}
+                              className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${pendingInstallmentFilter === num ? 'bg-amber-500 text-slate-950 shadow' : 'text-white hover:text-amber-400 hover:bg-amber-500/10'}`}
                             >
                               Falta {num}ª
                             </button>
