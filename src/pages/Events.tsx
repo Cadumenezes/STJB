@@ -573,7 +573,7 @@ export default function Events() {
     // Generate installments if Boleto
     const installments: Installment[] = []
     const instCount = Number(participantFormData.installments_count) || 1
-    if (participantFormData.payment_method === 'Boleto' && instCount > 0) {
+    if ((participantFormData.payment_method === 'Boleto' || participantFormData.payment_method === 'Cartão') && instCount > 0) {
       const baseValue = Math.floor((newTotal / instCount) * 100) / 100
       let sum = 0
       
@@ -717,7 +717,7 @@ export default function Events() {
       optimUpdate.amount_paid = amount_paid
     }
     
-    if (field === 'payment_method' && value !== 'Boleto' && p.installments && p.installments.length > 0) {
+    if (field === 'payment_method' && value !== 'Boleto' && value !== 'Cartão' && p.installments && p.installments.length > 0) {
        payload.installments = []
        optimUpdate.installments = []
     }
@@ -1466,7 +1466,7 @@ export default function Events() {
 
                                 {/* Parcelas */}
                                 <td className="px-4 py-3.5 text-xs">
-                                  {p.payment_method === 'Boleto' ? (
+                                  {p.payment_method === 'Boleto' || p.payment_method === 'Cartão' ? (
                                     <div className="flex flex-col gap-2 min-w-[320px]">
                                       <div className="flex items-center gap-2 mb-1 bg-white/5 p-2 rounded-xl">
                                         <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-wider">Qtd Parcelas:</span>
@@ -1566,7 +1566,7 @@ export default function Events() {
                                     </div>
                                   ) : (
                                     <div className="text-center text-[10px] text-[var(--text-muted)] p-2">
-                                      Somente Boleto
+                                      Somente Boleto/Cartão
                                     </div>
                                   )}
                                 </td>
@@ -1605,9 +1605,19 @@ export default function Events() {
 
                                 {/* Falta Pagar */}
                                 <td className="px-3 py-2.5 text-right text-xs">
-                                  <span className={`font-black ${faltaPagar > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
-                                    R$ {faltaPagar.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                  </span>
+                                  <div className="flex flex-col items-end">
+                                    <span className={`font-black ${faltaPagar > 0 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                                      R$ {faltaPagar.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                    </span>
+                                    {faltaPagar > 0 && (p.payment_method === 'Boleto' || p.payment_method === 'Cartão') && p.installments && p.installments.length > 0 && (
+                                      <span className="text-[9px] text-amber-500/70 font-bold mt-0.5">
+                                        Falta: {(p.installments || [])
+                                          .map((inst, idx) => inst.paid ? null : `${idx + 1}ª`)
+                                          .filter((x): x is string => x !== null)
+                                          .join(', ')}
+                                      </span>
+                                    )}
+                                  </div>
                                 </td>
 
                                 {/* Has Ticket */}
@@ -2796,7 +2806,7 @@ export default function Events() {
               />
             </div>
 
-            {participantFormData.payment_method === 'Boleto' ? (
+            {participantFormData.payment_method === 'Boleto' || participantFormData.payment_method === 'Cartão' ? (
               <div>
                 <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Qtd de Parcelas *</label>
                 <input
@@ -2845,7 +2855,7 @@ export default function Events() {
             )}
           </div>
 
-          {participantFormData.payment_method === 'Boleto' && activeEvent?.has_kit && (
+          {(participantFormData.payment_method === 'Boleto' || participantFormData.payment_method === 'Cartão') && activeEvent?.has_kit && (
             <div className="flex flex-col">
               <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Kit do Evento?</label>
               <div className="flex gap-2">
@@ -2913,7 +2923,7 @@ export default function Events() {
                   <span>Valor Total Estimado:</span>
                   <span className="text-purple-400">R$ {modalTotalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                 </div>
-                {participantFormData.payment_method === 'Boleto' && (
+                {(participantFormData.payment_method === 'Boleto' || participantFormData.payment_method === 'Cartão') && (
                   <div className="text-[10px] text-white/50 text-right mt-1">
                     Parcelado em {participantFormData.installments_count}x de R$ {(modalTotalValue / participantFormData.installments_count).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </div>
