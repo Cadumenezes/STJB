@@ -1319,21 +1319,21 @@ export default function Events() {
                         <button
                           type="button"
                           onClick={() => setPaymentFilter('all')}
-                          className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${paymentFilter === 'all' ? 'bg-purple-600 text-white shadow' : 'text-white/40 hover:text-white'}`}
+                          className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${paymentFilter === 'all' ? 'bg-purple-600 text-white shadow' : 'text-white/85 hover:text-white'}`}
                         >
                           Todos
                         </button>
                         <button
                           type="button"
                           onClick={() => setPaymentFilter('paid')}
-                          className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${paymentFilter === 'paid' ? 'bg-emerald-600 text-white shadow' : 'text-white/40 hover:text-white'}`}
+                          className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${paymentFilter === 'paid' ? 'bg-emerald-400 text-slate-950 shadow' : 'text-white/85 hover:text-white'}`}
                         >
                           Pago
                         </button>
                         <button
                           type="button"
                           onClick={() => setPaymentFilter('pending')}
-                          className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${paymentFilter === 'pending' ? 'bg-amber-600 text-white shadow' : 'text-white/40 hover:text-white'}`}
+                          className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${paymentFilter === 'pending' ? 'bg-amber-400 text-slate-950 shadow' : 'text-white/85 hover:text-white'}`}
                         >
                           Falta Pagar
                         </button>
