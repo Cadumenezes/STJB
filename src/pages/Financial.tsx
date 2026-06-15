@@ -84,6 +84,8 @@ export default function Financial() {
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [showFixedModal, setShowFixedModal] = useState(false)
+  const [showPaymentForecastModal, setShowPaymentForecastModal] = useState(false)
+  const [showExpenseForecastModal, setShowExpenseForecastModal] = useState(false)
   const [editEntry, setEditEntry] = useState<FinancialEntry | null>(null)
   const [editFixed, setEditFixed] = useState<FixedBill | null>(null)
   const [fixedBillMonths, setFixedBillMonths] = useState<{id: string, fixed_bill_id: string, month: string, amount: number}[]>([])
@@ -816,6 +818,7 @@ export default function Financial() {
       color: '#a78bfa',
       bg: 'rgba(167,139,250,0.1)',
       gradient: 'linear-gradient(135deg, #a78bfa, #7c3aed)',
+      onClick: () => setShowPaymentForecastModal(true)
     },
     {
       label: 'Previsão de Gastos',
@@ -824,6 +827,7 @@ export default function Financial() {
       color: '#fbbf24',
       bg: 'rgba(251,191,36,0.15)',
       gradient: 'linear-gradient(135deg, #fbbf24, #d97706)',
+      onClick: () => setShowExpenseForecastModal(true)
     },
   ]
 
@@ -1572,7 +1576,10 @@ export default function Financial() {
             {summaryCards.map((card) => (
               <div
                 key={card.label}
-                className="group relative overflow-hidden rounded-2xl p-8 sm:p-10 transition-all duration-300 hover:scale-[1.05] hover:shadow-2xl"
+                onClick={card.onClick}
+                className={`group relative overflow-hidden rounded-2xl p-8 sm:p-10 transition-all duration-300 hover:scale-[1.05] hover:shadow-2xl ${
+                  card.onClick ? 'cursor-pointer hover:border-purple-500/40 hover:bg-white/[0.02]' : ''
+                }`}
                 style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}
               >
                 <div className="flex flex-col items-center justify-center h-28 text-center gap-2 relative z-10">
@@ -2804,6 +2811,237 @@ export default function Financial() {
           )}
         </div>
       )}
+
+      {/* Modais omitidos para brevidade, mas mantidos no arquivo real */}
+
+      {/* Modal Detalhamento da Previsão de Pagamentos */}
+      <Modal 
+        isOpen={showPaymentForecastModal} 
+        onClose={() => setShowPaymentForecastModal(false)} 
+        title={`Detalhamento da Previsão de Pagamentos - ${new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}`}
+        size="xl"
+      >
+        <div className="space-y-6">
+          <div className="flex justify-between items-center bg-black/15 p-5 rounded-2xl border border-white/5">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Dia Limite com Desconto</p>
+              <p className="text-sm font-bold text-white">Até o dia {discountDueDay} de cada mês</p>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Total Previsto</p>
+              <p className="text-2xl font-black text-purple-400">R$ {previsaoPagamentos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left border-collapse">
+              <thead>
+                <tr className="border-b border-white/10" style={{ color: 'var(--text-muted)' }}>
+                  <th className="py-3 px-4 font-bold">Aluno</th>
+                  <th className="py-3 px-4 font-bold text-center">Plano / Status</th>
+                  <th className="py-3 px-4 font-bold text-right">Valor Previsto</th>
+                  <th className="py-3 px-4 font-bold text-center">Situação (Mês Atual)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {students
+                  .filter(s => s.status === 'active' || s.status === 'partial_scholarship')
+                  .sort((a, b) => a.name.localeCompare(b.name))
+                  .map(s => {
+                    const fee = isBeforeDiscount && s.discount_monthly_fee && s.discount_monthly_fee > 0
+                      ? Number(s.discount_monthly_fee)
+                      : Number(s.monthly_fee || 0)
+                    
+                    const hasDiscountApplied = isBeforeDiscount && s.discount_monthly_fee && s.discount_monthly_fee > 0
+
+                    const currentMonthPayment = pendingPayments.find(p => p.student_id === s.id && p.reference_month === currentMonthStr)
+                    
+                    let statusLabel = 'Pago'
+                    let statusClass = 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                    
+                    if (currentMonthPayment) {
+                      if (currentMonthPayment.status === 'overdue') {
+                        statusLabel = 'Atrasado'
+                        statusClass = 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                      } else {
+                        statusLabel = 'Pendente'
+                        statusClass = 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                      }
+                    }
+
+                    return (
+                      <tr key={s.id} className="hover:bg-white/5 transition-colors">
+                        <td className="py-3 px-4">
+                          <p className="font-semibold text-white">{s.name}</p>
+                          {s.guardian_name && (
+                            <p className="text-[10px] text-[var(--text-muted)]">Resp: {s.guardian_name}</p>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${
+                            s.status === 'partial_scholarship' 
+                              ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' 
+                              : 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                          }`}>
+                            {s.status === 'partial_scholarship' ? 'Bolsa Parcial' : 'Ativo'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <p className="font-black text-white">R$ {fee.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                          {hasDiscountApplied && (
+                            <p className="text-[9px] text-emerald-400 font-bold">Desconto aplicado</p>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${statusClass}`}>
+                            {statusLabel}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Modal Detalhamento da Previsão de Gastos */}
+      <Modal 
+        isOpen={showExpenseForecastModal} 
+        onClose={() => setShowExpenseForecastModal(false)} 
+        title={`Detalhamento da Previsão de Gastos - ${new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}`}
+        size="xl"
+      >
+        <div className="space-y-8">
+          <div className="grid grid-cols-3 gap-4 bg-black/15 p-5 rounded-2xl border border-white/5">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Contas Fixas</p>
+              <p className="text-lg font-black text-white">R$ {fixedBillsTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Folha de Pagamento</p>
+              <p className="text-lg font-black text-white">R$ {payrollTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">Total Previsto</p>
+              <p className="text-xl font-black text-amber-500">R$ {previsaoGastos.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-sm font-black uppercase tracking-widest text-purple-400 border-b border-white/5 pb-2">Contas Fixas do Mês</h3>
+            {fixedBills.length === 0 ? (
+              <p className="text-xs text-[var(--text-muted)] italic px-4">Nenhuma conta fixa ativa para este mês.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-white/10" style={{ color: 'var(--text-muted)' }}>
+                      <th className="py-2.5 px-4 font-bold">Descrição</th>
+                      <th className="py-2.5 px-4 font-bold">Categoria</th>
+                      <th className="py-2.5 px-4 font-bold text-center">Dia Venc.</th>
+                      <th className="py-2.5 px-4 font-bold text-right">Valor</th>
+                      <th className="py-2.5 px-4 font-bold text-center">Situação</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {fixedBills
+                      .filter(bill => {
+                        if (!bill.active) return false
+                        if (bill.installments) {
+                          const totalPaid = entries.filter(e => e.fixed_bill_id === bill.id).length
+                          const isPaidThisMonth = entries.some(e => e.fixed_bill_id === bill.id && e.date.startsWith(currentMonthStr))
+                          if (totalPaid >= bill.installments && !isPaidThisMonth) return false
+                        }
+                        return true
+                      })
+                      .sort((a, b) => a.due_day - b.due_day)
+                      .map(bill => {
+                        const amount = getFixedBillAmountForMonth(bill.id, currentMonthStr, bill.amount)
+                        const isPaid = entries.some(e => e.fixed_bill_id === bill.id && e.date.startsWith(currentMonthStr))
+
+                        return (
+                          <tr key={bill.id} className="hover:bg-white/5 transition-colors">
+                            <td className="py-2.5 px-4 font-semibold text-white">
+                              {bill.description}
+                              {bill.installments && (
+                                <span className="text-[10px] text-purple-400 ml-2">
+                                  ({entries.filter(e => e.fixed_bill_id === bill.id).length} de {bill.installments} parcelas)
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-2.5 px-4 text-xs" style={{ color: 'var(--text-secondary)' }}>{bill.category}</td>
+                            <td className="py-2.5 px-4 text-center text-xs">Dia {bill.due_day}</td>
+                            <td className="py-2.5 px-4 text-right font-black text-white">R$ {amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                            <td className="py-2.5 px-4 text-center">
+                              <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                                isPaid 
+                                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                                  : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                              }`}>
+                                {isPaid ? 'Pago' : 'Pendente'}
+                              </span>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-sm font-black uppercase tracking-widest text-purple-400 border-b border-white/5 pb-2">Folha de Pagamento (Equipe)</h3>
+            {payrollData.length === 0 ? (
+              <p className="text-xs text-[var(--text-muted)] italic px-4">Nenhum membro da equipe com valores calculados.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-white/10" style={{ color: 'var(--text-muted)' }}>
+                      <th className="py-2.5 px-4 font-bold">Colaborador</th>
+                      <th className="py-2.5 px-4 font-bold">Função</th>
+                      <th className="py-2.5 px-4 font-bold text-right">Valor Previsto</th>
+                      <th className="py-2.5 px-4 font-bold text-center">Situação</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/5">
+                    {payrollData
+                      .sort((a, b) => b.totalToPay - a.totalToPay)
+                      .map(teacher => {
+                        const isPaid = entries.some(e => 
+                          e.type === 'expense' && 
+                          e.category === 'Salários' && 
+                          e.description.includes(teacher.name) && 
+                          e.date.startsWith(currentMonthStr)
+                        )
+
+                        return (
+                          <tr key={teacher.id} className="hover:bg-white/5 transition-colors">
+                            <td className="py-2.5 px-4 font-semibold text-white">{teacher.name}</td>
+                            <td className="py-2.5 px-4 text-xs" style={{ color: 'var(--text-secondary)' }}>{getRoleLabel(teacher.role)}</td>
+                            <td className="py-2.5 px-4 text-right font-black text-white">R$ {teacher.totalToPay.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                            <td className="py-2.5 px-4 text-center">
+                              <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                                isPaid 
+                                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                                  : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                              }`}>
+                                {isPaid ? 'Pago' : 'Pendente'}
+                              </span>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      </Modal>
 
       {/* Modais omitidos para brevidade, mas mantidos no arquivo real */}
 
