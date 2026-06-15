@@ -978,6 +978,7 @@ export default function Events() {
 
   const participantsWithClothes = currentParticipants.filter(p => (Number(p.clothes_cost) || 0) > 0).length
   const totalClothesRevenue = currentParticipants.reduce((acc, p) => acc + (Number(p.clothes_cost) || 0), 0)
+  const totalClothesCount = currentParticipants.reduce((acc, p) => acc + (Number(p.clothes_count) || 0), 0)
 
   const totalKits = currentParticipants.filter(p => p.kit).length
   const totalKitRevenue = totalKits * (activeEvent?.kit_price || 0)
@@ -1229,7 +1230,7 @@ export default function Events() {
                     <div className="p-4 rounded-2xl" style={{ backgroundColor: 'rgba(255,255,255,0.01)', border: '1px solid var(--border-color)' }}>
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Roupas</span>
-                        <span className="px-2 py-1 bg-rose-500/20 text-rose-400 rounded-lg text-xs font-black">{participantsWithClothes} alunos</span>
+                        <span className="px-2 py-1 bg-rose-500/20 text-rose-400 rounded-lg text-xs font-black">{totalClothesCount} un.</span>
                       </div>
                       <div className="flex justify-between items-end mt-4">
                         <div>
@@ -3091,8 +3092,8 @@ export default function Events() {
 
               <div className="p-3 bg-gray-50 border border-black/10 rounded">
                 <p className="font-bold uppercase text-gray-500">Roupas</p>
-                <p className="text-sm font-black mt-1">{participantsWithClothes} alunos</p>
-                <p className="text-xs text-gray-600 mt-0.5">Base: R$ {Number(activeEvent.base_clothes_cost || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                <p className="text-sm font-black mt-1">{totalClothesCount} unidades</p>
+                <p className="text-xs text-gray-600 mt-0.5">({participantsWithClothes} alunos)</p>
                 <p className="font-black mt-2 text-right">R$ {Number(totalClothesRevenue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
               </div>
 
