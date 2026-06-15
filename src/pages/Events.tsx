@@ -16,6 +16,7 @@ export default function Events() {
   const [showEventModal, setShowEventModal] = useState(false)
   const [editEvent, setEditEvent] = useState<Event | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [paymentFilter, setPaymentFilter] = useState<'all' | 'paid' | 'pending'>('all')
   const [profile, setProfile] = useState<Profile | null>(null)
   const [reportSchoolData, setReportSchoolData] = useState<any | null>(null)
   const [gatewayType, setGatewayType] = useState<'none' | 'asaas' | 'cora'>('none')
@@ -932,9 +933,18 @@ export default function Events() {
     .filter(p => {
       const student = students.find(s => s.id === p.student_id)
       if (!student) return false
+      
+      // Filter by Search Query
       if (searchQuery) {
-        return student.name.toLowerCase().includes(searchQuery.toLowerCase())
+        const matchesQuery = student.name.toLowerCase().includes(searchQuery.toLowerCase())
+        if (!matchesQuery) return false
       }
+      
+      // Filter by Payment Status
+      const faltaPagar = (Number(p.total_value) || 0) - (Number(p.amount_paid) || 0)
+      if (paymentFilter === 'paid' && faltaPagar > 0) return false
+      if (paymentFilter === 'pending' && faltaPagar <= 0) return false
+      
       return true
     })
     .sort((a, b) => {
@@ -1302,6 +1312,31 @@ export default function Events() {
                           onChange={(e) => setSearchQuery(e.target.value)}
                           className="w-full bg-transparent text-sm text-white focus:outline-none placeholder:text-white/30"
                         />
+                      </div>
+
+                      {/* Filtros de Pagamento */}
+                      <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setPaymentFilter('all')}
+                          className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${paymentFilter === 'all' ? 'bg-purple-600 text-white shadow' : 'text-white/40 hover:text-white'}`}
+                        >
+                          Todos
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPaymentFilter('paid')}
+                          className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${paymentFilter === 'paid' ? 'bg-emerald-600 text-white shadow' : 'text-white/40 hover:text-white'}`}
+                        >
+                          Pago
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPaymentFilter('pending')}
+                          className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${paymentFilter === 'pending' ? 'bg-amber-600 text-white shadow' : 'text-white/40 hover:text-white'}`}
+                        >
+                          Falta Pagar
+                        </button>
                       </div>
                     </div>
                      {profile?.role !== 'secretary' && (
