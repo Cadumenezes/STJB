@@ -17,6 +17,7 @@ export default function Events() {
   const [editEvent, setEditEvent] = useState<Event | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [paymentFilter, setPaymentFilter] = useState<'all' | 'paid' | 'pending'>('all')
+  const [pendingInstallmentFilter, setPendingInstallmentFilter] = useState<number | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [reportSchoolData, setReportSchoolData] = useState<any | null>(null)
   const [gatewayType, setGatewayType] = useState<'none' | 'asaas' | 'cora'>('none')
@@ -943,7 +944,13 @@ export default function Events() {
       // Filter by Payment Status
       const faltaPagar = (Number(p.total_value) || 0) - (Number(p.amount_paid) || 0)
       if (paymentFilter === 'paid' && faltaPagar > 0) return false
-      if (paymentFilter === 'pending' && faltaPagar <= 0) return false
+      if (paymentFilter === 'pending') {
+        if (faltaPagar <= 0) return false
+        if (pendingInstallmentFilter !== null) {
+          const targetInst = (p.installments || [])[pendingInstallmentFilter - 1]
+          if (!targetInst || targetInst.paid) return false
+        }
+      }
       
       return true
     })
@@ -1280,8 +1287,8 @@ export default function Events() {
               {activeSubTab === 'spreadsheet' ? (
                 <>
                   {/* Event Actions & Add Participant */}
-                  <div className="flex flex-col sm:flex-row justify-between items-center gap-4 bg-black/20 p-4 rounded-3xl border border-white/5">
-                    <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+                  <div className="flex flex-col lg:flex-row justify-between items-center gap-4 bg-black/20 p-4 rounded-3xl border border-white/5">
+                    <div className="flex flex-col sm:flex-row flex-wrap items-center gap-4 w-full sm:w-auto">
                       {profile?.role !== 'secretary' && (
                         <button
                           type="button"
@@ -1318,26 +1325,51 @@ export default function Events() {
                       <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 gap-1 shrink-0">
                         <button
                           type="button"
-                          onClick={() => setPaymentFilter('all')}
+                          onClick={() => {
+                            setPaymentFilter('all')
+                            setPendingInstallmentFilter(null)
+                          }}
                           className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${paymentFilter === 'all' ? 'bg-purple-600 text-white shadow' : 'text-white/85 hover:text-white'}`}
                         >
                           Todos
                         </button>
                         <button
                           type="button"
-                          onClick={() => setPaymentFilter('paid')}
+                          onClick={() => {
+                            setPaymentFilter('paid')
+                            setPendingInstallmentFilter(null)
+                          }}
                           className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${paymentFilter === 'paid' ? 'bg-emerald-400 text-slate-950 shadow' : 'text-white/85 hover:text-white'}`}
                         >
                           Pago
                         </button>
                         <button
                           type="button"
-                          onClick={() => setPaymentFilter('pending')}
-                          className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${paymentFilter === 'pending' ? 'bg-amber-400 text-slate-950 shadow' : 'text-white/85 hover:text-white'}`}
+                          onClick={() => {
+                            setPaymentFilter('pending')
+                            setPendingInstallmentFilter(null)
+                          }}
+                          className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${paymentFilter === 'pending' && pendingInstallmentFilter === null ? 'bg-amber-400 text-slate-950 shadow' : 'text-white/85 hover:text-white'}`}
                         >
                           Falta Pagar
                         </button>
                       </div>
+
+                      {/* Filtros de Parcela Específica */}
+                      {paymentFilter === 'pending' && (
+                        <div className="flex bg-white/5 p-1 rounded-xl border border-white/10 gap-1 shrink-0">
+                          {[1, 2, 3, 4, 5].map((num) => (
+                            <button
+                              key={num}
+                              type="button"
+                              onClick={() => setPendingInstallmentFilter(num)}
+                              className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer ${pendingInstallmentFilter === num ? 'bg-amber-500 text-slate-950 shadow' : 'text-white/60 hover:text-white'}`}
+                            >
+                              Falta {num}ª
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                      {profile?.role !== 'secretary' && (
                         <div className="flex gap-2">
