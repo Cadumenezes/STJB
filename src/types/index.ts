@@ -213,6 +213,7 @@ export interface EventParticipant {
   payment_method: string | null
   choreography_count: number
   choreography_price?: number
+  clothes_count?: number
   clothes_cost: number
   installments: Installment[]
   seats?: string[] | null

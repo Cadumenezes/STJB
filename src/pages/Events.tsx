@@ -52,6 +52,7 @@ export default function Events() {
     payment_method: '',
     choreography_count: 1,
     choreography_price: 0,
+    clothes_count: 1,
     clothes_cost: 0,
     ticket_quantity: 0,
     kit: false,
@@ -549,6 +550,7 @@ export default function Events() {
       ...prev,
       choreography_count: count,
       choreography_price: choreoPrice,
+      clothes_count: count,
       clothes_cost: clothesPrice
     }))
   }
@@ -565,6 +567,7 @@ export default function Events() {
 
     const choreoPrice = Number(participantFormData.choreography_price) || 0
     const clothesPrice = Number(participantFormData.clothes_cost) || 0
+    const clothesCount = Number(participantFormData.clothes_count) || 0
     const ticketQty = Number(participantFormData.ticket_quantity) || 0
     const hasKitSelected = Boolean(participantFormData.kit)
     
@@ -614,6 +617,7 @@ export default function Events() {
       payment_method: participantFormData.payment_method || null,
       choreography_count: Number(participantFormData.choreography_count) || 0,
       choreography_price: choreoPrice,
+      clothes_count: clothesCount,
       clothes_cost: clothesPrice,
       installments
     }
@@ -684,6 +688,10 @@ export default function Events() {
           choreoPrice = choreoCount > 0 ? (activeEvent.base_choreography_price || 0) : 0
           payload.choreography_price = choreoPrice
           optimUpdate.choreography_price = choreoPrice
+
+          const newClothesCount = choreoCount
+          payload.clothes_count = newClothesCount
+          optimUpdate.clothes_count = newClothesCount
 
           clothesPrice = choreoCount * (activeEvent.base_clothes_cost || 0)
           payload.clothes_cost = clothesPrice
@@ -1298,6 +1306,7 @@ export default function Events() {
                               payment_method: '',
                               choreography_count: 1,
                               choreography_price: activeEvent?.base_choreography_price || 0,
+                              clothes_count: 1,
                               clothes_cost: activeEvent?.base_clothes_cost || 0,
                               ticket_quantity: 0,
                               kit: false,
@@ -1400,7 +1409,7 @@ export default function Events() {
                           <th className="pl-5 pr-8 py-3.5 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5">Aluno</th>
                           <th className="px-4 py-3.5 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-center">Tipo Pgto</th>
                           <th className="px-4 py-3.5 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-center">Coreo (Qtd / R$)</th>
-                          <th className="px-4 py-3.5 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-center">Roupa (R$)</th>
+                          <th className="px-4 py-3.5 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-center">Roupa (Qtd / R$)</th>
                           <th className="px-4 py-3.5 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-left">Parcelas</th>
                           <th className="px-4 py-3.5 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-right">Valor Total</th>
                           <th className="px-4 py-3.5 font-black text-[10px] uppercase tracking-wider text-[var(--text-muted)] border-b border-white/5 text-right">Valor Pago</th>
@@ -1485,20 +1494,32 @@ export default function Events() {
                                   </div>
                                 </td>
 
-                                {/* Roupa (R$) */}
+                                {/* Roupa (Qtd / R$) */}
                                 <td className="px-4 py-3.5 text-center text-xs">
-                                  <div className="flex items-center gap-0.5 bg-black/20 px-2 py-1 rounded-lg border border-white/5 w-24 mx-auto">
-                                    <span className="text-[9px] text-white/30">R$</span>
+                                  <div className="flex flex-col gap-1 items-center">
                                     <input 
                                       type="number" 
-                                      step="0.01"
-                                      value={p.clothes_cost || 0} 
-                                      onChange={(e) => handleUpdateParticipant(p.id, 'clothes_cost', parseFloat(e.target.value) || 0)}
+                                      min="0"
+                                      value={p.clothes_count ?? 0} 
+                                      onChange={(e) => handleUpdateParticipant(p.id, 'clothes_count', parseInt(e.target.value) || 0)}
                                       disabled={profile?.role === 'secretary'}
-                                      className={`w-full bg-transparent border-none p-0 text-xs text-right font-black focus:outline-none ${p.clothes_cost > 0 ? 'text-rose-400' : 'text-white/30'}`}
-                                      placeholder="Roupa"
-                                      title="Valor total da roupa"
+                                      className={`w-14 text-center bg-transparent border border-white/10 rounded-lg px-1 py-0.5 text-xs font-black transition-all disabled:opacity-50 ${p.clothes_count && p.clothes_count > 0 ? 'text-rose-400' : 'text-white/30'}`}
+                                      placeholder="Qtd"
+                                      title="Quantidade de roupas"
                                     />
+                                    <div className="flex items-center gap-0.5 bg-black/20 px-1 py-0.5 rounded border border-white/5 w-[84px]">
+                                      <span className="text-[9px] text-white/30">R$</span>
+                                      <input 
+                                        type="number" 
+                                        step="0.01"
+                                        value={p.clothes_cost || 0} 
+                                        onChange={(e) => handleUpdateParticipant(p.id, 'clothes_cost', parseFloat(e.target.value) || 0)}
+                                        disabled={profile?.role === 'secretary'}
+                                        className={`w-full bg-transparent border-none p-0 text-[10px] text-right font-black focus:outline-none ${p.clothes_cost > 0 ? 'text-rose-300' : 'text-white/20'}`}
+                                        placeholder="Roupa"
+                                        title="Valor total da roupa"
+                                      />
+                                    </div>
                                   </div>
                                 </td>
 
@@ -2818,7 +2839,33 @@ export default function Events() {
             </div>
 
             <div>
-              <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Custo de Roupa (R$)</label>
+              <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Qtd de Convites</label>
+              <input
+                type="number"
+                min="0"
+                value={participantFormData.ticket_quantity}
+                onChange={e => setParticipantFormData({...participantFormData, ticket_quantity: parseInt(e.target.value) || 0})}
+                className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none"
+                style={inputStyle}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Qtd de Roupas</label>
+              <input
+                type="number"
+                min="0"
+                value={participantFormData.clothes_count}
+                onChange={e => setParticipantFormData({...participantFormData, clothes_count: parseInt(e.target.value) || 0})}
+                className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none"
+                style={inputStyle}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Custo Total de Roupa (R$)</label>
               <input
                 type="number"
                 step="0.01"
@@ -2832,18 +2879,6 @@ export default function Events() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Qtd de Convites</label>
-              <input
-                type="number"
-                min="0"
-                value={participantFormData.ticket_quantity}
-                onChange={e => setParticipantFormData({...participantFormData, ticket_quantity: parseInt(e.target.value) || 0})}
-                className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none"
-                style={inputStyle}
-              />
-            </div>
-
             {participantFormData.payment_method === 'Boleto' || participantFormData.payment_method === 'Cartão' ? (
               <div>
                 <label className="text-sm font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Qtd de Parcelas *</label>
@@ -2942,7 +2977,7 @@ export default function Events() {
                   <span>R$ {modalChoreoPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                 </div>
                 <div className="flex justify-between text-xs text-white/70">
-                  <span>Custo de Roupa:</span>
+                  <span>Custo de Roupa{Number(participantFormData.clothes_count || 0) > 0 ? ` (${participantFormData.clothes_count}x)` : ''}:</span>
                   <span>R$ {modalClothesPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                 </div>
                 {modalTicketQty > 0 && (
@@ -3101,8 +3136,12 @@ export default function Events() {
                     <tr key={p.id}>
                       <td className="py-2 font-medium">{student?.name}</td>
                       <td className="py-2 text-center uppercase">{p.payment_method || '-'}</td>
-                      <td className="py-2 text-center">{p.choreography_count || 0}</td>
-                      <td className="py-2 text-center">{p.clothes_cost || 0}</td>
+                      <td className="py-2 text-center">
+                        {p.choreography_count || 0} {p.choreography_price && p.choreography_price > 0 ? `(R$ ${Number(p.choreography_price).toLocaleString('pt-BR', { minimumFractionDigits: 2 })})` : ''}
+                      </td>
+                      <td className="py-2 text-center">
+                        {p.clothes_count || 0} {p.clothes_cost && p.clothes_cost > 0 ? `(R$ ${Number(p.clothes_cost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })})` : ''}
+                      </td>
                       {activeEvent.has_kit && (
                         <td className="py-2 text-center">{p.kit ? 'Sim' : 'Não'}</td>
                       )}
