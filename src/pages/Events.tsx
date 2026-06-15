@@ -3060,13 +3060,14 @@ export default function Events() {
             <div className="space-y-1 text-right text-sm">
               <p className="text-xs font-bold uppercase text-gray-500">Resumo Geral</p>
               <p className="text-sm"><b>Total de Participantes:</b> {currentParticipants.length}</p>
-              <p className="text-sm"><b>Custo do Evento:</b> R$ {Number(eventCost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              <p className="text-sm"><b>Custo Estimado (Orçamento):</b> R$ {Number(eventCost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              <p className="text-sm text-rose-600"><b>Despesas Realizadas:</b> R$ {Number(totalRealExpenses).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
               <p className="text-sm"><b>Receita Prevista (Total):</b> R$ {Number(expectedRevenue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
               <p className="text-sm text-emerald-600"><b>Receita Recebida (Pago):</b> R$ {Number(totalReceived).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
               <p className="text-sm text-amber-600"><b>Pendente:</b> R$ {Number(expectedRevenue - totalReceived).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
               <div className="border-t border-black/10 pt-2 mt-2">
                 <p className="text-base font-black">
-                  <b>Saldo Líquido (Pago - Custo):</b> <span className={netResult >= 0 ? 'text-emerald-600' : 'text-rose-600'}>
+                  <b>Saldo Líquido (Pago - Despesas):</b> <span className={netResult >= 0 ? 'text-emerald-600' : 'text-rose-600'}>
                     R$ {Number(netResult).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </span>
                 </p>
@@ -3112,6 +3113,37 @@ export default function Events() {
                 )}
               </div>
             </div>
+          </div>
+
+          {/* Detalhamento das Despesas */}
+          <div className="mb-8">
+            <h3 className="text-sm font-black uppercase mb-4 border-b border-black pb-1">Detalhamento das Despesas</h3>
+            {activeEventExpenses.length === 0 ? (
+              <p className="text-xs text-gray-500 italic">Nenhuma despesa cadastrada para este evento.</p>
+            ) : (
+              <table className="w-full text-xs text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-black text-gray-600 font-bold">
+                    <th className="py-2 w-1/4">Data</th>
+                    <th className="py-2 w-1/2">Descrição</th>
+                    <th className="py-2 text-right w-1/4">Valor</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-black/10">
+                  {[...activeEventExpenses].sort((a, b) => a.expense_date.localeCompare(b.expense_date)).map((exp) => (
+                    <tr key={exp.id}>
+                      <td className="py-2">{new Date(exp.expense_date + 'T12:00:00').toLocaleDateString('pt-BR')}</td>
+                      <td className="py-2 font-medium">{exp.description}</td>
+                      <td className="py-2 text-right text-rose-600">R$ {Number(exp.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                    </tr>
+                  ))}
+                  <tr className="font-bold border-t-2 border-black">
+                    <td colSpan={2} className="py-2 text-right uppercase">Total Despesas:</td>
+                    <td className="py-2 text-right text-rose-600">R$ {Number(totalRealExpenses).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+                  </tr>
+                </tbody>
+              </table>
+            )}
           </div>
 
           {/* Participants Table */}
