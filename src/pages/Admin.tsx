@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { Profile } from '../types'
-import { Shield, CheckCircle, XCircle, Search, AlertTriangle, Key, Edit, Calendar, Trash2, MessageSquare, Clock, CornerDownRight, FileText } from 'lucide-react'
+import { Shield, CheckCircle, XCircle, Search, AlertTriangle, Key, Edit, Calendar, Trash2, MessageSquare, Clock, CornerDownRight, FileText, Mail } from 'lucide-react'
 import Modal from '../components/Modal'
 
 export default function Admin() {
@@ -26,6 +26,10 @@ export default function Admin() {
   // Feedbacks de Cancelamento
   const [feedbacks, setFeedbacks] = useState<any[]>([])
   const [loadingFeedbacks, setLoadingFeedbacks] = useState(false)
+  const [editingFeedback, setEditingFeedback] = useState<any | null>(null)
+  const [feedbackStatus, setFeedbackStatus] = useState<'pending' | 'resolved'>('pending')
+  const [feedbackNotes, setFeedbackNotes] = useState('')
+  const [savingFeedback, setSavingFeedback] = useState(false)
 
   useEffect(() => {
     loadProfiles()
@@ -133,6 +137,54 @@ export default function Admin() {
       console.error('Error deleting ticket:', error)
       alert(`Erro ao deletar chamado: ${error.message}`)
       setLoadingTickets(false)
+    }
+  }
+
+  async function handleSaveFeedback(e: React.FormEvent) {
+    e.preventDefault()
+    if (!editingFeedback) return
+
+    setSavingFeedback(true)
+    try {
+      const { error } = await supabase
+        .from('cancellation_feedbacks')
+        .update({
+          status: feedbackStatus,
+          admin_notes: feedbackNotes
+        })
+        .eq('id', editingFeedback.id)
+
+      if (error) throw error
+
+      alert('Feedback atualizado com sucesso!')
+      setEditingFeedback(null)
+      loadFeedbacks()
+    } catch (err: any) {
+      console.error('Error updating feedback:', err)
+      alert(`Erro ao atualizar feedback: ${err.message}`)
+    } finally {
+      setSavingFeedback(false)
+    }
+  }
+
+  async function handleDeleteFeedback(id: string) {
+    if (!window.confirm('Tem certeza que deseja excluir permanentemente este feedback de cancelamento?')) {
+      return
+    }
+
+    try {
+      const { error } = await supabase
+        .from('cancellation_feedbacks')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+
+      alert('Feedback excluído com sucesso!')
+      loadFeedbacks()
+    } catch (err: any) {
+      console.error('Error deleting feedback:', err)
+      alert(`Erro ao excluir feedback: ${err.message}`)
     }
   }
 
@@ -512,7 +564,10 @@ export default function Admin() {
                       <th className="p-4 font-black text-[11px] uppercase tracking-wider text-gray-400">Diretor (E-mail)</th>
                       <th className="p-4 font-black text-[11px] uppercase tracking-wider text-gray-400">Motivo do Cancelamento</th>
                       <th className="p-4 font-black text-[11px] uppercase tracking-wider text-gray-400">Observações adicionais</th>
-                      <th className="p-4 font-black text-[11px] uppercase tracking-wider text-gray-400 text-right">Data</th>
+                      <th className="p-4 font-black text-[11px] uppercase tracking-wider text-gray-400">Status</th>
+                      <th className="p-4 font-black text-[11px] uppercase tracking-wider text-gray-400">Notas de Tratativa</th>
+                      <th className="p-4 font-black text-[11px] uppercase tracking-wider text-gray-400">Data</th>
+                      <th className="p-4 font-black text-[11px] uppercase tracking-wider text-gray-400 text-center">Ações</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
@@ -520,7 +575,8 @@ export default function Admin() {
                       .filter(f => 
                         f.email.toLowerCase().includes(search.toLowerCase()) ||
                         f.reason.toLowerCase().includes(search.toLowerCase()) ||
-                        (f.comments && f.comments.toLowerCase().includes(search.toLowerCase()))
+                        (f.comments && f.comments.toLowerCase().includes(search.toLowerCase())) ||
+                        (f.admin_notes && f.admin_notes.toLowerCase().includes(search.toLowerCase()))
                       )
                       .map((feed) => {
                         // Traduzir motivo do cancelamento
@@ -538,13 +594,61 @@ export default function Admin() {
 
                         return (
                           <tr key={feed.id} className="hover:bg-white/5 transition-colors">
-                            <td className="p-4 font-semibold text-white">{feed.email}</td>
+                            <td className="p-4 font-semibold text-white">
+                              <div className="flex items-center gap-2">
+                                <span>{feed.email}</span>
+                                <a
+                                  href={`mailto:${feed.email}?subject=Feedback%20DanceFlow%20-%20Queremos%20te%20ouvir%21&body=Olá%2C%0A%0Avi%20seu%20feedback%20sobre%20o%20cancelamento%20da%20sua%20escola%20no%20DanceFlow.%20Gostaria%20de%20conversar%20melhor%20para%20entender%20se%20podemos%20oferecer%20alguma%20condição%20especial%2C%20uma%20promoção%20ou%20se%20há%20algum%20recurso%20específico%20que%20você%20precisa.%0A%0AAguardamos%20seu%20retorno%21%0A%0AAtenciosamente%2C%0AEquipe%20DanceFlow`}
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 text-[10px] font-bold transition-all cursor-pointer"
+                                  title="Entrar em contato por E-mail"
+                                >
+                                  <Mail size={10} />
+                                  Contatar
+                                </a>
+                              </div>
+                            </td>
                             <td className="p-4 text-purple-400 font-bold">{translateReason(feed.reason)}</td>
                             <td className="p-4 text-gray-300 max-w-xs truncate animate-fade-in" style={{ textOverflow: 'ellipsis', overflow: 'hidden' }} title={feed.comments || ''}>
                               {feed.comments || '-'}
                             </td>
-                            <td className="p-4 text-right text-gray-400 text-xs">
+                            <td className="p-4">
+                              {feed.status === 'resolved' ? (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                  Tratado
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                                  Pendente
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-4 text-gray-300 max-w-xs truncate" title={feed.admin_notes || ''}>
+                              {feed.admin_notes || '-'}
+                            </td>
+                            <td className="p-4 text-gray-400 text-xs">
                               {new Date(feed.created_at).toLocaleDateString('pt-BR')} {new Date(feed.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                            </td>
+                            <td className="p-4 text-center">
+                              <div className="flex items-center justify-center gap-2">
+                                <button
+                                  onClick={() => {
+                                    setEditingFeedback(feed);
+                                    setFeedbackStatus(feed.status || 'pending');
+                                    setFeedbackNotes(feed.admin_notes || '');
+                                  }}
+                                  className="p-1 hover:text-purple-400 text-gray-400 transition-colors cursor-pointer"
+                                  title="Tratar Chamado / Notas"
+                                >
+                                  <Edit size={14} />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteFeedback(feed.id)}
+                                  className="p-1 hover:text-red-400 text-gray-400 transition-colors cursor-pointer"
+                                  title="Excluir Registro"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         );
@@ -694,6 +798,77 @@ export default function Admin() {
                 className="flex-1 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold transition-all shadow-lg flex items-center justify-center disabled:opacity-50"
               >
                 {loadingTickets ? 'Salvando...' : 'Salvar Resposta'}
+              </button>
+            </div>
+          </form>
+        )}
+      </Modal>
+
+      {/* Modal Tratar Feedback de Cancelamento */}
+      <Modal isOpen={!!editingFeedback} onClose={() => setEditingFeedback(null)} title="Tratar Feedback de Cancelamento">
+        {editingFeedback && (
+          <form onSubmit={handleSaveFeedback} className="space-y-6">
+            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2">
+              <p className="text-xs text-gray-400">Cliente (Diretor)</p>
+              <p className="text-sm font-black text-white">{editingFeedback.email}</p>
+              
+              <p className="text-xs text-gray-400 pt-2">Motivo Escolhido</p>
+              <p className="text-sm font-semibold text-purple-400">
+                {editingFeedback.reason === 'preço_alto' ? '💰 Preço muito alto / Sem orçamento' :
+                 editingFeedback.reason === 'falta_recursos' ? '⚙️ Falta de recursos necessários' :
+                 editingFeedback.reason === 'dificuldade_uso' ? '🧭 Dificuldade de usar a plataforma' :
+                 editingFeedback.reason === 'fechamento_escola' ? '🚪 Escola de dança fechou' :
+                 editingFeedback.reason === 'mudanca_sistema' ? '🔄 Migrando para outro sistema' :
+                 '❓ Outro motivo'}
+              </p>
+
+              {editingFeedback.comments && (
+                <>
+                  <p className="text-xs text-gray-400 pt-2">Comentários do Cliente</p>
+                  <div className="text-xs text-gray-300 bg-black/40 p-3 rounded border border-white/5 whitespace-pre-wrap">
+                    {editingFeedback.comments}
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div>
+              <label className="text-sm font-bold block mb-2 text-gray-400 font-sans">Status da Tratativa</label>
+              <select
+                value={feedbackStatus}
+                onChange={(e) => setFeedbackStatus(e.target.value as any)}
+                className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition-all font-medium"
+              >
+                <option value="pending" className="bg-gray-900">Pendente (Sem contato / Em aberto)</option>
+                <option value="resolved" className="bg-gray-900">Tratado (Conversado / Resolvido)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="text-sm font-bold block mb-2 text-gray-400 font-sans">Notas Internas do Admin</label>
+              <textarea
+                rows={4}
+                value={feedbackNotes}
+                onChange={(e) => setFeedbackNotes(e.target.value)}
+                placeholder="Ex: Ofereci promoção de 30% de desconto por e-mail. Aguardando retorno ou registrando acordos..."
+                className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-purple-500 transition-all font-medium text-sm placeholder:text-gray-600 focus:ring-1 focus:ring-purple-500"
+              />
+            </div>
+
+            <div className="flex gap-4 pt-4 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => setEditingFeedback(null)}
+                className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={savingFeedback}
+                className="flex-1 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold transition-all shadow-lg flex items-center justify-center disabled:opacity-50"
+              >
+                {savingFeedback ? 'Salvando...' : 'Salvar Tratativa'}
               </button>
             </div>
           </form>

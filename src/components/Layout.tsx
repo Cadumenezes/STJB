@@ -1043,6 +1043,34 @@ export default function Layout() {
     loadSettings()
   }, [])
 
+  // Auto-logout por inatividade de 30 minutos
+  useEffect(() => {
+    let inactivityTimeout: any;
+
+    const resetTimer = () => {
+      if (inactivityTimeout) clearTimeout(inactivityTimeout);
+      inactivityTimeout = setTimeout(async () => {
+        console.log('Usuário inativo por 30 minutos. Deslogando...');
+        await supabase.auth.signOut();
+      }, 30 * 60 * 1000); // 30 minutos em milissegundos
+    };
+
+    const events = ['mousedown', 'keydown', 'scroll', 'touchstart', 'click'];
+    
+    events.forEach(event => {
+      window.addEventListener(event, resetTimer);
+    });
+
+    resetTimer();
+
+    return () => {
+      if (inactivityTimeout) clearTimeout(inactivityTimeout);
+      events.forEach(event => {
+        window.removeEventListener(event, resetTimer);
+      });
+    };
+  }, []);
+
   async function loadSettings() {
     const { data } = await supabase.from('school_settings').select('*').limit(1).single()
     if (data) {
@@ -1088,11 +1116,11 @@ export default function Layout() {
         className={`fixed inset-y-0 left-0 z-50 w-56 transform transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
-        style={{ backgroundColor: 'var(--bg-secondary)', borderRight: '1px solid var(--border-color)' }}
+        style={{ backgroundColor: 'var(--bg-secondary)', borderRight: '1px solid rgba(255, 255, 255, 0.08)' }}
       >
         <div className="flex h-full flex-col">
           {/* Logo */}
-          <div className="flex flex-col items-center justify-center py-4 px-4 relative" style={{ borderBottom: '1px solid var(--border-color)' }}>
+          <div className="flex flex-col items-center justify-center py-4 px-4 relative" style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
             <button
               className="absolute top-4 right-4 lg:hidden"
               onClick={() => setSidebarOpen(false)}
@@ -1177,7 +1205,7 @@ export default function Layout() {
           </nav>
 
           {/* Footer */}
-          <div className="p-3 space-y-2" style={{ borderTop: '1px solid var(--border-color)' }}>
+          <div className="p-3 space-y-2" style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
             <button
               onClick={() => supabase.auth.signOut()}
               className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-sm font-semibold text-rose-400 hover:bg-rose-500/10 transition-all duration-200"
@@ -1216,11 +1244,11 @@ export default function Layout() {
       </aside>
 
       {/* Main content */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden transition-all duration-300">
         {/* Top bar */}
         <header
           className="flex h-16 items-center gap-4 px-6 lg:px-8"
-          style={{ backgroundColor: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-color)' }}
+          style={{ backgroundColor: 'var(--bg-secondary)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}
         >
           <button
             className="lg:hidden"

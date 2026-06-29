@@ -383,7 +383,30 @@ export default function Events() {
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return
     const files = Array.from(e.target.files)
+    
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif']
+
     files.forEach(file => {
+      // Validação de tipo MIME
+      if (!allowedMimeTypes.includes(file.type)) {
+        alert(`O arquivo "${file.name}" não é uma imagem válida (JPEG, PNG, WebP ou GIF) e foi rejeitado por segurança.`)
+        return
+      }
+
+      // Validação de extensão
+      const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase()
+      if (!allowedExtensions.includes(fileExtension)) {
+        alert(`O arquivo "${file.name}" possui uma extensão inválida e foi rejeitado.`)
+        return
+      }
+
+      // Limite de tamanho: 5MB por foto de evento
+      if (file.size > 5 * 1024 * 1024) {
+        alert(`O arquivo "${file.name}" é muito grande. O limite máximo é 5MB por foto.`)
+        return
+      }
+
       const reader = new FileReader()
       reader.onloadend = () => {
         if (reader.result) {

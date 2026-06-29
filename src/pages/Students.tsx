@@ -797,8 +797,18 @@ export default function Students() {
     const file = e.target.files?.[0]
     if (!file) return
 
-    if (!file.type.startsWith('image/')) {
-      alert('Por favor, selecione um arquivo de imagem válido.')
+    // Validação rígida de tipo MIME (apenas formatos raster seguros, sem SVG)
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+    if (!allowedMimeTypes.includes(file.type)) {
+      alert('Por favor, selecione um arquivo de imagem válido (JPEG, PNG, WebP ou GIF). Imagens SVG e outros formatos não são permitidos por motivos de segurança.')
+      return
+    }
+
+    // Validação rígida de extensão
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif']
+    const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase()
+    if (!allowedExtensions.includes(fileExtension)) {
+      alert('Extensão de arquivo inválida. Apenas .jpg, .jpeg, .png, .webp e .gif são permitidos.')
       return
     }
 
@@ -1052,6 +1062,7 @@ export default function Students() {
           <textarea
             value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
             rows={3}
+            spellCheck={true}
             className="w-full rounded-2xl px-4 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-purple-500/50"
             style={inputStyle}
           />

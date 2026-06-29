@@ -22,26 +22,29 @@ export default function Evaluations() {
   const [students, setStudents] = useState<Student[]>([])
   
   // Grade Form state (maps student_id to its grade info)
-  const [gradesState, setGradesState] = useState<Record<string, { grade: string, concept: string, feedback: string }>>({})
+  const [gradesState, setGradesState] = useState<Record<string, { grade: string, concept: string, feedback: string, criteria_grades?: Record<string, string> }>>({})
 
   // Exam Modal Form
   const [showExamModal, setShowExamModal] = useState(false)
   const [editExam, setEditExam] = useState<Exam | null>(null)
+  const [newCriterion, setNewCriterion] = useState('')
   const [examFormData, setExamFormData] = useState({
     name: '',
     description: '',
     date: new Date().toISOString().split('T')[0],
-    class_id: ''
+    class_id: '',
+    criteria: [] as string[]
   })
 
   // Data for single student printing
   const [printGradeData, setPrintGradeData] = useState<{
     student: Student
-    gradeInfo: { grade: string; concept: string; feedback: string }
+    gradeInfo: { grade: string; concept: string; feedback: string; criteria_grades?: Record<string, string> }
     examName: string
     date: string
     className: string
     instructorName: string
+    criteria?: string[]
   } | null>(null)
 
   useEffect(() => {
@@ -171,20 +174,27 @@ export default function Evaluations() {
         .select('*')
         .eq('exam_id', selectedExamId)
 
-      const gradesMap: Record<string, { grade: string, concept: string, feedback: string }> = {}
+      const gradesMap: Record<string, { grade: string, concept: string, feedback: string, criteria_grades: Record<string, string> }> = {}
       
       // Initialize for all current students
       students.forEach(s => {
-        gradesMap[s.id] = { grade: '', concept: '', feedback: '' }
+        gradesMap[s.id] = { grade: '', concept: '', feedback: '', criteria_grades: {} }
       })
 
       // Populate with saved grades
       if (gradesData) {
-        gradesData.forEach((g: ExamGrade) => {
+        gradesData.forEach((g: any) => {
+          const criteriaMap: Record<string, string> = {}
+          if (g.criteria_grades) {
+            Object.entries(g.criteria_grades).forEach(([k, v]) => {
+              criteriaMap[k] = v !== null && v !== undefined ? String(v) : ''
+            })
+          }
           gradesMap[g.student_id] = {
             grade: g.grade !== undefined && g.grade !== null ? String(g.grade) : '',
             concept: g.concept || '',
-            feedback: g.feedback || ''
+            feedback: g.feedback || '',
+            criteria_grades: criteriaMap
           }
         })
       }
@@ -223,6 +233,27 @@ export default function Evaluations() {
   const activeClass = classes.find(c => c.id === selectedClassId)
   const activeExam = exams.find(e => e.id === selectedExamId)
 
+  function handleAddCriterion() {
+    const trimmed = newCriterion.trim()
+    if (!trimmed) return
+    if (examFormData.criteria.includes(trimmed)) {
+      alert('Este critério já foi adicionado!')
+      return
+    }
+    setExamFormData({
+      ...examFormData,
+      criteria: [...examFormData.criteria, trimmed]
+    })
+    setNewCriterion('')
+  }
+
+  function handleRemoveCriterion(name: string) {
+    setExamFormData({
+      ...examFormData,
+      criteria: examFormData.criteria.filter(c => c !== name)
+    })
+  }
+
   // Handle Exam Save (Insert / Update)
   async function handleExamSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -234,6 +265,7 @@ export default function Evaluations() {
       description: examFormData.description,
       date: examFormData.date,
       class_id: examFormData.class_id,
+      criteria: examFormData.criteria || [],
       user_id: schoolOwnerId
     }
 
@@ -251,7 +283,7 @@ export default function Evaluations() {
 
       setShowExamModal(false)
       setEditExam(null)
-      setExamFormData({ name: '', description: '', date: new Date().toISOString().split('T')[0], class_id: '' })
+      setExamFormData({ name: '', description: '', date: new Date().toISOString().split('T')[0], class_id: '', criteria: [] })
       
       // Reload lists
       if (activeTab === 'exams') {
@@ -286,18 +318,60 @@ export default function Evaluations() {
     }
   }
 
+  const handleCriteriaGradeChange = (studentId: string, criterion: string, value: string) => {
+    const studentState = gradesState[studentId] || { grade: '', concept: '', feedback: '', criteria_grades: {} }
+    const updatedCriteriaGrades = {
+      ...studentState.criteria_grades,
+      [criterion]: value
+    }
+
+    // Calculate average of criteria that have values
+    const criteriaKeys = activeExam?.criteria || []
+    let sum = 0
+    let count = 0
+    criteriaKeys.forEach(c => {
+      const valStr = updatedCriteriaGrades[c]
+      if (valStr) {
+        const val = parseFloat(valStr)
+        if (!isNaN(val)) {
+          sum += val
+          count++
+        }
+      }
+    })
+
+    const averageGrade = count > 0 ? (sum / count).toFixed(1) : ''
+
+    setGradesState({
+      ...gradesState,
+      [studentId]: {
+        ...studentState,
+        criteria_grades: updatedCriteriaGrades,
+        grade: averageGrade
+      }
+    })
+  }
+
   // Handle Grades Save (Batch Upsert)
   async function handleSaveGrades() {
     if (!selectedExamId || !schoolOwnerId) return
 
     setSaving(true)
     const records = Object.entries(gradesState).map(([studentId, info]) => {
+      const parsedCriteriaGrades: Record<string, number | null> = {}
+      if (info.criteria_grades) {
+        Object.entries(info.criteria_grades).forEach(([k, v]) => {
+          parsedCriteriaGrades[k] = v ? parseFloat(v) : null
+        })
+      }
+
       return {
         exam_id: selectedExamId,
         student_id: studentId,
         grade: info.grade ? parseFloat(info.grade) : null,
         concept: info.concept || null,
         feedback: info.feedback || null,
+        criteria_grades: parsedCriteriaGrades,
         user_id: schoolOwnerId
       }
     })
@@ -343,7 +417,8 @@ export default function Evaluations() {
       examName: activeExam.name,
       date: activeExam.date,
       className: activeClass?.name || '',
-      instructorName: instName
+      instructorName: instName,
+      criteria: activeExam.criteria || []
     })
 
     setTimeout(() => {
@@ -411,7 +486,8 @@ export default function Evaluations() {
                     name: '',
                     description: '',
                     date: new Date().toISOString().split('T')[0],
-                    class_id: selectedClassId || (classes.length > 0 ? classes[0].id : '')
+                    class_id: selectedClassId || (classes.length > 0 ? classes[0].id : ''),
+                    criteria: []
                   })
                   setShowExamModal(true)
                 }}
@@ -506,7 +582,16 @@ export default function Evaluations() {
                       <thead>
                         <tr className="border-b" style={{ borderColor: 'var(--border-color)', backgroundColor: 'rgba(255,255,255,0.02)' }}>
                           <th className="p-4 font-bold" style={{ color: 'var(--text-secondary)' }}>Aluno</th>
-                          <th className="p-4 font-bold w-28" style={{ color: 'var(--text-secondary)' }}>Nota (0-10)</th>
+                          {activeExam?.criteria && activeExam.criteria.length > 0 ? (
+                            activeExam.criteria.map((criterion, idx) => (
+                              <th key={idx} className="p-4 font-bold w-28 text-center" style={{ color: 'var(--text-secondary)' }}>{criterion} (0-10)</th>
+                            ))
+                          ) : (
+                            <th className="p-4 font-bold w-28" style={{ color: 'var(--text-secondary)' }}>Nota (0-10)</th>
+                          )}
+                          {activeExam?.criteria && activeExam.criteria.length > 0 && (
+                            <th className="p-4 font-bold w-28 text-center" style={{ color: 'var(--text-secondary)' }}>Média Final</th>
+                          )}
                           <th className="p-4 font-bold w-44" style={{ color: 'var(--text-secondary)' }}>Conceito</th>
                           <th className="p-4 font-bold" style={{ color: 'var(--text-secondary)' }}>Feedback / Observações</th>
                           <th className="p-4 font-bold text-center w-28" style={{ color: 'var(--text-secondary)' }}>Ações</th>
@@ -514,7 +599,7 @@ export default function Evaluations() {
                       </thead>
                       <tbody>
                         {students.map((student) => {
-                          const state = gradesState[student.id] || { grade: '', concept: '', feedback: '' }
+                          const state = gradesState[student.id] || { grade: '', concept: '', feedback: '', criteria_grades: {} }
                           return (
                             <tr key={student.id} className="border-b" style={{ borderColor: 'var(--border-color)' }}>
                               <td className="p-4 flex items-center gap-3">
@@ -530,22 +615,48 @@ export default function Evaluations() {
                                   <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>Matrícula: {student.status === 'active' ? 'Ativo' : 'Bolsista'}</div>
                                 </div>
                               </td>
-                              <td className="p-4">
-                                <input
-                                  type="number"
-                                  min="0"
-                                  max="10"
-                                  step="0.1"
-                                  placeholder="0.0"
-                                  value={state.grade}
-                                  onChange={(e) => setGradesState({
-                                    ...gradesState,
-                                    [student.id]: { ...state, grade: e.target.value }
-                                  })}
-                                  className="w-20 rounded-lg px-2.5 py-1.5 text-center text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
-                                  style={inputStyle}
-                                />
-                              </td>
+                              {activeExam?.criteria && activeExam.criteria.length > 0 ? (
+                                activeExam.criteria.map((criterion, idx) => {
+                                  const critVal = state.criteria_grades?.[criterion] || ''
+                                  return (
+                                    <td key={idx} className="p-4">
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        max="10"
+                                        step="0.1"
+                                        placeholder="0.0"
+                                        value={critVal}
+                                        onChange={(e) => handleCriteriaGradeChange(student.id, criterion, e.target.value)}
+                                        className="w-20 rounded-lg px-2.5 py-1.5 text-center text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
+                                        style={inputStyle}
+                                      />
+                                    </td>
+                                  )
+                                })
+                              ) : (
+                                <td className="p-4">
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    max="10"
+                                    step="0.1"
+                                    placeholder="0.0"
+                                    value={state.grade}
+                                    onChange={(e) => setGradesState({
+                                      ...gradesState,
+                                      [student.id]: { ...state, grade: e.target.value }
+                                    })}
+                                    className="w-20 rounded-lg px-2.5 py-1.5 text-center text-sm focus:outline-none focus:ring-1 focus:ring-purple-500"
+                                    style={inputStyle}
+                                  />
+                                </td>
+                              )}
+                              {activeExam?.criteria && activeExam.criteria.length > 0 && (
+                                <td className="p-4 text-center font-bold text-purple-400">
+                                  {state.grade || '-'}
+                                </td>
+                              )}
                               <td className="p-4">
                                 <select
                                   value={state.concept}
@@ -566,6 +677,7 @@ export default function Evaluations() {
                               <td className="p-4">
                                 <input
                                   type="text"
+                                  spellCheck={true}
                                   placeholder="Evolução técnica, dedicação, pontos a melhorar..."
                                   value={state.feedback}
                                   onChange={(e) => setGradesState({
@@ -655,7 +767,8 @@ export default function Evaluations() {
                               name: exam.name,
                               description: exam.description || '',
                               date: exam.date,
-                              class_id: exam.class_id
+                              class_id: exam.class_id,
+                              criteria: exam.criteria || []
                             })
                             setShowExamModal(true)
                           }}
@@ -733,9 +846,56 @@ export default function Evaluations() {
           </div>
 
           <div>
+            <label className="text-sm font-bold block mb-1.5" style={{ color: 'var(--text-secondary)' }}>Critérios de Avaliação (opcional)</label>
+            <div className="flex gap-2 mb-2">
+              <input
+                type="text"
+                placeholder="Ex: Técnica, Postura, Musicalidade"
+                value={newCriterion}
+                onChange={(e) => setNewCriterion(e.target.value)}
+                className="flex-1 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                style={inputStyle}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddCriterion();
+                  }
+                }}
+              />
+              <button
+                type="button"
+                onClick={handleAddCriterion}
+                className="px-4 py-2 bg-purple-600 hover:bg-purple-755 text-white rounded-xl text-sm font-bold transition-all hover:bg-purple-700"
+              >
+                Adicionar
+              </button>
+            </div>
+            
+            {examFormData.criteria && examFormData.criteria.length > 0 ? (
+              <div className="flex flex-wrap gap-2 p-3 rounded-xl border border-dashed border-white/10" style={{ backgroundColor: 'rgba(0,0,0,0.15)' }}>
+                {examFormData.criteria.map((c, idx) => (
+                  <span key={idx} className="flex items-center gap-1.5 bg-purple-900/40 text-purple-200 border border-purple-500/30 px-3 py-1 rounded-full text-xs font-semibold">
+                    {c}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveCriterion(c)}
+                      className="text-purple-400 hover:text-rose-400 transition-colors font-bold ml-1 text-sm leading-none"
+                    >
+                      &times;
+                    </button>
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-gray-500 italic">Nenhum critério adicionado. A prova usará uma única nota geral.</p>
+            )}
+          </div>
+
+          <div>
             <label className="text-sm font-bold block mb-1.5" style={{ color: 'var(--text-secondary)' }}>Descrição / Conteúdo Programático</label>
             <textarea
               rows={3}
+              spellCheck={true}
               value={examFormData.description}
               onChange={(e) => setExamFormData({ ...examFormData, description: e.target.value })}
               placeholder="Descreva as técnicas avaliadas ou observações importantes sobre esta prova..."
@@ -825,13 +985,43 @@ export default function Evaluations() {
           {/* Resultado da Avaliação */}
           <div className="mb-8">
             <h3 className="text-sm font-bold uppercase tracking-wider text-gray-500 mb-4 border-b pb-1">Desempenho da Avaliação</h3>
+            
+            {/* Tabela de Critérios se existirem */}
+            {printGradeData.criteria && printGradeData.criteria.length > 0 ? (
+              <div className="mb-6 border border-gray-200 rounded-lg overflow-hidden">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                      <th className="p-3 font-bold text-gray-600 uppercase tracking-wider">Critério de Avaliação</th>
+                      <th className="p-3 font-bold text-gray-600 uppercase tracking-wider text-right w-32">Nota (0-10)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {printGradeData.criteria.map((c, i) => {
+                      const val = printGradeData.gradeInfo.criteria_grades?.[c] || ''
+                      return (
+                        <tr key={i} className="border-b border-gray-200 last:border-b-0">
+                          <td className="p-3 font-medium text-gray-700">{c}</td>
+                          <td className="p-3 text-right font-bold text-gray-900">
+                            {val ? Number(val).toFixed(1) : '-'}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
               <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
                 <span className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Avaliação / Prova</span>
                 <span className="text-sm font-bold text-gray-800">{printGradeData.examName}</span>
               </div>
               <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                <span className="text-[10px] font-bold uppercase text-gray-400 block mb-1">Nota da Prova</span>
+                <span className="text-[10px] font-bold uppercase text-gray-400 block mb-1">
+                  {printGradeData.criteria && printGradeData.criteria.length > 0 ? 'Média Final' : 'Nota da Prova'}
+                </span>
                 <span className="text-lg font-black text-purple-700">
                   {printGradeData.gradeInfo.grade ? Number(printGradeData.gradeInfo.grade).toFixed(1) : 'Sem nota'}
                 </span>

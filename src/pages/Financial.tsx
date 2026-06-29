@@ -1009,13 +1009,27 @@ export default function Financial() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+
+    // Validação rígida de extensão
+    const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase()
+    if (fileExtension !== '.ofx' && fileExtension !== '.csv') {
+      alert('Arquivo inválido. Por segurança, apenas extratos bancários com extensão .ofx ou .csv são permitidos.')
+      return
+    }
+
+    // Limite de tamanho: 5MB por extrato
+    if (file.size > 5 * 1024 * 1024) {
+      alert('O arquivo de extrato é muito grande. O limite máximo é 5MB.')
+      return
+    }
+
     setReconciliationFile(file)
     setProcessingFile(true)
 
     const reader = new FileReader()
     reader.onload = (event) => {
       const text = event.target?.result as string
-      const isOFX = file.name.toLowerCase().endsWith('.ofx')
+      const isOFX = fileExtension === '.ofx'
       processExtratoText(text, isOFX)
     }
     reader.readAsText(file)

@@ -14,6 +14,9 @@ export default function Auth() {
   const [phone, setPhone] = useState('')
   const [message, setMessage] = useState({ type: '', text: '' })
   
+  // Estados de lockout de força bruta
+  const [lockoutRemaining, setLockoutRemaining] = useState(0)
+  
   // Estados para o fluxo de redefinição de senha
   const [forgotMode, setForgotMode] = useState(false)
   const [isResetting, setIsResetting] = useState(false)
@@ -35,8 +38,37 @@ export default function Auth() {
     }
   }, [])
 
+  useEffect(() => {
+    const checkLockout = () => {
+      const lockoutUntil = localStorage.getItem('login_lockout_until')
+      if (lockoutUntil) {
+        const remaining = Math.ceil((parseInt(lockoutUntil, 10) - Date.now()) / 1000)
+        if (remaining > 0) {
+          setLockoutRemaining(remaining)
+        } else {
+          localStorage.removeItem('login_lockout_until')
+          localStorage.removeItem('login_failed_attempts')
+          setLockoutRemaining(0)
+        }
+      }
+    }
+
+    checkLockout()
+    const interval = setInterval(checkLockout, 1000)
+    return () => clearInterval(interval)
+  }, [])
+
   async function handleAuth(e: React.FormEvent) {
     e.preventDefault()
+
+    // Verificar se lockout está ativo
+    const lockoutUntil = localStorage.getItem('login_lockout_until')
+    if (lockoutUntil && parseInt(lockoutUntil, 10) > Date.now()) {
+      const remaining = Math.ceil((parseInt(lockoutUntil, 10) - Date.now()) / 1000)
+      setMessage({ type: 'error', text: `Muitas tentativas falhas. Por segurança, a tela de login está bloqueada. Por favor, aguarde ${remaining} segundos.` })
+      return
+    }
+
     setLoading(true)
     setMessage({ type: '', text: '' })
 
@@ -44,6 +76,10 @@ export default function Auth() {
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
+
+        // Sucesso no login: limpar histórico de tentativas
+        localStorage.removeItem('login_failed_attempts')
+        localStorage.removeItem('login_lockout_until')
       } else {
         if (!acceptTerms) {
           throw new Error('Você precisa ler e concordar com os Termos de Uso e a Política de Privacidade para se cadastrar.')
@@ -66,7 +102,21 @@ export default function Auth() {
         setMessage({ type: 'success', text: 'Cadastro realizado! Verifique seu e-mail para confirmar.' })
       }
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.message || 'Ocorreu um erro.' })
+      if (isLogin) {
+        const failedAttempts = parseInt(localStorage.getItem('login_failed_attempts') || '0', 10) + 1
+        localStorage.setItem('login_failed_attempts', failedAttempts.toString())
+
+        if (failedAttempts >= 5) {
+          const lockoutUntilTimestamp = Date.now() + 30 * 1000 // Bloqueia por 30 segundos
+          localStorage.setItem('login_lockout_until', lockoutUntilTimestamp.toString())
+          setLockoutRemaining(30)
+          setMessage({ type: 'error', text: 'Muitas tentativas incorretas. A tela de login foi bloqueada por 30 segundos.' })
+        } else {
+          setMessage({ type: 'error', text: `${error.message || 'Ocorreu um erro.'} (Tentativa ${failedAttempts} de 5)` })
+        }
+      } else {
+        setMessage({ type: 'error', text: error.message || 'Ocorreu um erro.' })
+      }
     } finally {
       setLoading(false)
     }
@@ -336,10 +386,11 @@ export default function Auth() {
                     <input
                       type="email"
                       required
+                      disabled={lockoutRemaining > 0}
                       placeholder="Seu e-mail"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full bg-black/30 border border-white/10 rounded-xl pr-4 py-2.5 text-xs text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
+                      className="w-full bg-black/30 border border-white/10 rounded-xl pr-4 py-2.5 text-xs text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all disabled:opacity-55"
                       style={{ paddingLeft: '44px' }}
                     />
                   </div>
@@ -350,10 +401,11 @@ export default function Auth() {
                       <input
                         type="tel"
                         required
+                        disabled={lockoutRemaining > 0}
                         placeholder="Telefone / WhatsApp"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
-                        className="w-full bg-black/30 border border-white/10 rounded-xl pr-4 py-2.5 text-xs text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
+                        className="w-full bg-black/30 border border-white/10 rounded-xl pr-4 py-2.5 text-xs text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all disabled:opacity-55"
                         style={{ paddingLeft: '44px' }}
                       />
                     </div>
@@ -364,10 +416,11 @@ export default function Auth() {
                     <input
                       type="password"
                       required
+                      disabled={lockoutRemaining > 0}
                       placeholder="Sua senha"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full bg-black/30 border border-white/10 rounded-xl pr-4 py-2.5 text-xs text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
+                      className="w-full bg-black/30 border border-white/10 rounded-xl pr-4 py-2.5 text-xs text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all disabled:opacity-55"
                       style={{ paddingLeft: '44px' }}
                     />
                   </div>
@@ -376,11 +429,12 @@ export default function Auth() {
                     <div className="text-right">
                       <button
                         type="button"
+                        disabled={lockoutRemaining > 0}
                         onClick={() => {
                           setForgotMode(true);
                           setMessage({ type: '', text: '' });
                         }}
-                        className="text-[11px] text-purple-400 font-medium hover:text-purple-300 transition-colors cursor-pointer"
+                        className="text-[11px] text-purple-400 font-medium hover:text-purple-300 transition-colors cursor-pointer disabled:opacity-50"
                       >
                         Esqueceu sua senha?
                       </button>
@@ -394,24 +448,27 @@ export default function Auth() {
                       type="checkbox"
                       id="acceptTerms"
                       required
+                      disabled={lockoutRemaining > 0}
                       checked={acceptTerms}
                       onChange={(e) => setAcceptTerms(e.target.checked)}
-                      className="mt-0.5 rounded border-white/10 bg-black/30 text-purple-600 focus:ring-purple-500/50 cursor-pointer animate-fade-in"
+                      className="mt-0.5 rounded border-white/10 bg-black/30 text-purple-600 focus:ring-purple-500/50 cursor-pointer animate-fade-in disabled:opacity-50"
                     />
                     <label htmlFor="acceptTerms" className="text-[11px] text-gray-400 leading-normal select-none cursor-pointer">
                       Li e concordo com os{' '}
                       <button
                         type="button"
+                        disabled={lockoutRemaining > 0}
                         onClick={() => { setPolicyTab('terms'); setPolicyOpen(true); }}
-                        className="text-purple-400 hover:text-purple-300 font-bold hover:underline cursor-pointer"
+                        className="text-purple-400 hover:text-purple-300 font-bold hover:underline cursor-pointer disabled:opacity-50"
                       >
                         Termos de Uso
                       </button>{' '}
                       e a{' '}
                       <button
                         type="button"
+                        disabled={lockoutRemaining > 0}
                         onClick={() => { setPolicyTab('privacy'); setPolicyOpen(true); }}
-                        className="text-purple-400 hover:text-purple-300 font-bold hover:underline cursor-pointer"
+                        className="text-purple-400 hover:text-purple-300 font-bold hover:underline cursor-pointer disabled:opacity-50"
                       >
                         Política de Privacidade
                       </button>{' '}
@@ -422,15 +479,21 @@ export default function Auth() {
 
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || lockoutRemaining > 0}
                   className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3.5 rounded-xl text-xs transition-all shadow-lg shadow-purple-900/15 flex items-center justify-center gap-2 group disabled:opacity-50 cursor-pointer"
                 >
                   {loading ? (
                     <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   ) : (
                     <>
-                      {isLogin ? 'Acessar Conta' : 'Iniciar Avaliação Gratuita'}
-                      <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                      {lockoutRemaining > 0 ? (
+                        `Bloqueado (${lockoutRemaining}s)`
+                      ) : (
+                        <>
+                          {isLogin ? 'Acessar Conta' : 'Iniciar Avaliação Gratuita'}
+                          <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                        </>
+                      )}
                     </>
                   )}
                 </button>
@@ -456,7 +519,7 @@ export default function Auth() {
       </div>
 
       {/* Right Column: Visual Humanized Panel (SaaS Split-Screen Grid) */}
-      <div className="flex w-full md:w-[65%] lg:w-[70%] xl:w-[74%] flex-col justify-between p-6 sm:p-8 bg-[#06060c] relative md:border-l border-white/5 shrink-0">
+      <div className="hidden md:flex w-full md:w-[65%] lg:w-[70%] xl:w-[74%] flex-col justify-between p-6 sm:p-8 bg-[#06060c] relative md:border-l border-white/5 shrink-0">
         
         {/* Subtle Radial Glow */}
         <div className="absolute top-[-10%] right-[-10%] w-[60%] h-[60%] rounded-full bg-purple-600/10 blur-[130px] pointer-events-none -z-10" />

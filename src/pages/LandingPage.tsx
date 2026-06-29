@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, CheckCircle2, Shield, Sparkles, Award, User } from 'lucide-react'
+import { ArrowRight, CheckCircle2, Shield, Sparkles, Award, User, X } from 'lucide-react'
+import { supabase } from '../lib/supabase'
 import heroImage from '../assets/dance_hero_trio.png'
 import feature1Image from '../assets/dance_black_ballerina.png'
 import feature2Image from '../assets/dance_esmeralda_ballerina.png'
@@ -14,6 +16,93 @@ import theaterMapImg from '../assets/theater_map_mockup.png'
 import financialMockupImg from '../assets/financial_dashboard_mockup.png'
 
 export default function LandingPage() {
+  const [showContactModal, setShowContactModal] = useState(false)
+  const [contactType, setContactType] = useState<'support' | 'career'>('support')
+  const [contactEmail, setContactEmail] = useState('')
+  const [contactMessage, setContactMessage] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const sanitizeInput = (val: string) => {
+    return val
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;');
+  }
+
+  const handleContactSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    const emailTrim = contactEmail.trim()
+    const messageTrim = contactMessage.trim()
+
+    if (!emailTrim || !messageTrim) {
+      alert('Por favor, preencha todos os campos.')
+      return
+    }
+
+    // Validação rígida de e-mail por regex
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(emailTrim)) {
+      alert('Por favor, insira um e-mail válido.')
+      return
+    }
+
+    if (emailTrim.length > 100) {
+      alert('O e-mail é muito longo. O limite é de 100 caracteres.')
+      return
+    }
+
+    if (messageTrim.length > 2000) {
+      alert('A mensagem é muito longa. O limite é de 2000 caracteres.')
+      return
+    }
+
+    // Escanear contra injeção de script (XSS)
+    const scriptPattern = /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>|javascript:/gi
+    if (scriptPattern.test(emailTrim) || scriptPattern.test(messageTrim)) {
+      alert('Envio bloqueado por motivos de segurança. Não é permitido o uso de códigos ou scripts.')
+      return
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      const sanitizedEmail = sanitizeInput(emailTrim)
+      const sanitizedMessage = sanitizeInput(messageTrim)
+
+      const subject = contactType === 'support' 
+        ? 'Suporte - Contato Landing Page' 
+        : 'Trabalhe Conosco - Vaga / Interesse'
+        
+      const senderName = contactType === 'support'
+        ? 'Visitante (Landing Page)'
+        : 'Candidato (Landing Page)'
+
+      const { error } = await supabase.from('support_tickets').insert([{
+        sender_email: sanitizedEmail,
+        message: sanitizedMessage,
+        subject: subject,
+        sender_name: senderName,
+        sender_role: contactType === 'support' ? 'user' : 'guest',
+        status: 'open'
+      }])
+
+      if (error) throw error
+
+      alert('Sua mensagem foi enviada com sucesso! Agradecemos o contato.')
+      setShowContactModal(false)
+      setContactEmail('')
+      setContactMessage('')
+    } catch (err: any) {
+      console.error('Contact submit error:', err)
+      alert('Ocorreu um erro ao enviar sua mensagem: ' + err.message)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <div className="min-h-screen w-full bg-[#06060c] text-white selection:bg-purple-500/30 overflow-x-hidden font-sans flex flex-col items-center gap-y-8 md:gap-y-14">
       {/* Dynamic Background Accents */}
@@ -506,15 +595,112 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="relative z-10 py-16 text-center border-t border-white/5 w-full">
-        <div className="flex items-center justify-center gap-2 mb-4">
+      <footer className="relative z-10 py-16 text-center border-t border-white/5 w-full flex flex-col items-center justify-center gap-4">
+        <div className="flex items-center justify-center gap-2">
           <div className="h-5 w-5 rounded-md flex items-center justify-center bg-gradient-to-br from-purple-600 to-pink-500">
             <span className="text-white text-[10px] font-black">D</span>
           </div>
           <span className="font-black tracking-tight text-base">Dance<span className="text-purple-500">Flow</span></span>
         </div>
+        
+        {/* Footer Navigation Links */}
+        <div className="flex gap-6 text-xs font-semibold text-gray-500 my-2">
+          <button 
+            onClick={() => { setContactType('career'); setShowContactModal(true); }}
+            className="hover:text-purple-400 transition-colors cursor-pointer"
+          >
+            Trabalhe Conosco
+          </button>
+          <span className="text-gray-700">|</span>
+          <button 
+            onClick={() => { setContactType('support'); setShowContactModal(true); }}
+            className="hover:text-purple-400 transition-colors cursor-pointer"
+          >
+            Suporte
+          </button>
+        </div>
+        
         <p className="text-gray-600 text-xs font-semibold">© 2026 DanceFlow Management. Todos os direitos reservados.</p>
       </footer>
+
+      {/* Contact Modal */}
+      {showContactModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div 
+            className="relative w-full max-w-md rounded-3xl border border-white/10 p-6 md:p-8 overflow-hidden shadow-2xl"
+            style={{ backgroundColor: '#0c0c14' }}
+          >
+            {/* Background Glow */}
+            <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] rounded-full bg-purple-600/10 blur-[80px] pointer-events-none" />
+            <div className="absolute bottom-[-20%] right-[-20%] w-[60%] h-[60%] rounded-full bg-pink-600/10 blur-[80px] pointer-events-none" />
+
+            {/* Close Button */}
+            <button 
+              onClick={() => setShowContactModal(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors cursor-pointer"
+            >
+              <X size={16} />
+            </button>
+
+            {/* Header */}
+            <div className="mb-6 relative z-10">
+              <h3 className="text-lg font-black tracking-tight text-white">
+                {contactType === 'support' ? 'Suporte Técnico' : 'Trabalhe Conosco'}
+              </h3>
+              <p className="text-xs text-gray-400 mt-1">
+                {contactType === 'support' 
+                  ? 'Fale com nosso time técnico sobre dúvidas ou problemas no sistema.'
+                  : 'Quer fazer parte da equipe do DanceFlow? Envie sua vaga de interesse.'}
+              </p>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleContactSubmit} className="space-y-4 relative z-10">
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-gray-300 block">Seu E-mail</label>
+                <input 
+                  type="email"
+                  required
+                  disabled={isSubmitting}
+                  placeholder="exemplo@email.com"
+                  value={contactEmail}
+                  onChange={(e) => setContactEmail(e.target.value)}
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all disabled:opacity-50"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-gray-300 block">
+                  {contactType === 'support' ? 'Como podemos ajudar?' : 'Vaga de interesse / Apresentação'}
+                </label>
+                <textarea 
+                  required
+                  rows={4}
+                  disabled={isSubmitting}
+                  placeholder={contactType === 'support' 
+                    ? 'Descreva em detalhes o seu problema ou sugestão de suporte...'
+                    : 'Fale sobre a área/vaga que procura (ex: Professor de Balé, Recepcionista, Dev) e sua experiência...'}
+                  value={contactMessage}
+                  onChange={(e) => setContactMessage(e.target.value)}
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all resize-none disabled:opacity-50"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 rounded-xl text-xs transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+              >
+                {isSubmitting ? (
+                  <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  'Enviar Solicitação'
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

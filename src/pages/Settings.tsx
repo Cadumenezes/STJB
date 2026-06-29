@@ -364,8 +364,18 @@ export default function SettingsPage() {
     const file = e.target.files?.[0]
     if (!file) return
 
-    if (!file.type.startsWith('image/')) {
-      alert('Por favor, selecione um arquivo de imagem válido.')
+    // Validação rígida de tipo MIME (apenas formatos raster seguros, sem SVG)
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+    if (!allowedMimeTypes.includes(file.type)) {
+      alert('Por favor, selecione um arquivo de imagem válido (JPEG, PNG, WebP ou GIF). Imagens SVG e outros formatos não são permitidos por motivos de segurança.')
+      return
+    }
+
+    // Validação rígida de extensão
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif']
+    const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase()
+    if (!allowedExtensions.includes(fileExtension)) {
+      alert('Extensão de arquivo inválida. Apenas .jpg, .jpeg, .png, .webp e .gif são permitidos.')
       return
     }
 
@@ -386,12 +396,53 @@ export default function SettingsPage() {
     const file = e.target.files?.[0]
     if (!file) return
 
+    // Validação de extensão
+    const allowedExtensions = ['.html', '.txt']
+    const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase()
+    if (!allowedExtensions.includes(fileExtension)) {
+      alert('Extensão de arquivo inválida. Apenas modelos em .html e .txt são permitidos.')
+      return
+    }
+
+    // Limite de tamanho: 1MB para modelos de documentos
+    if (file.size > 1 * 1024 * 1024) {
+      alert('O arquivo de modelo é muito grande. O limite máximo é 1MB.')
+      return
+    }
+
     const reader = new FileReader()
     reader.onload = (event) => {
       const text = event.target?.result as string
+
+      // Escanear contra injeção de scripts (XSS)
+      const maliciousPatterns = [
+        /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, // tags script
+        /javascript:/gi,                                        // URIs javascript
+        /onload\s*=/gi,                                         // manipulador onload
+        /onerror\s*=/gi,                                        // manipulador onerror
+        /onclick\s*=/gi,                                        // manipulador onclick
+      ]
+      
+      const hasMaliciousContent = maliciousPatterns.some(pattern => pattern.test(text))
+      if (hasMaliciousContent) {
+        alert('Upload bloqueado: O arquivo enviado contém códigos JavaScript ou scripts perigosos não permitidos por motivos de segurança.')
+        return
+      }
+
       setFormData(prev => ({ ...prev, [field]: text }))
     }
     reader.readAsText(file)
+  }
+
+  const handleRestoreDefaultColors = () => {
+    setFormData(prev => ({
+      ...prev,
+      bg_color: '#0a0a0f',
+      bg_card: '#1a1a2e',
+      bg_menu: '#1a1a2e',
+      text_color: '#f0f0ff',
+      accent_color: '#8b5cf6',
+    }))
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -472,6 +523,15 @@ export default function SettingsPage() {
     color: 'var(--text-primary)',
   }
 
+  const getTabButtonStyle = (tabName: typeof activeTab): React.CSSProperties => ({
+    paddingLeft: '18px',
+    paddingRight: '18px',
+    backgroundColor: activeTab === tabName ? 'var(--bg-card)' : 'rgba(0, 0, 0, 0.2)',
+    borderColor: activeTab === tabName ? 'var(--accent-color)' : 'transparent',
+    color: activeTab === tabName ? '#fff' : 'var(--text-primary)',
+    boxShadow: activeTab === tabName ? '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 0 8px var(--accent-color)' : 'none'
+  })
+
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
@@ -481,7 +541,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="flex flex-col pb-10">
+    <div className="flex flex-col pb-10" style={{ paddingLeft: 'clamp(16px, 4vw, 48px)', paddingRight: 'clamp(16px, 4vw, 48px)' }}>
       {/* Header Section with Dynamic Style - DESTAQUES LEVEMENTE ARREDONDADOS */}
       <div 
         className="p-5 sm:p-8 md:p-10 pb-10 sm:pb-16 rounded-2xl border border-white/5 shadow-2xl mb-12 relative overflow-hidden"
@@ -527,12 +587,7 @@ export default function SettingsPage() {
             className={`px-8 py-3.5 text-sm font-bold transition-all rounded-xl shadow-md border cursor-pointer ${
               activeTab === 'general' ? 'font-black scale-105' : 'text-gray-400 hover:text-white hover:bg-white/5'
             }`}
-            style={{
-              backgroundColor: activeTab === 'general' ? 'var(--bg-card)' : 'rgba(0, 0, 0, 0.2)',
-              borderColor: activeTab === 'general' ? 'var(--accent-color)' : 'transparent',
-              color: activeTab === 'general' ? '#fff' : 'var(--text-primary)',
-              boxShadow: activeTab === 'general' ? '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 0 8px var(--accent-color)' : 'none'
-            }}
+            style={getTabButtonStyle('general')}
           >
             Aparência & Identidade
           </button>
@@ -542,12 +597,7 @@ export default function SettingsPage() {
             className={`px-8 py-3.5 text-sm font-bold transition-all rounded-xl shadow-md border cursor-pointer ${
               activeTab === 'gateways' ? 'font-black scale-105' : 'text-gray-400 hover:text-white hover:bg-white/5'
             }`}
-            style={{
-              backgroundColor: activeTab === 'gateways' ? 'var(--bg-card)' : 'rgba(0, 0, 0, 0.2)',
-              borderColor: activeTab === 'gateways' ? 'var(--accent-color)' : 'transparent',
-              color: activeTab === 'gateways' ? '#fff' : 'var(--text-primary)',
-              boxShadow: activeTab === 'gateways' ? '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 0 8px var(--accent-color)' : 'none'
-            }}
+            style={getTabButtonStyle('gateways')}
           >
             Integrações & Bancos
           </button>
@@ -557,12 +607,7 @@ export default function SettingsPage() {
             className={`px-8 py-3.5 text-sm font-bold transition-all rounded-xl shadow-md border cursor-pointer ${
               activeTab === 'templates' ? 'font-black scale-105' : 'text-gray-400 hover:text-white hover:bg-white/5'
             }`}
-            style={{
-              backgroundColor: activeTab === 'templates' ? 'var(--bg-card)' : 'rgba(0, 0, 0, 0.2)',
-              borderColor: activeTab === 'templates' ? 'var(--accent-color)' : 'transparent',
-              color: activeTab === 'templates' ? '#fff' : 'var(--text-primary)',
-              boxShadow: activeTab === 'templates' ? '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 0 8px var(--accent-color)' : 'none'
-            }}
+            style={getTabButtonStyle('templates')}
           >
             Modelos de Documentos
           </button>
@@ -572,12 +617,7 @@ export default function SettingsPage() {
             className={`px-8 py-3.5 text-sm font-bold transition-all rounded-xl shadow-md border cursor-pointer ${
               activeTab === 'security' ? 'font-black scale-105' : 'text-gray-400 hover:text-white hover:bg-white/5'
             }`}
-            style={{
-              backgroundColor: activeTab === 'security' ? 'var(--bg-card)' : 'rgba(0, 0, 0, 0.2)',
-              borderColor: activeTab === 'security' ? 'var(--accent-color)' : 'transparent',
-              color: activeTab === 'security' ? '#fff' : 'var(--text-primary)',
-              boxShadow: activeTab === 'security' ? '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 0 8px var(--accent-color)' : 'none'
-            }}
+            style={getTabButtonStyle('security')}
           >
             Segurança (MFA)
           </button>
@@ -587,12 +627,7 @@ export default function SettingsPage() {
             className={`px-8 py-3.5 text-sm font-bold transition-all rounded-xl shadow-md border cursor-pointer ${
               activeTab === 'billing' ? 'font-black scale-105' : 'text-gray-400 hover:text-white hover:bg-white/5'
             }`}
-            style={{
-              backgroundColor: activeTab === 'billing' ? 'var(--bg-card)' : 'rgba(0, 0, 0, 0.2)',
-              borderColor: activeTab === 'billing' ? 'var(--accent-color)' : 'transparent',
-              color: activeTab === 'billing' ? '#fff' : 'var(--text-primary)',
-              boxShadow: activeTab === 'billing' ? '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 0 8px var(--accent-color)' : 'none'
-            }}
+            style={getTabButtonStyle('billing')}
           >
             Assinatura & Plano
           </button>
@@ -602,12 +637,7 @@ export default function SettingsPage() {
             className={`px-8 py-3.5 text-sm font-bold transition-all rounded-xl shadow-md border cursor-pointer ${
               activeTab === 'feedback' ? 'font-black scale-105' : 'text-gray-400 hover:text-white hover:bg-white/5'
             }`}
-            style={{
-              backgroundColor: activeTab === 'feedback' ? 'var(--bg-card)' : 'rgba(0, 0, 0, 0.2)',
-              borderColor: activeTab === 'feedback' ? 'var(--accent-color)' : 'transparent',
-              color: activeTab === 'feedback' ? '#fff' : 'var(--text-primary)',
-              boxShadow: activeTab === 'feedback' ? '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 0 8px var(--accent-color)' : 'none'
-            }}
+            style={getTabButtonStyle('feedback')}
           >
             Feedback & Suporte
           </button>
@@ -616,7 +646,7 @@ export default function SettingsPage() {
 
       <div className="w-full max-w-7xl mx-auto">
         {activeTab === 'general' && (
-          <div className="rounded-none p-8 sm:p-10" style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
+          <div className="rounded-3xl border border-white/5" style={{ backgroundColor: 'var(--bg-secondary)', padding: 'clamp(20px, 4vw, 40px)' }}>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-4">
                 <div>
@@ -796,6 +826,14 @@ export default function SettingsPage() {
                           💡 <strong>Dica:</strong> Para salvar a cor do menu de forma persistente, rode o script <code>migration_bg_menu.sql</code> no <strong>SQL Editor</strong>! Por enquanto, ela será aplicada apenas nesta sessão.
                         </div>
                       )}
+                      
+                      <button
+                        type="button"
+                        onClick={handleRestoreDefaultColors}
+                        className="w-full mt-4 rounded-xl px-4 py-2.5 text-xs font-bold transition-all border border-white/10 hover:bg-white/5 text-purple-400 hover:text-purple-300 cursor-pointer"
+                      >
+                        Restaurar Cores ao Padrão
+                      </button>
                     </div>
                   </div>
 
@@ -845,7 +883,7 @@ export default function SettingsPage() {
         )}
 
         {activeTab === 'gateways' && (
-          <div className="rounded-none p-8 sm:p-10" style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
+          <div className="rounded-3xl border border-white/5" style={{ backgroundColor: 'var(--bg-secondary)', padding: 'clamp(20px, 4vw, 40px)' }}>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-5">
                 <div className="flex items-center gap-3 mb-2">
@@ -977,7 +1015,7 @@ export default function SettingsPage() {
         )}
 
         {activeTab === 'security' && (
-          <div className="rounded-none p-8 sm:p-10 space-y-6 animate-fade-in" style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
+          <div className="rounded-3xl space-y-6 animate-fade-in border border-white/5" style={{ backgroundColor: 'var(--bg-secondary)', padding: 'clamp(20px, 4vw, 40px)' }}>
             <div className="flex items-center gap-3 mb-2">
               <div className="h-6 w-2 rounded-full bg-purple-500" />
               <h3 className="text-sm font-bold text-purple-400 uppercase tracking-wider">Segurança da Conta</h3>
@@ -1124,7 +1162,7 @@ export default function SettingsPage() {
         )}
 
         {activeTab === 'feedback' && (
-          <div className="rounded-none p-8 sm:p-10 space-y-10 animate-fade-in" style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
+          <div className="rounded-3xl space-y-10 animate-fade-in border border-white/5" style={{ backgroundColor: 'var(--bg-secondary)', padding: 'clamp(20px, 4vw, 40px)' }}>
             
             {/* Sugestões Internas */}
             <div className="space-y-6">
@@ -1244,7 +1282,7 @@ export default function SettingsPage() {
         )}
 
         {activeTab === 'billing' && profile && (
-          <div className="rounded-none p-8 sm:p-10 space-y-8 animate-fade-in" style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
+          <div className="rounded-3xl space-y-8 animate-fade-in border border-white/5" style={{ backgroundColor: 'var(--bg-secondary)', padding: 'clamp(20px, 4vw, 40px)' }}>
             
             <div className="flex items-center gap-3">
               <div className="h-6 w-2 rounded-full bg-purple-500" />

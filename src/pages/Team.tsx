@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Plus, Edit, Trash2, UserCog, Calendar, Check, X, Clock, Users } from 'lucide-react'
+import { Plus, Edit, Trash2, UserCog, Calendar, Check, X, Clock, Users, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { TeamMember } from '../types'
 import Modal from '../components/Modal'
 
 export default function Team() {
-  // Tabs: 'members' or 'attendance'
-  const [activeTab, setActiveTab] = useState<'members' | 'attendance'>('members')
+  // Tabs: 'members' | 'attendance' | 'summary'
+  const [activeTab, setActiveTab] = useState<'members' | 'attendance' | 'summary'>('members')
   
   const [members, setMembers] = useState<TeamMember[]>([])
   const [loading, setLoading] = useState(true)
@@ -18,6 +18,11 @@ export default function Team() {
   const [teamAttendance, setTeamAttendance] = useState<Record<string, 'present' | 'absent' | 'late'>>({})
   const [savingAttendance, setSavingAttendance] = useState<string | null>(null)
   const [schoolOwnerId, setSchoolOwnerId] = useState<string | null>(null)
+
+  // Monthly Summary States
+  const [summaryMonth, setSummaryMonth] = useState<string>(new Date().toISOString().slice(0, 7))
+  const [summaryData, setSummaryData] = useState<Record<string, { classDays: number; classHours: number; pointDays: number }>>({})
+  const [loadingSummary, setLoadingSummary] = useState(false)
 
   const [formData, setFormData] = useState({
     name: '',
@@ -40,6 +45,78 @@ export default function Team() {
       loadTeamAttendance()
     }
   }, [activeTab, attendanceDate])
+
+  useEffect(() => {
+    if (activeTab === 'summary' && members.length > 0) {
+      loadTeamSummary()
+    }
+  }, [activeTab, summaryMonth, members])
+
+  async function loadTeamSummary() {
+    if (!summaryMonth) return
+    setLoadingSummary(true)
+    try {
+      const year = parseInt(summaryMonth.split('-')[0])
+      const month = parseInt(summaryMonth.split('-')[1])
+      const startDate = `${summaryMonth}-01`
+      const endDate = `${summaryMonth}-${new Date(year, month, 0).getDate()}`
+
+      // 1. Fetch class attendance for instructors
+      const { data: attData } = await supabase
+        .from('attendance')
+        .select('*')
+        .eq('type', 'instructor')
+        .eq('status', 'present')
+        .gte('date', startDate)
+        .lte('date', endDate)
+
+      // 2. Fetch daily team points
+      const { data: teamAttData } = await supabase
+        .from('team_attendance')
+        .select('*')
+        .in('status', ['present', 'late'])
+        .gte('date', startDate)
+        .lte('date', endDate)
+
+      // 3. Compute totals
+      const summaryMap: Record<string, { classDays: number; classHours: number; pointDays: number }> = {}
+      
+      members.forEach(m => {
+        // Class attendance
+        const teacherAtt = (attData || []).filter(a => a.instructor_id === m.id)
+        const uniqueClassDays = new Set(teacherAtt.map(a => a.date)).size
+        const classHoursCount = teacherAtt.length // 1 class = 1 hour
+
+        // Daily point attendance
+        const teacherPoints = (teamAttData || []).filter(a => a.member_id === m.id)
+        const uniquePointDays = new Set(teacherPoints.map(a => a.date)).size
+
+        summaryMap[m.id] = {
+          classDays: uniqueClassDays,
+          classHours: classHoursCount,
+          pointDays: uniquePointDays
+        }
+      })
+
+      setSummaryData(summaryMap)
+    } catch (err) {
+      console.error('Error loading team summary:', err)
+    } finally {
+      setLoadingSummary(false)
+    }
+  }
+
+  const handlePrevMonth = () => {
+    const [year, month] = summaryMonth.split('-').map(Number)
+    const date = new Date(year, month - 2, 1)
+    setSummaryMonth(date.toISOString().slice(0, 7))
+  }
+
+  const handleNextMonth = () => {
+    const [year, month] = summaryMonth.split('-').map(Number)
+    const date = new Date(year, month, 1)
+    setSummaryMonth(date.toISOString().slice(0, 7))
+  }
 
   async function loadInitialData() {
     setLoading(true)
@@ -122,8 +199,18 @@ export default function Team() {
     const file = e.target.files?.[0]
     if (!file) return
 
-    if (!file.type.startsWith('image/')) {
-      alert('Por favor, selecione um arquivo de imagem válido.')
+    // Validação rígida de tipo MIME (apenas formatos raster seguros, sem SVG)
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+    if (!allowedMimeTypes.includes(file.type)) {
+      alert('Por favor, selecione um arquivo de imagem válido (JPEG, PNG, WebP ou GIF). Imagens SVG e outros formatos não são permitidos por motivos de segurança.')
+      return
+    }
+
+    // Validação rígida de extensão
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif']
+    const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase()
+    if (!allowedExtensions.includes(fileExtension)) {
+      alert('Extensão de arquivo inválida. Apenas .jpg, .jpeg, .png, .webp e .gif são permitidos.')
       return
     }
 
@@ -294,6 +381,18 @@ export default function Team() {
           >
             Chamada Diária (Ponto)
           </button>
+          <button
+            onClick={() => setActiveTab('summary')}
+            className={`px-12 py-4 text-sm font-bold transition-all rounded-2xl shadow-lg border ${
+              activeTab === 'summary' ? 'text-white' : 'text-[var(--text-muted)] hover:text-white hover:bg-white/5'
+            }`}
+            style={{ 
+              backgroundColor: activeTab === 'summary' ? 'var(--bg-card)' : 'transparent',
+              borderColor: activeTab === 'summary' ? 'var(--border-color)' : 'transparent'
+            }}
+          >
+            Resumo Mensal
+          </button>
         </div>
       </div>
 
@@ -381,7 +480,7 @@ export default function Team() {
             )
           })}
         </div>
-      ) : (
+      ) : activeTab === 'attendance' ? (
         /* Team Attendance Point Logging View */
         <div className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 rounded-2xl border border-white/5" style={{ backgroundColor: 'var(--bg-card)' }}>
@@ -494,7 +593,135 @@ export default function Team() {
                   )}
                 </tbody>
               </table>
+              </div>
             </div>
+          </div>
+        ) : (
+        /* Team Attendance Monthly Summary View */
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 rounded-2xl border border-white/5" style={{ backgroundColor: 'var(--bg-card)' }}>
+            <div className="flex items-center gap-3">
+              <Calendar size={20} className="text-purple-400" />
+              <span className="text-sm font-bold" style={{ color: 'var(--text-secondary)' }}>Mês de Referência:</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handlePrevMonth}
+                className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-purple-400 hover:text-purple-300 transition-all border border-white/5 cursor-pointer"
+                title="Mês Anterior"
+              >
+                <ChevronLeft size={16} />
+              </button>
+
+              <div className="relative flex items-center">
+                <input
+                  type="month"
+                  value={summaryMonth}
+                  onChange={(e) => setSummaryMonth(e.target.value)}
+                  onClick={(e) => e.currentTarget.showPicker?.()}
+                  className="rounded-xl pl-4 pr-10 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500/50 cursor-pointer text-sm select-none"
+                  style={{ ...inputStyle, width: '180px' }}
+                />
+                <ChevronDown size={14} className="absolute right-3 text-white/50 pointer-events-none" />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleNextMonth}
+                className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-purple-400 hover:text-purple-300 transition-all border border-white/5 cursor-pointer"
+                title="Próximo Mês"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-white/5 overflow-hidden" style={{ backgroundColor: 'var(--bg-card)' }}>
+            {loadingSummary ? (
+              <div className="flex items-center justify-center p-20">
+                <div className="h-12 w-12 border-4 border-purple-600/20 border-t-purple-600 rounded-full animate-spin" />
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[750px]">
+                  <thead>
+                    <tr className="border-b" style={{ borderColor: 'var(--border-color)', backgroundColor: 'rgba(255,255,255,0.01)' }}>
+                      <th className="p-6 text-xs font-black uppercase tracking-widest text-white/50">Membro da Equipe</th>
+                      <th className="p-6 text-xs font-black uppercase tracking-widest text-white/50">Função</th>
+                      <th className="p-6 text-xs font-black uppercase tracking-widest text-white/50 text-center">Dias com Aula</th>
+                      <th className="p-6 text-xs font-black uppercase tracking-widest text-white/50 text-center">Horas de Aula (Aulas)</th>
+                      <th className="p-6 text-xs font-black uppercase tracking-widest text-white/50 text-center">Presenças no Ponto</th>
+                      <th className="p-6 text-xs font-black uppercase tracking-widest text-white/50 text-center">Status no Mês</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {members.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="p-10 text-center opacity-50 text-sm">
+                          Nenhum funcionário cadastrado.
+                        </td>
+                      </tr>
+                    ) : (
+                      members.map((m) => {
+                        const data = summaryData[m.id] || { classDays: 0, classHours: 0, pointDays: 0 }
+                        const roleConf = roleColors[m.role] || { bg: 'rgba(156,163,175,0.15)', text: '#9ca3af', label: m.role }
+                        const hasActivity = data.classDays > 0 || data.pointDays > 0
+
+                        return (
+                          <tr key={m.id} className="border-b" style={{ borderColor: 'var(--border-color)' }}>
+                            <td className="p-6">
+                              <div className="flex items-center gap-3">
+                                {m.photo_url ? (
+                                  <img 
+                                    src={m.photo_url} 
+                                    alt={m.name} 
+                                    className="h-10 w-10 rounded-xl object-cover border border-purple-500/20 shadow-md shrink-0" 
+                                  />
+                                ) : (
+                                  <div className="h-10 w-10 rounded-xl bg-purple-500/10 flex items-center justify-center shrink-0">
+                                    <span className="text-white font-bold">{m.name.charAt(0)}</span>
+                                  </div>
+                                )}
+                                <div>
+                                  <p className="font-bold text-white text-sm">{m.name}</p>
+                                  <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{m.specialty || 'Geral'}</span>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="p-6">
+                              <span className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full" style={{ backgroundColor: roleConf.bg, color: roleConf.text }}>
+                                {roleConf.label}
+                              </span>
+                            </td>
+                            <td className="p-6 text-center font-bold text-sm text-purple-300">
+                              {data.classDays} {data.classDays === 1 ? 'dia' : 'dias'}
+                            </td>
+                            <td className="p-6 text-center font-bold text-sm text-emerald-400">
+                              {data.classHours} {data.classHours === 1 ? 'hora' : 'horas'}
+                            </td>
+                            <td className="p-6 text-center font-bold text-sm text-blue-400">
+                              {data.pointDays} {data.pointDays === 1 ? 'dia' : 'dias'}
+                            </td>
+                            <td className="p-6 text-center">
+                              {hasActivity ? (
+                                <span className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                  Ativo
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-white/5 text-white/30">
+                                  Sem Atividade
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        )
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </div>
       )}

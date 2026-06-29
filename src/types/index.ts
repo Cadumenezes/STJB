@@ -250,6 +250,7 @@ export interface Exam {
   name: string
   description?: string | null
   date: string
+  criteria?: string[] | null
   created_at?: string
 }
 
@@ -261,6 +262,7 @@ export interface ExamGrade {
   grade?: number | null
   concept?: string | null
   feedback?: string | null
+  criteria_grades?: Record<string, number | null> | null
   created_at?: string
   updated_at?: string
 }
