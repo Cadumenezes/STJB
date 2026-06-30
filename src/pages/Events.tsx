@@ -2811,6 +2811,7 @@ export default function Events() {
             >
               <option value="">Selecione um aluno...</option>
               {students
+                .filter(s => s.status !== 'locked' && s.status !== 'inactive')
                 .filter(s => !participants.filter(p => p.event_id === activeEventId).some(p => p.student_id === s.id))
                 .sort((a, b) => a.name.localeCompare(b.name))
                 .map(s => (
