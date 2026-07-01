@@ -31,7 +31,7 @@ Direção Geral`;
 import {
   Users, UserPlus, Search, Filter, CheckCircle, Clock, AlertTriangle,
   Edit, Trash2, CreditCard, X, ChevronDown, Music, FileText, Calendar, MessageCircle, Printer, Lock, GraduationCap,
-  Copy, ExternalLink, QrCode, RefreshCw
+  Copy, ExternalLink, QrCode, RefreshCw, RotateCcw
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { Student, MonthlyPayment, DanceClass, Attendance } from '../types'
@@ -1916,13 +1916,62 @@ export default function Students() {
                                   </td>
                                   <td className="py-2 text-right">
                                     {p.status === 'paid' ? (
-                                      <button
-                                        onClick={() => generateReceipt(selectedStudent, p)}
-                                        className="text-emerald-400 hover:text-emerald-300 p-1"
-                                        title="Imprimir Recibo"
-                                      >
-                                        <Printer size={14} />
-                                      </button>
+                                      <div className="inline-flex items-center gap-2">
+                                        <button
+                                          onClick={() => generateReceipt(selectedStudent, p)}
+                                          className="text-emerald-400 hover:text-emerald-300 p-1"
+                                          title="Imprimir Recibo"
+                                        >
+                                          <Printer size={14} />
+                                        </button>
+                                        <button
+                                          onClick={async () => {
+                                            if (!confirm(`Tem certeza que deseja estornar (desfazer) o pagamento de R$ ${Number(p.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })} da referência ${p.reference_month}?`)) return;
+                                            try {
+                                              const todayStr = new Date().toISOString().split('T')[0];
+                                              const newStatus = p.due_date < todayStr ? 'overdue' : 'pending';
+                                              
+                                              const { error: payErr } = await supabase
+                                                .from('monthly_payments')
+                                                .update({
+                                                  status: newStatus,
+                                                  paid_date: null,
+                                                })
+                                                .eq('id', p.id);
+
+                                              if (payErr) throw payErr;
+
+                                              const descriptionPattern = `%${selectedStudent.name}%${p.reference_month}%`;
+                                              const { error: entryErr } = await supabase
+                                                .from('financial_entries')
+                                                .delete()
+                                                .eq('type', 'income')
+                                                .ilike('description', descriptionPattern);
+
+                                              if (entryErr) {
+                                                console.error('Erro ao deletar entrada financeira:', entryErr);
+                                              }
+
+                                              alert('Pagamento estornado com sucesso! A mensalidade voltou para pendente e o lançamento correspondente foi excluído. 🔄');
+                                              
+                                              const { data: paymentsData } = await supabase
+                                                .from('monthly_payments')
+                                                .select('*')
+                                                .eq('student_id', selectedStudent.id)
+                                                .order('reference_month', { ascending: false });
+                                              setProfilePayments(paymentsData || []);
+                                              
+                                              loadData();
+                                            } catch (err: any) {
+                                              alert('Erro ao estornar pagamento: ' + err.message);
+                                            }
+                                          }}
+                                          className="text-rose-400 hover:text-rose-300 p-1 hover:bg-rose-500/10 rounded transition-all"
+                                          title="Estornar Pagamento"
+                                        >
+                                          <RotateCcw size={14} />
+                                        </button>
+                                      </div>
                                     ) : (
                                       <div className="inline-flex items-center gap-2">
                                         {gatewayType !== 'none' && (

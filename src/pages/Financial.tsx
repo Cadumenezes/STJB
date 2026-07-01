@@ -626,9 +626,88 @@ export default function Financial() {
     loadData()
   }
   async function handleDelete(id: string) {
-    if (!confirm('Excluir esta entrada?')) return
+    const entry = entries.find(e => e.id === id)
+    if (!entry) return
+
+    const isMonthlyPayment = entry.type === 'income' && 
+      (entry.category === 'Mensalidade' || entry.category === 'Mensalidades') &&
+      (entry.description.startsWith('Mensalidade:') || entry.description.startsWith('Mensalidade (Conciliação)'))
+
+    let confirmMsg = 'Excluir esta entrada?'
+    if (isMonthlyPayment) {
+      confirmMsg = 'Esta entrada corresponde a uma mensalidade recebida. Ao excluí-la, deseja também estornar a mensalidade do aluno (retornando-a para pendente/atrasado)?'
+    }
+
+    if (!confirm(confirmMsg)) return
+
     const { error } = await supabase.from('financial_entries').delete().eq('id', id)
-    if (error) alert('Erro ao excluir')
+    if (error) {
+      alert('Erro ao excluir')
+      return
+    }
+
+    if (isMonthlyPayment) {
+      try {
+        let studentName = ''
+        let referenceMonth = ''
+
+        if (entry.description.startsWith('Mensalidade:')) {
+          const match = entry.description.match(/Mensalidade:\s*(.*?)\s*-\s*Ref:\s*(\d{4}-\d{2})/)
+          if (match) {
+            studentName = match[1].trim()
+            referenceMonth = match[2]
+          }
+        } else if (entry.description.startsWith('Mensalidade (Conciliação)')) {
+          const parts = entry.description.split('-')
+          if (parts.length > 1) {
+            studentName = parts[1].trim()
+          }
+        }
+
+        if (studentName) {
+          const { data: studentData } = await supabase
+            .from('students')
+            .select('id')
+            .ilike('name', `%${studentName}%`)
+            .limit(1)
+
+          if (studentData && studentData.length > 0) {
+            const studentId = studentData[0].id
+            
+            let query = supabase
+              .from('monthly_payments')
+              .select('*')
+              .eq('student_id', studentId)
+              .eq('status', 'paid')
+
+            if (referenceMonth) {
+              query = query.eq('reference_month', referenceMonth)
+            } else {
+              query = query.order('reference_month', { ascending: false }).limit(1)
+            }
+
+            const { data: paymentsData } = await query
+
+            if (paymentsData && paymentsData.length > 0) {
+              const p = paymentsData[0]
+              const todayStr = new Date().toISOString().split('T')[0]
+              const newStatus = p.due_date < todayStr ? 'overdue' : 'pending'
+
+              await supabase
+                .from('monthly_payments')
+                .update({
+                  status: newStatus,
+                  paid_date: null
+                })
+                .eq('id', p.id)
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Erro ao reverter status da mensalidade associada:', err)
+      }
+    }
+
     loadData()
   }
 
