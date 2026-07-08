@@ -87,6 +87,22 @@ export default function App() {
     setPolicyModalOpen(true)
   }
 
+  // ── Logout ao fechar o navegador/aba ──────────────────────────────────────
+  // sessionStorage é apagado quando a aba fecha, mas persiste em reloads (F5).
+  // Se não há a flag "tab_active", significa que é uma abertura nova → faz logout.
+  useEffect(() => {
+    const tabActive = sessionStorage.getItem('tab_active')
+    if (!tabActive) {
+      // Nova abertura do navegador: encerra sessão persistida no localStorage
+      supabase.auth.signOut().then(() => {
+        sessionStorage.setItem('tab_active', '1')
+      })
+    } else {
+      sessionStorage.setItem('tab_active', '1')
+    }
+  }, [])
+  // ──────────────────────────────────────────────────────────────────────────
+
   useEffect(() => {
     // Fetch profile function
     const fetchProfile = async (userId: string) => {
