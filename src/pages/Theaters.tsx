@@ -15,6 +15,7 @@ export default function Theaters() {
   const [seatsPerRow, setSeatsPerRow] = useState<number>(12)
   const [exceptions, setExceptions] = useState<Record<string, any>>({})
   const [corridorsInput, setCorridorsInput] = useState('')
+  const [horizontalCorridorsInput, setHorizontalCorridorsInput] = useState('')
 
   useEffect(() => {
     loadTheaters()
@@ -37,11 +38,22 @@ export default function Theaters() {
       .map(c => parseInt(c.trim()))
       .filter(num => !isNaN(num) && num > 0)
 
+    const parsedHorizontalCorridors = horizontalCorridorsInput
+      .split(',')
+      .map(c => c.trim().toUpperCase())
+      .filter(Boolean)
+
     const updatedExceptions = { ...exceptions }
     if (parsedCorridors.length > 0) {
       updatedExceptions._corridors = parsedCorridors
     } else {
       delete updatedExceptions._corridors
+    }
+
+    if (parsedHorizontalCorridors.length > 0) {
+      updatedExceptions._horizontal_corridors = parsedHorizontalCorridors
+    } else {
+      delete updatedExceptions._horizontal_corridors
     }
 
     const payload = {
@@ -86,6 +98,8 @@ export default function Theaters() {
     setExceptions(th.exceptions || {})
     const corridors = (th.exceptions?._corridors || []) as number[]
     setCorridorsInput(corridors.length > 0 ? corridors.join(', ') : '')
+    const hCorridors = (th.exceptions?._horizontal_corridors || []) as string[]
+    setHorizontalCorridorsInput(hCorridors.length > 0 ? hCorridors.join(', ') : '')
     setShowModal(true)
   }
 
@@ -95,6 +109,7 @@ export default function Theaters() {
     setSeatsPerRow(12)
     setExceptions({})
     setCorridorsInput('')
+    setHorizontalCorridorsInput('')
   }
 
   function getRowLabel(index: number): string {
@@ -367,6 +382,18 @@ export default function Theaters() {
                 <span className="text-[10px] text-gray-500 block mt-1">Coloque os números das colunas separados por vírgula.</span>
               </div>
 
+              <div>
+                <label className="text-sm font-medium block mb-1.5" style={{ color: 'var(--text-secondary)' }}>Corredores Horizontais (fileiras após as quais haverá corredor)</label>
+                <input 
+                  value={horizontalCorridorsInput} 
+                  onChange={(e) => setHorizontalCorridorsInput(e.target.value)} 
+                  placeholder="Ex: D, H (separadas por vírgula)"
+                  className="w-full rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/50" 
+                  style={inputStyle} 
+                />
+                <span className="text-[10px] text-gray-500 block mt-1">Coloque as letras das fileiras separadas por vírgula.</span>
+              </div>
+
               <div className="space-y-3 pt-2">
                 <div className="flex justify-between items-center">
                   <h4 className="text-xs font-bold uppercase text-gray-400">Exceções de Fileira</h4>
@@ -464,50 +491,62 @@ export default function Theaters() {
                       return startNum
                     })
 
+                    const hCorridors = (exceptions._horizontal_corridors || []) as string[]
+
                     return Array.from({ length: rowsCount }).map((_, rIdx) => {
                       const rowName = getRowLabel(rIdx)
                       const count = exceptions[rowName] !== undefined ? exceptions[rowName] : seatsPerRow
                       const rowStartNum = previewStartNumbers[rIdx]
+                      const hasHorizontalCorridorAfter = hCorridors.includes(rowName)
+
                       return (
-                        <div key={rowName} className="flex items-center gap-1.5 shrink-0">
-                          <span className="text-[10px] font-black text-gray-500 w-4 text-center shrink-0">{rowName}</span>
-                          <div className="flex gap-1 items-center">
-                            {count === 0 ? (
-                              <span className="text-[8px] text-rose-400 italic font-semibold">Sem cadeiras</span>
-                            ) : (
-                              Array.from({ length: count }).map((_, sIdx) => {
-                                const seatNum = rowStartNum + sIdx
-                                const seatLabel = `${rowName}${seatNum}`
-                                const isCorridorAfter = corridors.includes(sIdx + 1)
-                                return (
-                                  <React.Fragment key={seatLabel}>
-                                    <div 
-                                      className="rounded flex items-center justify-center font-bold border shrink-0 transition-all select-none hover:scale-110 cursor-help"
-                                      style={{ 
-                                        width: `${seatSize}px`,
-                                        height: `${seatSize}px`,
-                                        fontSize: `${Math.max(6, seatSize * 0.45)}px`,
-                                        backgroundColor: 'rgba(139, 92, 246, 0.15)',
-                                        borderColor: 'rgba(139, 92, 246, 0.35)',
-                                        color: 'var(--text-primary)',
-                                      }}
-                                      title={`Assento ${seatLabel}`}
-                                    >
-                                      {seatSize >= 15 ? seatNum : ''}
-                                    </div>
-                                    {isCorridorAfter && sIdx < count - 1 && (
+                        <React.Fragment key={rowName}>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className="text-[10px] font-black text-gray-500 w-4 text-center shrink-0">{rowName}</span>
+                            <div className="flex gap-1 items-center">
+                              {count === 0 ? (
+                                <span className="text-[8px] text-rose-400 italic font-semibold">Sem cadeiras</span>
+                              ) : (
+                                Array.from({ length: count }).map((_, sIdx) => {
+                                  const seatNum = rowStartNum + sIdx
+                                  const seatLabel = `${rowName}${seatNum}`
+                                  const isCorridorAfter = corridors.includes(sIdx + 1)
+                                  return (
+                                    <React.Fragment key={seatLabel}>
                                       <div 
-                                        className="shrink-0 select-none pointer-events-none" 
-                                        style={{ width: `${seatSize * 0.6}px` }} 
-                                      />
-                                    )}
-                                  </React.Fragment>
-                                )
-                              })
-                            )}
+                                        className="rounded flex items-center justify-center font-bold border shrink-0 transition-all select-none hover:scale-110 cursor-help"
+                                        style={{ 
+                                          width: `${seatSize}px`,
+                                          height: `${seatSize}px`,
+                                          fontSize: `${Math.max(6, seatSize * 0.45)}px`,
+                                          backgroundColor: 'rgba(139, 92, 246, 0.15)',
+                                          borderColor: 'rgba(139, 92, 246, 0.35)',
+                                          color: 'var(--text-primary)',
+                                        }}
+                                        title={`Assento ${seatLabel}`}
+                                      >
+                                        {seatSize >= 15 ? seatNum : ''}
+                                      </div>
+                                      {isCorridorAfter && sIdx < count - 1 && (
+                                        <div 
+                                          className="shrink-0 select-none pointer-events-none" 
+                                          style={{ width: `${seatSize * 0.6}px` }} 
+                                        />
+                                      )}
+                                    </React.Fragment>
+                                  )
+                                })
+                              )}
+                            </div>
+                            <span className="text-[10px] font-black text-gray-500 w-4 text-center shrink-0">{rowName}</span>
                           </div>
-                          <span className="text-[10px] font-black text-gray-500 w-4 text-center shrink-0">{rowName}</span>
-                        </div>
+                          {hasHorizontalCorridorAfter && rIdx < rowsCount - 1 && (
+                            <div 
+                              className="shrink-0 select-none pointer-events-none" 
+                              style={{ height: '14px' }} 
+                            />
+                          )}
+                        </React.Fragment>
                       )
                     })
                   })()}

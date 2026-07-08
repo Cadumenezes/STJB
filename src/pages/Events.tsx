@@ -30,6 +30,7 @@ export default function Events() {
   const [seatsPerRow, setSeatsPerRow] = useState(12)
   const [exceptions, setExceptions] = useState<Record<string, any>>({})
   const [corridorsInput, setCorridorsInput] = useState('')
+  const [horizontalCorridorsInput, setHorizontalCorridorsInput] = useState('')
 
   // Estados para Aba de Mapa de Teatro e Reservas
   const [activeSubTab, setActiveSubTab] = useState<'spreadsheet' | 'seating_map' | 'expenses'>('spreadsheet')
@@ -98,11 +99,14 @@ export default function Events() {
       setExceptions(config.exceptions || {})
       const corridors = (config.exceptions?._corridors || []) as number[]
       setCorridorsInput(corridors.length > 0 ? corridors.join(', ') : '')
+      const hCorridors = (config.exceptions?._horizontal_corridors || []) as string[]
+      setHorizontalCorridorsInput(hCorridors.length > 0 ? hCorridors.join(', ') : '')
     } else {
       setRowsCount(10)
       setSeatsPerRow(12)
       setExceptions({})
       setCorridorsInput('')
+      setHorizontalCorridorsInput('')
     }
     setShowMapModal(true)
   }
@@ -117,11 +121,22 @@ export default function Events() {
       .map(c => parseInt(c.trim()))
       .filter(num => !isNaN(num) && num > 0)
 
+    const parsedHorizontalCorridors = horizontalCorridorsInput
+      .split(',')
+      .map(c => c.trim().toUpperCase())
+      .filter(Boolean)
+
     const updatedExceptions = { ...exceptions }
     if (parsedCorridors.length > 0) {
       updatedExceptions._corridors = parsedCorridors
     } else {
       delete updatedExceptions._corridors
+    }
+
+    if (parsedHorizontalCorridors.length > 0) {
+      updatedExceptions._horizontal_corridors = parsedHorizontalCorridors
+    } else {
+      delete updatedExceptions._horizontal_corridors
     }
 
     const config: SeatingMapConfig = {
@@ -2234,224 +2249,236 @@ export default function Events() {
                                 return startNum
                               })
 
+                              const hCorridors = (excs._horizontal_corridors || []) as string[]
+
                               return Array.from({ length: rows }).map((_, rIdx) => {
                                 const rowName = getRowLabel(rIdx)
                                 const count = excs[rowName] !== undefined ? excs[rowName] : stdSeats
                                 const rowStartNum = rowStartNumbers[rIdx]
+                                const hasHorizontalCorridorAfter = hCorridors.includes(rowName)
+
                                 return (
-                                  <div key={rowName} className="flex items-center gap-2 shrink-0">
-                                    <span className="text-[10px] font-black text-white/30 w-4 text-center shrink-0">{rowName}</span>
-                                    
-                                    <div className="flex gap-1.5 items-center">
-                                      {count === 0 ? (
-                                        <span className="text-[9px] text-rose-400 italic font-semibold">Sem cadeiras nesta fileira</span>
-                                      ) : (
-                                        Array.from({ length: count }).map((_, sIdx) => {
-                                          const seatNum = rowStartNum + sIdx
-                                          const seatLabel = `${rowName}${seatNum}`
-                                          
-                                          // Find booking status for current session
-                                          const occupiedBy = participants.find(p => {
-                                            if (p.event_id !== activeEventId) return false
-                                            if (hasSessions && selectedSessionId) {
-                                              return p.seats_by_session?.[selectedSessionId]?.includes(seatLabel)
-                                            }
-                                            return p.seats?.includes(seatLabel)
-                                          })
-                                          const isSelectedSeat = selectedParticipantId && occupiedBy?.id === selectedParticipantId
-                                          
-                                          // Check if seat is a courtesy seat
-                                          const isCourtesy = (() => {
-                                            const map = activeEvent?.seating_map
-                                            if (!map) return false
-                                            if (hasSessions && selectedSessionId) {
-                                              return map.courtesies_by_session?.[selectedSessionId]?.includes(seatLabel) || false
-                                            }
-                                            return map.courtesies?.includes(seatLabel) || false
-                                          })()
-
-                                          let style: React.CSSProperties = {
-                                            width: `${displaySeatSize}px`,
-                                            height: `${displaySeatSize}px`,
-                                            fontSize: `${Math.max(7, displaySeatSize * 0.45)}px`
-                                          }
-
-                                          let seatClass = "rounded-lg flex items-center justify-center font-bold border shrink-0 transition-all select-none cursor-pointer "
-                                          let tooltipText = `Poltrona ${seatLabel}`
-
-                                          if (isCourtesy) {
-                                            tooltipText += " - Cortesia (Reservado)"
-                                            if (selectedParticipantId === 'courtesy') {
-                                              seatClass += "text-white hover:scale-110"
-                                              style.backgroundColor = '#38bdf8'
-                                              style.boxShadow = '0 0 12px #38bdf8'
-                                              style.borderColor = '#0284c7'
-                                            } else {
-                                              seatClass += "hover:opacity-90"
-                                              style.backgroundColor = 'rgba(56, 189, 248, 0.15)'
-                                              style.borderColor = '#38bdf8'
-                                              style.color = '#38bdf8'
-                                            }
-                                          } else if (occupiedBy) {
-                                            const occStudent = students.find(s => s.id === occupiedBy.student_id)
-                                            tooltipText += ` - Reservado para: ${occStudent?.name || 'Desconhecido'}`
-                                            if (isSelectedSeat) {
-                                              seatClass += "text-white hover:scale-110"
-                                              style.backgroundColor = 'var(--accent-color)'
-                                              style.boxShadow = '0 0 12px var(--accent-color)'
-                                              style.borderColor = '#ef4444'
-                                            } else {
-                                              seatClass += "hover:opacity-90"
-                                              style.backgroundColor = 'color-mix(in srgb, var(--accent-color) 20%, transparent)'
-                                              style.borderColor = '#ef4444'
-                                              style.color = 'var(--accent-color)'
-                                            }
-                                          } else {
-                                            tooltipText += " - Livre"
-                                            seatClass += "bg-zinc-800/80 text-zinc-400 hover:bg-zinc-700 hover:text-white hover:border-[#10b981] hover:scale-105"
-                                            style.borderColor = '#10b981'
-                                          }
-
-                                          const handleSeatClick = async () => {
-                                            if (!selectedParticipantId) {
-                                              alert('Por favor, selecione um aluno ou "Assento de Cortesia" na lista ao lado primeiro para reservar assentos!')
-                                              return
-                                            }
-
-                                            const map = activeEvent?.seating_map || { rows_count: 10, seats_per_row: 12, exceptions: {} }
-
-                                            if (selectedParticipantId === 'courtesy') {
-                                              let updatedCourtesies = [...(map.courtesies || [])]
-                                              let updatedCourtesiesBySession = { ...(map.courtesies_by_session || {}) }
-
+                                  <React.Fragment key={rowName}>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                      <span className="text-[10px] font-black text-white/30 w-4 text-center shrink-0">{rowName}</span>
+                                      
+                                      <div className="flex gap-1.5 items-center">
+                                        {count === 0 ? (
+                                          <span className="text-[9px] text-rose-400 italic font-semibold">Sem cadeiras nesta fileira</span>
+                                        ) : (
+                                          Array.from({ length: count }).map((_, sIdx) => {
+                                            const seatNum = rowStartNum + sIdx
+                                            const seatLabel = `${rowName}${seatNum}`
+                                            
+                                            // Find booking status for current session
+                                            const occupiedBy = participants.find(p => {
+                                              if (p.event_id !== activeEventId) return false
                                               if (hasSessions && selectedSessionId) {
-                                                let sessionCourtesies = [...(updatedCourtesiesBySession[selectedSessionId] || [])]
-                                                if (isCourtesy) {
-                                                  sessionCourtesies = sessionCourtesies.filter(s => s !== seatLabel)
-                                                } else {
-                                                  if (occupiedBy) {
-                                                    const otherSeats = getParticipantSeats(occupiedBy, selectedSessionId)
-                                                    await handleUpdateSeats(occupiedBy.id, otherSeats.filter(s => s !== seatLabel), selectedSessionId)
-                                                  }
-                                                  sessionCourtesies.push(seatLabel)
-                                                }
-                                                updatedCourtesiesBySession[selectedSessionId] = sessionCourtesies
-                                              } else {
-                                                if (isCourtesy) {
-                                                  updatedCourtesies = updatedCourtesies.filter(s => s !== seatLabel)
-                                                } else {
-                                                  if (occupiedBy) {
-                                                    const otherSeats = getParticipantSeats(occupiedBy, selectedSessionId)
-                                                    await handleUpdateSeats(occupiedBy.id, otherSeats.filter(s => s !== seatLabel), selectedSessionId)
-                                                  }
-                                                  updatedCourtesies.push(seatLabel)
-                                                }
+                                                return p.seats_by_session?.[selectedSessionId]?.includes(seatLabel)
                                               }
-
-                                              const newSeatingMap = {
-                                                ...map,
-                                                courtesies: updatedCourtesies,
-                                                courtesies_by_session: updatedCourtesiesBySession
+                                              return p.seats?.includes(seatLabel)
+                                            })
+                                            const isSelectedSeat = selectedParticipantId && occupiedBy?.id === selectedParticipantId
+                                            
+                                            // Check if seat is a courtesy seat
+                                            const isCourtesy = (() => {
+                                              const map = activeEvent?.seating_map
+                                              if (!map) return false
+                                              if (hasSessions && selectedSessionId) {
+                                                return map.courtesies_by_session?.[selectedSessionId]?.includes(seatLabel) || false
                                               }
-
-                                              const { error } = await supabase
-                                                .from('events')
-                                                .update({ seating_map: newSeatingMap })
-                                                .eq('id', activeEventId)
-
-                                              if (error) {
-                                                alert('Erro ao atualizar cortesia: ' + error.message)
-                                              } else {
-                                                loadData()
-                                              }
-                                              return
+                                              return map.courtesies?.includes(seatLabel) || false
+                                            })()
+ 
+                                            let style: React.CSSProperties = {
+                                              width: `${displaySeatSize}px`,
+                                              height: `${displaySeatSize}px`,
+                                              fontSize: `${Math.max(7, displaySeatSize * 0.45)}px`
                                             }
-
-                                            const targetPart = participants.find(p => p.id === selectedParticipantId)
-                                            if (!targetPart) return
-
-                                            const currentSeats = getParticipantSeats(targetPart, selectedSessionId)
-
+ 
+                                            let seatClass = "rounded-lg flex items-center justify-center font-bold border shrink-0 transition-all select-none cursor-pointer "
+                                            let tooltipText = `Poltrona ${seatLabel}`
+ 
                                             if (isCourtesy) {
-                                              const targetStud = students.find(s => s.id === targetPart.student_id)
-                                              if (confirm(`O assento ${seatLabel} é uma cortesia. Deseja liberar a cortesia e reservar para ${targetStud?.name || 'este aluno'}?`)) {
+                                              tooltipText += " - Cortesia (Reservado)"
+                                              if (selectedParticipantId === 'courtesy') {
+                                                seatClass += "text-white hover:scale-110"
+                                                style.backgroundColor = '#38bdf8'
+                                                style.boxShadow = '0 0 12px #38bdf8'
+                                                style.borderColor = '#0284c7'
+                                              } else {
+                                                seatClass += "hover:opacity-90"
+                                                style.backgroundColor = 'rgba(56, 189, 248, 0.15)'
+                                                style.borderColor = '#38bdf8'
+                                                style.color = '#38bdf8'
+                                              }
+                                            } else if (occupiedBy) {
+                                              const occStudent = students.find(s => s.id === occupiedBy.student_id)
+                                              tooltipText += ` - Reservado para: ${occStudent?.name || 'Desconhecido'}`
+                                              if (isSelectedSeat) {
+                                                seatClass += "text-white hover:scale-110"
+                                                style.backgroundColor = 'var(--accent-color)'
+                                                style.boxShadow = '0 0 12px var(--accent-color)'
+                                                style.borderColor = '#ef4444'
+                                              } else {
+                                                seatClass += "hover:opacity-90"
+                                                style.backgroundColor = 'color-mix(in srgb, var(--accent-color) 20%, transparent)'
+                                                style.borderColor = '#ef4444'
+                                                style.color = 'var(--accent-color)'
+                                              }
+                                            } else {
+                                              tooltipText += " - Livre"
+                                              seatClass += "bg-zinc-800/80 text-zinc-400 hover:bg-zinc-700 hover:text-white hover:border-[#10b981] hover:scale-105"
+                                              style.borderColor = '#10b981'
+                                            }
+ 
+                                            const handleSeatClick = async () => {
+                                              if (!selectedParticipantId) {
+                                                alert('Por favor, selecione um aluno ou "Assento de Cortesia" na lista ao lado primeiro para reservar assentos!')
+                                                return
+                                              }
+ 
+                                              const map = activeEvent?.seating_map || { rows_count: 10, seats_per_row: 12, exceptions: {} }
+ 
+                                              if (selectedParticipantId === 'courtesy') {
                                                 let updatedCourtesies = [...(map.courtesies || [])]
                                                 let updatedCourtesiesBySession = { ...(map.courtesies_by_session || {}) }
-
+ 
                                                 if (hasSessions && selectedSessionId) {
-                                                  updatedCourtesiesBySession[selectedSessionId] = (updatedCourtesiesBySession[selectedSessionId] || []).filter(s => s !== seatLabel)
+                                                  let sessionCourtesies = [...(updatedCourtesiesBySession[selectedSessionId] || [])]
+                                                  if (isCourtesy) {
+                                                    sessionCourtesies = sessionCourtesies.filter(s => s !== seatLabel)
+                                                  } else {
+                                                    if (occupiedBy) {
+                                                      const otherSeats = getParticipantSeats(occupiedBy, selectedSessionId)
+                                                      await handleUpdateSeats(occupiedBy.id, otherSeats.filter(s => s !== seatLabel), selectedSessionId)
+                                                    }
+                                                    sessionCourtesies.push(seatLabel)
+                                                  }
+                                                  updatedCourtesiesBySession[selectedSessionId] = sessionCourtesies
                                                 } else {
-                                                  updatedCourtesies = updatedCourtesies.filter(s => s !== seatLabel)
+                                                  if (isCourtesy) {
+                                                    updatedCourtesies = updatedCourtesies.filter(s => s !== seatLabel)
+                                                  } else {
+                                                    if (occupiedBy) {
+                                                      const otherSeats = getParticipantSeats(occupiedBy, selectedSessionId)
+                                                      await handleUpdateSeats(occupiedBy.id, otherSeats.filter(s => s !== seatLabel), selectedSessionId)
+                                                    }
+                                                    updatedCourtesies.push(seatLabel)
+                                                  }
                                                 }
-
+ 
                                                 const newSeatingMap = {
                                                   ...map,
                                                   courtesies: updatedCourtesies,
                                                   courtesies_by_session: updatedCourtesiesBySession
                                                 }
-
-                                                await supabase
+ 
+                                                const { error } = await supabase
                                                   .from('events')
                                                   .update({ seating_map: newSeatingMap })
                                                   .eq('id', activeEventId)
-
-                                                // Reserve for student
-                                                const newSeats = [...currentSeats, seatLabel]
-                                                await handleUpdateSeats(selectedParticipantId, newSeats, selectedSessionId)
+ 
+                                                if (error) {
+                                                  alert('Erro ao atualizar cortesia: ' + error.message)
+                                                } else {
+                                                  loadData()
+                                                }
+                                                return
                                               }
-                                              return
-                                            }
-
-                                            if (occupiedBy) {
-                                              if (occupiedBy.id === selectedParticipantId) {
-                                                const newSeats = currentSeats.filter(s => s !== seatLabel)
-                                                await handleUpdateSeats(selectedParticipantId, newSeats, selectedSessionId)
+ 
+                                              const targetPart = participants.find(p => p.id === selectedParticipantId)
+                                              if (!targetPart) return
+ 
+                                              const currentSeats = getParticipantSeats(targetPart, selectedSessionId)
+ 
+                                              if (isCourtesy) {
+                                                const targetStud = students.find(s => s.id === targetPart.student_id)
+                                                if (confirm(`O assento ${seatLabel} é uma cortesia. Deseja liberar a cortesia e reservar para ${targetStud?.name || 'este aluno'}?`)) {
+                                                  let updatedCourtesies = [...(map.courtesies || [])]
+                                                  let updatedCourtesiesBySession = { ...(map.courtesies_by_session || {}) }
+ 
+                                                  if (hasSessions && selectedSessionId) {
+                                                    updatedCourtesiesBySession[selectedSessionId] = (updatedCourtesiesBySession[selectedSessionId] || []).filter(s => s !== seatLabel)
+                                                  } else {
+                                                    updatedCourtesies = updatedCourtesies.filter(s => s !== seatLabel)
+                                                  }
+ 
+                                                  const newSeatingMap = {
+                                                    ...map,
+                                                    courtesies: updatedCourtesies,
+                                                    courtesies_by_session: updatedCourtesiesBySession
+                                                  }
+ 
+                                                  await supabase
+                                                    .from('events')
+                                                    .update({ seating_map: newSeatingMap })
+                                                    .eq('id', activeEventId)
+ 
+                                                  // Reserve for student
+                                                  const newSeats = [...currentSeats, seatLabel]
+                                                  await handleUpdateSeats(selectedParticipantId, newSeats, selectedSessionId)
+                                                }
+                                                return
+                                              }
+ 
+                                              if (occupiedBy) {
+                                                if (occupiedBy.id === selectedParticipantId) {
+                                                  const newSeats = currentSeats.filter(s => s !== seatLabel)
+                                                  await handleUpdateSeats(selectedParticipantId, newSeats, selectedSessionId)
+                                                } else {
+                                                  const otherStud = students.find(s => s.id === occupiedBy.student_id)
+                                                  if (confirm(`O assento ${seatLabel} já está reservado para ${otherStud?.name || 'outro aluno'}. Deseja desmarcar e liberar este assento?`)) {
+                                                    const otherSeats = getParticipantSeats(occupiedBy, selectedSessionId)
+                                                    const newSeatsOther = otherSeats.filter(s => s !== seatLabel)
+                                                    await handleUpdateSeats(occupiedBy.id, newSeatsOther, selectedSessionId)
+                                                  }
+                                                }
                                               } else {
-                                                const otherStud = students.find(s => s.id === occupiedBy.student_id)
-                                                if (confirm(`O assento ${seatLabel} já está reservado para ${otherStud?.name || 'outro aluno'}. Deseja desmarcar e liberar este assento?`)) {
-                                                  const otherSeats = getParticipantSeats(occupiedBy, selectedSessionId)
-                                                  const newSeatsOther = otherSeats.filter(s => s !== seatLabel)
-                                                  await handleUpdateSeats(occupiedBy.id, newSeatsOther, selectedSessionId)
+                                                // Check global limit
+                                                const globalCount = getTotalSeatsCount(targetPart)
+                                                const limit = targetPart.ticket_quantity || 0
+                                                if (limit > 0 && globalCount >= limit) {
+                                                  const targetStud = students.find(s => s.id === targetPart.student_id)
+                                                  alert(`Limite de ingressos atingido! ${targetStud?.name} comprou apenas ${limit} ingresso(s) no total entre todas as sessões.`)
+                                                } else {
+                                                  const newSeats = [...currentSeats, seatLabel]
+                                                  await handleUpdateSeats(selectedParticipantId, newSeats, selectedSessionId)
                                                 }
                                               }
-                                            } else {
-                                              // Check global limit
-                                              const globalCount = getTotalSeatsCount(targetPart)
-                                              const limit = targetPart.ticket_quantity || 0
-                                              if (limit > 0 && globalCount >= limit) {
-                                                const targetStud = students.find(s => s.id === targetPart.student_id)
-                                                alert(`Limite de ingressos atingido! ${targetStud?.name} comprou apenas ${limit} ingresso(s) no total entre todas as sessões.`)
-                                              } else {
-                                                const newSeats = [...currentSeats, seatLabel]
-                                                await handleUpdateSeats(selectedParticipantId, newSeats, selectedSessionId)
-                                              }
                                             }
-                                          }
-
-                                          return (
-                                            <React.Fragment key={seatLabel}>
-                                              <div 
-                                                className={seatClass}
-                                                style={style}
-                                                title={tooltipText}
-                                                onClick={handleSeatClick}
-                                              >
-                                                {displaySeatSize >= 15 ? seatNum : ''}
-                                              </div>
-                                              {mapCorridors.includes(sIdx + 1) && sIdx < count - 1 && (
+ 
+                                            return (
+                                              <React.Fragment key={seatLabel}>
                                                 <div 
-                                                  className="shrink-0 select-none pointer-events-none" 
-                                                  style={{ width: `${displaySeatSize * 0.6}px` }} 
-                                                />
-                                              )}
-                                            </React.Fragment>
-                                          )
-                                        })
-                                      )}
+                                                  className={seatClass}
+                                                  style={style}
+                                                  title={tooltipText}
+                                                  onClick={handleSeatClick}
+                                                >
+                                                  {displaySeatSize >= 15 ? seatNum : ''}
+                                                </div>
+                                                {mapCorridors.includes(sIdx + 1) && sIdx < count - 1 && (
+                                                  <div 
+                                                    className="shrink-0 select-none pointer-events-none" 
+                                                    style={{ width: `${displaySeatSize * 0.6}px` }} 
+                                                  />
+                                                )}
+                                              </React.Fragment>
+                                            )
+                                          })
+                                        )}
+                                      </div>
+ 
+                                      <span className="text-[10px] font-black text-white/30 w-4 text-center shrink-0">{rowName}</span>
                                     </div>
-
-                                    <span className="text-[10px] font-black text-white/30 w-4 text-center shrink-0">{rowName}</span>
-                                  </div>
+                                    {hasHorizontalCorridorAfter && rIdx < rows - 1 && (
+                                      <div 
+                                        className="shrink-0 select-none pointer-events-none" 
+                                        style={{ height: `${displaySeatSize * 0.6}px` }} 
+                                      />
+                                    )}
+                                  </React.Fragment>
                                 )
                               })
                             })()}
@@ -3339,6 +3366,18 @@ export default function Events() {
                 <span className="text-[10px] text-gray-500 block mt-1">Coloque os números das colunas separados por vírgula.</span>
               </div>
 
+              <div>
+                <label className="text-xs font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Corredores Horizontais (fileiras após as quais haverá corredor)</label>
+                <input 
+                  value={horizontalCorridorsInput} 
+                  onChange={e => setHorizontalCorridorsInput(e.target.value)} 
+                  placeholder="Ex: D, H (separadas por vírgula)"
+                  className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none" 
+                  style={inputStyle} 
+                />
+                <span className="text-[10px] text-gray-500 block mt-1">Coloque as letras das fileiras separadas por vírgula.</span>
+              </div>
+
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <h4 className="text-xs font-bold uppercase text-gray-400">Exceções de Fileira</h4>
@@ -3441,56 +3480,67 @@ export default function Events() {
                       previewSeatCounter += count
                       return startNum
                     })
+                    const hCorridors = (exceptions._horizontal_corridors || []) as string[]
 
                     return Array.from({ length: rowsCount }).map((_, rIdx) => {
                       const rowName = getRowLabel(rIdx)
                       const count = exceptions[rowName] !== undefined ? exceptions[rowName] : seatsPerRow
                       const rowStartNum = previewStartNumbers[rIdx]
-                      return (
-                        <div key={rowName} className="flex items-center gap-1.5 shrink-0">
-                          {/* Left row label */}
-                          <span className="text-[10px] font-black text-gray-500 w-4 text-center shrink-0">{rowName}</span>
-                          
-                          {/* Seats list */}
-                          <div className="flex gap-1 items-center">
-                            {count === 0 ? (
-                              <span className="text-[9px] text-rose-400 italic font-semibold">Sem cadeiras nesta fileira</span>
-                            ) : (
-                              Array.from({ length: count }).map((_, sIdx) => {
-                                const seatNum = rowStartNum + sIdx
-                                const seatLabel = `${rowName}${seatNum}`
-                                const isCorridorAfter = corridors.includes(sIdx + 1)
-                                return (
-                                  <React.Fragment key={seatLabel}>
-                                    <div 
-                                      className="rounded-md flex items-center justify-center font-bold border shrink-0 transition-all select-none hover:scale-110 cursor-help"
-                                      style={{ 
-                                        width: `${seatSize}px`,
-                                        height: `${seatSize}px`,
-                                        fontSize: `${Math.max(6, seatSize * 0.45)}px`,
-                                        backgroundColor: 'rgba(139, 92, 246, 0.15)',
-                                        borderColor: 'rgba(139, 92, 246, 0.3)',
-                                        color: '#c084fc'
-                                      }}
-                                      title={`Poltrona ${seatLabel}`}
-                                    >
-                                      {seatSize >= 15 ? seatNum : ''}
-                                    </div>
-                                    {isCorridorAfter && sIdx < count - 1 && (
-                                      <div 
-                                        className="shrink-0 select-none pointer-events-none" 
-                                        style={{ width: `${seatSize * 0.6}px` }} 
-                                      />
-                                    )}
-                                  </React.Fragment>
-                                )
-                              })
-                            )}
-                          </div>
+                      const hasHorizontalCorridorAfter = hCorridors.includes(rowName)
 
-                          {/* Right row label */}
-                          <span className="text-[10px] font-black text-gray-500 w-4 text-center shrink-0">{rowName}</span>
-                        </div>
+                      return (
+                        <React.Fragment key={rowName}>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {/* Left row label */}
+                            <span className="text-[10px] font-black text-gray-500 w-4 text-center shrink-0">{rowName}</span>
+                            
+                            {/* Seats list */}
+                            <div className="flex gap-1 items-center">
+                              {count === 0 ? (
+                                <span className="text-[9px] text-rose-400 italic font-semibold">Sem cadeiras nesta fileira</span>
+                              ) : (
+                                Array.from({ length: count }).map((_, sIdx) => {
+                                  const seatNum = rowStartNum + sIdx
+                                  const seatLabel = `${rowName}${seatNum}`
+                                  const isCorridorAfter = corridors.includes(sIdx + 1)
+                                  return (
+                                    <React.Fragment key={seatLabel}>
+                                      <div 
+                                        className="rounded-md flex items-center justify-center font-bold border shrink-0 transition-all select-none hover:scale-110 cursor-help"
+                                        style={{ 
+                                          width: `${seatSize}px`,
+                                          height: `${seatSize}px`,
+                                          fontSize: `${Math.max(6, seatSize * 0.45)}px`,
+                                          backgroundColor: 'rgba(139, 92, 246, 0.15)',
+                                          borderColor: 'rgba(139, 92, 246, 0.3)',
+                                          color: '#c084fc'
+                                        }}
+                                        title={`Poltrona ${seatLabel}`}
+                                      >
+                                        {seatSize >= 15 ? seatNum : ''}
+                                      </div>
+                                      {isCorridorAfter && sIdx < count - 1 && (
+                                        <div 
+                                          className="shrink-0 select-none pointer-events-none" 
+                                          style={{ width: `${seatSize * 0.6}px` }} 
+                                        />
+                                      )}
+                                    </React.Fragment>
+                                  )
+                                })
+                              )}
+                            </div>
+
+                            {/* Right row label */}
+                            <span className="text-[10px] font-black text-gray-500 w-4 text-center shrink-0">{rowName}</span>
+                          </div>
+                          {hasHorizontalCorridorAfter && rIdx < rowsCount - 1 && (
+                            <div 
+                              className="shrink-0 select-none pointer-events-none" 
+                              style={{ height: '14px' }} 
+                            />
+                          )}
+                        </React.Fragment>
                       )
                     })
                   })()}
