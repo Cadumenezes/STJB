@@ -72,7 +72,7 @@ export default function Events() {
     ...rowExceptions,
     1
   ) + (corridors.length * 0.6)
-  const seatSize = Math.max(8, Math.min(28, Math.floor((480 - (maxSeats - 1) * 3) / maxSeats)))
+  const seatSize = Math.max(22, Math.min(28, Math.floor((480 - (maxSeats - 1) * 3) / maxSeats)))
 
   function getRowLabel(index: number): string {
     const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -2238,7 +2238,7 @@ export default function Events() {
                                 ...rowExceptions,
                                 1
                               ) + (mapCorridors.length * 0.6)
-                              const displaySeatSize = Math.max(12, Math.min(36, Math.floor((550 - (maxSeatsInRow - 1) * 4) / maxSeatsInRow)))
+                              const displaySeatSize = Math.max(26, Math.min(36, Math.floor((550 - (maxSeatsInRow - 1) * 4) / maxSeatsInRow)))
 
                               let currentSeatCounter = 1;
                               const rowStartNumbers = Array.from({ length: rows }).map((_, rIdx) => {
@@ -2290,10 +2290,15 @@ export default function Events() {
                                               return map.courtesies?.includes(seatLabel) || false
                                             })()
  
+                                            const isThreeDigits = seatNum > 99
+                                            const seatFontSize = isThreeDigits 
+                                              ? Math.max(8, displaySeatSize * 0.35) 
+                                              : Math.max(9, displaySeatSize * 0.45)
+
                                             let style: React.CSSProperties = {
                                               width: `${displaySeatSize}px`,
                                               height: `${displaySeatSize}px`,
-                                              fontSize: `${Math.max(7, displaySeatSize * 0.45)}px`
+                                              fontSize: `${seatFontSize}px`
                                             }
  
                                             let seatClass = "rounded-lg flex items-center justify-center font-bold border shrink-0 transition-all select-none cursor-pointer "
@@ -3503,6 +3508,10 @@ export default function Events() {
                                   const seatNum = rowStartNum + sIdx
                                   const seatLabel = `${rowName}${seatNum}`
                                   const isCorridorAfter = corridors.includes(sIdx + 1)
+                                  const isThreeDigits = seatNum > 99
+                                  const previewSeatFontSize = isThreeDigits
+                                    ? Math.max(7, seatSize * 0.35)
+                                    : Math.max(8, seatSize * 0.45)
                                   return (
                                     <React.Fragment key={seatLabel}>
                                       <div 
@@ -3510,7 +3519,7 @@ export default function Events() {
                                         style={{ 
                                           width: `${seatSize}px`,
                                           height: `${seatSize}px`,
-                                          fontSize: `${Math.max(6, seatSize * 0.45)}px`,
+                                          fontSize: `${previewSeatFontSize}px`,
                                           backgroundColor: 'rgba(139, 92, 246, 0.15)',
                                           borderColor: 'rgba(139, 92, 246, 0.3)',
                                           color: '#c084fc'

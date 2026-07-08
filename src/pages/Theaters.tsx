@@ -130,7 +130,7 @@ export default function Theaters() {
     ...rowExceptions,
     1
   ) + (corridors.length * 0.6)
-  const seatSize = Math.max(8, Math.min(28, Math.floor((360 - (maxSeats - 1) * 3) / maxSeats)))
+  const seatSize = Math.max(22, Math.min(28, Math.floor((360 - (maxSeats - 1) * 3) / maxSeats)))
 
   const inputStyle: React.CSSProperties = {
     backgroundColor: 'var(--bg-input)',
@@ -511,6 +511,10 @@ export default function Theaters() {
                                   const seatNum = rowStartNum + sIdx
                                   const seatLabel = `${rowName}${seatNum}`
                                   const isCorridorAfter = corridors.includes(sIdx + 1)
+                                  const isThreeDigits = seatNum > 99
+                                  const previewSeatFontSize = isThreeDigits
+                                    ? Math.max(7, seatSize * 0.35)
+                                    : Math.max(8, seatSize * 0.45)
                                   return (
                                     <React.Fragment key={seatLabel}>
                                       <div 
@@ -518,7 +522,7 @@ export default function Theaters() {
                                         style={{ 
                                           width: `${seatSize}px`,
                                           height: `${seatSize}px`,
-                                          fontSize: `${Math.max(6, seatSize * 0.45)}px`,
+                                          fontSize: `${previewSeatFontSize}px`,
                                           backgroundColor: 'rgba(139, 92, 246, 0.15)',
                                           borderColor: 'rgba(139, 92, 246, 0.35)',
                                           color: 'var(--text-primary)',
