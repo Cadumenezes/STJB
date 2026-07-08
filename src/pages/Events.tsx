@@ -586,7 +586,14 @@ export default function Events() {
     setReportSchoolData(school || { school_name: 'DanceFlow' })
     setTimeout(() => {
       window.print()
-      setReportSchoolData(null)
+      let cleared = false
+      const clearData = () => {
+        if (cleared) return
+        cleared = true
+        setReportSchoolData(null)
+      }
+      window.addEventListener('afterprint', clearData, { once: true })
+      setTimeout(clearData, 3000)
     }, 500)
   }
 

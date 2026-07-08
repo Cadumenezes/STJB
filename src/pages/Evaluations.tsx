@@ -423,7 +423,14 @@ export default function Evaluations() {
 
     setTimeout(() => {
       window.print()
-      setPrintGradeData(null)
+      let cleared = false
+      const clearData = () => {
+        if (cleared) return
+        cleared = true
+        setPrintGradeData(null)
+      }
+      window.addEventListener('afterprint', clearData, { once: true })
+      setTimeout(clearData, 3000)
     }, 500)
   }
 

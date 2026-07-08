@@ -247,7 +247,14 @@ export default function Students() {
     setSelectedStudent(student)
     setTimeout(() => {
       window.print()
-      setReportData(null)
+      let cleared = false
+      const clearData = () => {
+        if (cleared) return
+        cleared = true
+        setReportData(null)
+      }
+      window.addEventListener('afterprint', clearData, { once: true })
+      setTimeout(clearData, 3000)
     }, 500)
   }
 
@@ -261,7 +268,14 @@ export default function Students() {
     setSelectedStudent(student)
     setTimeout(() => {
       window.print()
-      setReceiptData(null)
+      let cleared = false
+      const clearData = () => {
+        if (cleared) return
+        cleared = true
+        setReceiptData(null)
+      }
+      window.addEventListener('afterprint', clearData, { once: true })
+      setTimeout(clearData, 3000)
     }, 500)
   }
 
@@ -644,7 +658,14 @@ export default function Students() {
     setSelectedStudent(student)
     setTimeout(() => {
       window.print()
-      setTaxReportData(null)
+      let cleared = false
+      const clearData = () => {
+        if (cleared) return
+        cleared = true
+        setTaxReportData(null)
+      }
+      window.addEventListener('afterprint', clearData, { once: true })
+      setTimeout(clearData, 3000)
     }, 500)
   }
 
@@ -656,7 +677,14 @@ export default function Students() {
     setSelectedStudent(student)
     setTimeout(() => {
       window.print()
-      setEnrollmentReportData(null)
+      let cleared = false
+      const clearData = () => {
+        if (cleared) return
+        cleared = true
+        setEnrollmentReportData(null)
+      }
+      window.addEventListener('afterprint', clearData, { once: true })
+      setTimeout(clearData, 3000)
     }, 500)
   }
 
