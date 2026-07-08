@@ -149,7 +149,7 @@ export interface FixedBillMonth {
 export interface SeatingMapConfig {
   rows_count: number;
   seats_per_row: number;
-  exceptions: Record<string, number>;
+  exceptions: Record<string, any>;
   courtesies?: string[];
   courtesies_by_session?: Record<string, string[]>;
 }
@@ -165,7 +165,7 @@ export interface Theater {
   name: string;
   rows_count: number;
   seats_per_row: number;
-  exceptions: Record<string, number>;
+  exceptions: Record<string, any>;
   user_id?: string;
   created_at?: string;
 }

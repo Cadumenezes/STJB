@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Plus, Edit, Trash2, Calendar, MapPin, DollarSign, Users, Download, PlusCircle, CheckCircle, CreditCard, Box, Search, Printer, Map, ExternalLink, Copy, Loader2, QrCode } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { Event, EventParticipant, Student, Installment, Profile, EventSession, SeatingMapConfig, Theater, EventExpense } from '../types'
@@ -28,7 +28,8 @@ export default function Events() {
   const [showMapModal, setShowMapModal] = useState(false)
   const [rowsCount, setRowsCount] = useState(10)
   const [seatsPerRow, setSeatsPerRow] = useState(12)
-  const [exceptions, setExceptions] = useState<Record<string, number>>({})
+  const [exceptions, setExceptions] = useState<Record<string, any>>({})
+  const [corridorsInput, setCorridorsInput] = useState('')
 
   // Estados para Aba de Mapa de Teatro e Reservas
   const [activeSubTab, setActiveSubTab] = useState<'spreadsheet' | 'seating_map' | 'expenses'>('spreadsheet')
@@ -61,11 +62,15 @@ export default function Events() {
   })
 
   // Cálculo do tamanho dinâmico das cadeiras para a visualização prévia
+  const rowExceptions = Object.entries(exceptions)
+    .filter(([key]) => !key.startsWith('_'))
+    .map(([, val]) => val as number)
+  const corridors = (exceptions._corridors || []) as number[]
   const maxSeats = Math.max(
     seatsPerRow,
-    ...Object.values(exceptions),
+    ...rowExceptions,
     1
-  )
+  ) + (corridors.length * 0.6)
   const seatSize = Math.max(8, Math.min(28, Math.floor((480 - (maxSeats - 1) * 3) / maxSeats)))
 
   function getRowLabel(index: number): string {
@@ -91,10 +96,13 @@ export default function Events() {
       setRowsCount(config.rows_count || 10)
       setSeatsPerRow(config.seats_per_row || 12)
       setExceptions(config.exceptions || {})
+      const corridors = (config.exceptions?._corridors || []) as number[]
+      setCorridorsInput(corridors.length > 0 ? corridors.join(', ') : '')
     } else {
       setRowsCount(10)
       setSeatsPerRow(12)
       setExceptions({})
+      setCorridorsInput('')
     }
     setShowMapModal(true)
   }
@@ -104,10 +112,22 @@ export default function Events() {
     const activeEvent = events.find(e => e.id === activeEventId)
     if (!activeEvent) return
 
+    const parsedCorridors = corridorsInput
+      .split(',')
+      .map(c => parseInt(c.trim()))
+      .filter(num => !isNaN(num) && num > 0)
+
+    const updatedExceptions = { ...exceptions }
+    if (parsedCorridors.length > 0) {
+      updatedExceptions._corridors = parsedCorridors
+    } else {
+      delete updatedExceptions._corridors
+    }
+
     const config: SeatingMapConfig = {
       rows_count: Number(rowsCount),
       seats_per_row: Number(seatsPerRow),
-      exceptions: exceptions
+      exceptions: updatedExceptions
     }
 
     const { error } = await supabase
@@ -2194,11 +2214,15 @@ export default function Events() {
                               const stdSeats = config.seats_per_row || 12
                               const excs = config.exceptions || {}
                               
+                              const rowExceptions = Object.entries(excs)
+                                .filter(([key]) => !key.startsWith('_'))
+                                .map(([, val]) => val as number)
+                              const mapCorridors = (excs._corridors || []) as number[]
                               const maxSeatsInRow = Math.max(
                                 stdSeats,
-                                ...Object.values(excs),
+                                ...rowExceptions,
                                 1
-                              )
+                              ) + (mapCorridors.length * 0.6)
                               const displaySeatSize = Math.max(12, Math.min(36, Math.floor((550 - (maxSeatsInRow - 1) * 4) / maxSeatsInRow)))
 
                               let currentSeatCounter = 1;
@@ -2405,15 +2429,22 @@ export default function Events() {
                                           }
 
                                           return (
-                                            <div 
-                                              key={seatLabel}
-                                              className={seatClass}
-                                              style={style}
-                                              title={tooltipText}
-                                              onClick={handleSeatClick}
-                                            >
-                                              {displaySeatSize >= 15 ? seatNum : ''}
-                                            </div>
+                                            <React.Fragment key={seatLabel}>
+                                              <div 
+                                                className={seatClass}
+                                                style={style}
+                                                title={tooltipText}
+                                                onClick={handleSeatClick}
+                                              >
+                                                {displaySeatSize >= 15 ? seatNum : ''}
+                                              </div>
+                                              {mapCorridors.includes(sIdx + 1) && sIdx < count - 1 && (
+                                                <div 
+                                                  className="shrink-0 select-none pointer-events-none" 
+                                                  style={{ width: `${displaySeatSize * 0.6}px` }} 
+                                                />
+                                              )}
+                                            </React.Fragment>
                                           )
                                         })
                                       )}
@@ -3296,13 +3327,31 @@ export default function Events() {
                 </div>
               </div>
 
+              <div>
+                <label className="text-xs font-bold block mb-2" style={{ color: 'var(--text-secondary)' }}>Corredores (colunas após as quais haverá um corredor)</label>
+                <input 
+                  value={corridorsInput} 
+                  onChange={e => setCorridorsInput(e.target.value)} 
+                  placeholder="Ex: 4, 9 (separadas por vírgula)"
+                  className="w-full rounded-2xl px-5 py-3 text-sm focus:outline-none" 
+                  style={inputStyle} 
+                />
+                <span className="text-[10px] text-gray-500 block mt-1">Coloque os números das colunas separados por vírgula.</span>
+              </div>
+
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <h4 className="text-xs font-bold uppercase text-gray-400">Exceções de Fileira</h4>
-                  {Object.keys(exceptions).length > 0 && (
+                  {Object.keys(exceptions).filter(k => !k.startsWith('_')).length > 0 && (
                     <button 
                       type="button" 
-                      onClick={() => setExceptions({})} 
+                      onClick={() => {
+                        const newExc = { ...exceptions }
+                        Object.keys(newExc).forEach(k => {
+                          if (!k.startsWith('_')) delete newExc[k]
+                        })
+                        setExceptions(newExc)
+                      }}
                       className="text-[10px] text-rose-400 hover:text-rose-300 font-bold uppercase tracking-widest cursor-pointer"
                     >
                       Limpar Tudo
@@ -3410,22 +3459,30 @@ export default function Events() {
                               Array.from({ length: count }).map((_, sIdx) => {
                                 const seatNum = rowStartNum + sIdx
                                 const seatLabel = `${rowName}${seatNum}`
+                                const isCorridorAfter = corridors.includes(sIdx + 1)
                                 return (
-                                  <div 
-                                    key={seatLabel}
-                                    className="rounded-md flex items-center justify-center font-bold border shrink-0 transition-all select-none hover:scale-110 cursor-help"
-                                    style={{ 
-                                      width: `${seatSize}px`,
-                                      height: `${seatSize}px`,
-                                      fontSize: `${Math.max(6, seatSize * 0.45)}px`,
-                                      backgroundColor: 'rgba(139, 92, 246, 0.15)',
-                                      borderColor: 'rgba(139, 92, 246, 0.3)',
-                                      color: '#c084fc'
-                                    }}
-                                    title={`Poltrona ${seatLabel}`}
-                                  >
-                                    {seatSize >= 15 ? seatNum : ''}
-                                  </div>
+                                  <React.Fragment key={seatLabel}>
+                                    <div 
+                                      className="rounded-md flex items-center justify-center font-bold border shrink-0 transition-all select-none hover:scale-110 cursor-help"
+                                      style={{ 
+                                        width: `${seatSize}px`,
+                                        height: `${seatSize}px`,
+                                        fontSize: `${Math.max(6, seatSize * 0.45)}px`,
+                                        backgroundColor: 'rgba(139, 92, 246, 0.15)',
+                                        borderColor: 'rgba(139, 92, 246, 0.3)',
+                                        color: '#c084fc'
+                                      }}
+                                      title={`Poltrona ${seatLabel}`}
+                                    >
+                                      {seatSize >= 15 ? seatNum : ''}
+                                    </div>
+                                    {isCorridorAfter && sIdx < count - 1 && (
+                                      <div 
+                                        className="shrink-0 select-none pointer-events-none" 
+                                        style={{ width: `${seatSize * 0.6}px` }} 
+                                      />
+                                    )}
+                                  </React.Fragment>
                                 )
                               })
                             )}
