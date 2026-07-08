@@ -61,6 +61,7 @@ export default function Students() {
   const [discountDueDay, setDiscountDueDay] = useState(10)
   const [gatewayType, setGatewayType] = useState<'none' | 'asaas' | 'cora'>('none')
   const [generatingBillingId, setGeneratingBillingId] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
   const [formData, setFormData] = useState({
     name: '', email: '', phone: '', birth_date: '', cpf: '', address: '', guardian_name: '', guardian_phone: '', notes: '',
     monthly_fee: '', discount_monthly_fee: '', enrollment_fee: '', class_ids: [] as string[], status: 'active' as Student['status'],
@@ -241,7 +242,7 @@ export default function Students() {
     setReportData({
       payments: allPayments || [],
       attendance: attendance || [],
-      school: school || { school_name: 'DanceFlow' }
+      school: school || { school_name: 'DanceFlow-Escola' }
     })
     setSelectedStudent(student)
     setTimeout(() => {
@@ -255,7 +256,7 @@ export default function Students() {
     const { data: school } = await supabase.from('school_settings').select('*').limit(1).single()
     setReceiptData({
       payment,
-      school: school || { school_name: 'DanceFlow' }
+      school: school || { school_name: 'DanceFlow-Escola' }
     })
     setSelectedStudent(student)
     setTimeout(() => {
@@ -265,9 +266,33 @@ export default function Students() {
   }
 
   function getStudentPaymentStatus(studentId: string): 'paid' | 'pending' | 'overdue' | 'none' {
-    const currentMonth = new Date().toISOString().slice(0, 7)
-    const p = payments.find((pay) => pay.student_id === studentId && pay.reference_month === currentMonth)
-    return p ? p.status : 'none'
+    const studentPayments = payments.filter((pay) => pay.student_id === studentId)
+    if (studentPayments.length === 0) return 'none'
+
+    const todayStr = new Date().toISOString().split('T')[0]
+    const currentMonth = todayStr.slice(0, 7)
+
+    // Check if there are any overdue payments (either explicitly marked, or pending but due date in the past)
+    const hasOverdue = studentPayments.some(
+      (pay) => pay.status === 'overdue' || (pay.status === 'pending' && pay.due_date < todayStr)
+    )
+    if (hasOverdue) return 'overdue'
+
+    // If no overdue payments, check for the current month's payment status
+    const currentPay = studentPayments.find((pay) => pay.reference_month === currentMonth)
+    if (currentPay) {
+      return currentPay.status
+    }
+
+    // If there is no payment record for the current month, but we have pending payments (which aren't overdue yet)
+    const hasPending = studentPayments.some((pay) => pay.status === 'pending')
+    if (hasPending) return 'pending'
+
+    // If they have any paid payment in this list
+    const hasPaid = studentPayments.some((pay) => pay.status === 'paid')
+    if (hasPaid) return 'paid'
+
+    return 'none'
   }
 
   const filteredStudents = students.filter((s) => {
@@ -305,10 +330,10 @@ export default function Students() {
       const status = getStudentPaymentStatus(s.id)
       return status === 'pending' || status === 'none'
     }).length,
-    overdue: payments.filter((p) => {
-      if (p.status !== 'overdue') return false
-      const student = students.find(s => s.id === p.student_id)
-      return student?.status === 'active' || student?.status === 'partial_scholarship'
+    overdue: students.filter((s) => {
+      if (s.status !== 'active' && s.status !== 'partial_scholarship') return false
+      const status = getStudentPaymentStatus(s.id)
+      return status === 'overdue'
     }).length,
     scholarship: students.filter(s => s.status === 'scholarship').length,
     partial_scholarship: students.filter(s => s.status === 'partial_scholarship').length,
@@ -333,6 +358,7 @@ export default function Students() {
         return
       }
     }
+    setSaving(true)
     const payload = {
       ...formData,
       birth_date: dbBirthDate,
@@ -342,14 +368,20 @@ export default function Students() {
       class_ids: formData.class_ids || [],
       status: formData.status || 'active',
     }
-    const { error } = await supabase.from('students').insert([payload])
-    if (!error) {
-      setShowAddModal(false)
-      resetForm()
-      loadData()
-    } else {
+    try {
+      const { error } = await supabase.from('students').insert([payload])
+      if (!error) {
+        setShowAddModal(false)
+        resetForm()
+        loadData()
+      } else {
+        throw error
+      }
+    } catch (error: any) {
       console.error(error)
       alert('Erro ao cadastrar: ' + error.message)
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -372,6 +404,7 @@ export default function Students() {
         return
       }
     }
+    setSaving(true)
     const payload = {
       ...formData,
       birth_date: dbBirthDate,
@@ -381,14 +414,20 @@ export default function Students() {
       class_ids: formData.class_ids || [],
       status: formData.status,
     }
-    const { error } = await supabase.from('students').update(payload).eq('id', selectedStudent.id)
-    if (!error) {
-      setShowEditModal(false)
-      resetForm()
-      loadData()
-    } else {
+    try {
+      const { error } = await supabase.from('students').update(payload).eq('id', selectedStudent.id)
+      if (!error) {
+        setShowEditModal(false)
+        resetForm()
+        loadData()
+      } else {
+        throw error
+      }
+    } catch (error: any) {
       console.error(error)
       alert('Erro ao editar: ' + error.message)
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -600,7 +639,7 @@ export default function Students() {
 
     setTaxReportData({
       payments: paidPayments || [],
-      school: school || { school_name: 'DanceFlow' }
+      school: school || { school_name: 'DanceFlow-Escola' }
     })
     setSelectedStudent(student)
     setTimeout(() => {
@@ -612,7 +651,7 @@ export default function Students() {
   async function generateEnrollmentDeclaration(student: Student) {
     const { data: school } = await supabase.from('school_settings').select('*').limit(1).single()
     setEnrollmentReportData({
-      school: school || { school_name: 'DanceFlow' }
+      school: school || { school_name: 'DanceFlow-Escola' }
     })
     setSelectedStudent(student)
     setTimeout(() => {
@@ -626,8 +665,8 @@ export default function Students() {
 
     // Remove o CPF do aluno do template (com parênteses e espaços extras ao redor)
     let text = template.replace(/\s*\(?CPF:\s*{cpf_aluno}\)?/g, '')
-      .replace(/{nome_escola}/g, school.school_name || 'DanceFlow')
-      .replace(/{escola}/g, school.school_name || 'DanceFlow')
+      .replace(/{nome_escola}/g, school.school_name || 'DanceFlow-Escola')
+      .replace(/{escola}/g, school.school_name || 'DanceFlow-Escola')
       .replace(/{cnpj_escola}/g, school.cnpj || 'Não cadastrado')
       .replace(/{cnpj}/g, school.cnpj || 'Não cadastrado')
       .replace(/{endereco_escola}/g, school.address || 'Não cadastrado')
@@ -718,13 +757,13 @@ export default function Students() {
         formattedHtml += `
           <div style="text-align: center; margin-bottom: 30px;">
             <img src="${school.logo_url}" alt="${school.school_name || 'Logo'}" style="max-height: 70px; max-width: 180px; object-fit: contain; margin-bottom: 8px;" />
-            <div style="font-size: 12px; font-weight: bold; color: #555; text-transform: uppercase; letter-spacing: 1px;">${school.school_name || 'DanceFlow'}</div>
+            <div style="font-size: 12px; font-weight: bold; color: #555; text-transform: uppercase; letter-spacing: 1px;">${school.school_name || 'DanceFlow-Escola'}</div>
           </div>
         `
       } else {
         formattedHtml += `
           <div style="text-align: center; margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 15px;">
-            <h1 style="font-size: 22px; font-weight: 800; margin: 0; color: #111; text-transform: uppercase; letter-spacing: 1px;">${school.school_name || 'DanceFlow'}</h1>
+            <h1 style="font-size: 22px; font-weight: 800; margin: 0; color: #111; text-transform: uppercase; letter-spacing: 1px;">${school.school_name || 'DanceFlow-Escola'}</h1>
           </div>
         `
       }
@@ -1078,10 +1117,11 @@ export default function Students() {
           </button>
           <button
             type="submit"
-            className="rounded-2xl px-5 py-2.5 text-sm font-medium text-white transition-all hover:opacity-90"
+            disabled={saving}
+            className="rounded-2xl px-5 py-2.5 text-sm font-medium text-white transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)' }}
           >
-            {submitLabel}
+            {saving ? 'Salvando...' : submitLabel}
           </button>
         </div>
       </form>
@@ -1129,7 +1169,7 @@ export default function Students() {
             </div>
             <div className="text-right text-xs">
               <p>Gerado em: {new Date().toLocaleDateString('pt-BR')}</p>
-              <p>DanceFlow System</p>
+              <p>DanceFlow-Escola System</p>
             </div>
           </div>
 
@@ -1195,7 +1235,7 @@ export default function Students() {
             <div className="w-64 border-t-2 border-black mb-2"></div>
             <p className="text-sm font-black uppercase">{reportData.school.director || reportData.school.school_name}</p>
             <p className="text-xs">{reportData.school.director ? 'Direção / Responsável' : 'Assinatura da Direção'}</p>
-            <p className="mt-8 text-[10px] text-gray-400">Este documento é uma declaração oficial de frequência e quitação financeira gerada pelo sistema DanceFlow.</p>
+            <p className="mt-8 text-[10px] text-gray-400">Este documento é uma declaração oficial de frequência e quitação financeira gerada pelo sistema DanceFlow-Escola.</p>
           </div>
         </div>,
         document.body

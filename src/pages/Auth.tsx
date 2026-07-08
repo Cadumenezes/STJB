@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import { Mail, Lock, Phone, ArrowRight, Sparkles } from 'lucide-react'
+import { Mail, Lock, Phone, ArrowRight, Sparkles, Eye, EyeOff } from 'lucide-react'
 import loginBgImage from '../assets/dance_auth_login.png'
 import danceLoginJazz from '../assets/dance_login_jazz.png'
 import danceLoginKids from '../assets/dance_login_kids.png'
@@ -21,6 +21,8 @@ export default function Auth() {
   const [forgotMode, setForgotMode] = useState(false)
   const [isResetting, setIsResetting] = useState(false)
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   // Estados de conformidade LGPD
   const [acceptTerms, setAcceptTerms] = useState(false)
@@ -183,7 +185,7 @@ export default function Auth() {
           <div className="h-7 w-7 rounded-lg flex items-center justify-center bg-gradient-to-br from-purple-600 to-pink-500 shadow-lg shadow-purple-500/20">
             <span className="text-white text-xs font-black">D</span>
           </div>
-          <span className="text-base font-black tracking-tight text-white">Dance<span className="text-purple-500">Flow</span></span>
+          <span className="text-base font-black tracking-tight text-white">Dance<span className="text-purple-500">Flow-Escola</span></span>
         </div>
 
         {/* Brand Quote (Completely separate, on top of where login is made!) */}
@@ -198,7 +200,7 @@ export default function Auth() {
             "A dança é a linguagem secreta da alma. Nosso propósito é fazer a gestão da sua escola fluir tão suavemente quanto cada passo de dança."
           </blockquote>
           <div>
-            <h4 className="font-bold text-xs text-white">DanceFlow Management</h4>
+            <h4 className="font-bold text-xs text-white">DanceFlow-Escola Management</h4>
           </div>
         </div>
 
@@ -227,27 +229,41 @@ export default function Auth() {
                   <div className="relative group">
                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-500 transition-colors z-10" size={15} />
                     <input
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       required
                       placeholder="Nova senha (mín. 6 caracteres)"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full bg-black/30 border border-white/10 rounded-xl pr-4 py-2.5 text-xs text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
+                      className="w-full bg-black/30 border border-white/10 rounded-xl pr-10 py-2.5 text-xs text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
                       style={{ paddingLeft: '44px' }}
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-purple-400 transition-colors cursor-pointer z-10"
+                    >
+                      {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </button>
                   </div>
 
                   <div className="relative group">
                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-500 transition-colors z-10" size={15} />
                     <input
-                      type="password"
+                      type={showConfirmPassword ? "text" : "password"}
                       required
                       placeholder="Confirme a nova senha"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      className="w-full bg-black/30 border border-white/10 rounded-xl pr-4 py-2.5 text-xs text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
+                      className="w-full bg-black/30 border border-white/10 rounded-xl pr-10 py-2.5 text-xs text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all"
                       style={{ paddingLeft: '44px' }}
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-purple-400 transition-colors cursor-pointer z-10"
+                    >
+                      {showConfirmPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </button>
                   </div>
                 </div>
 
@@ -274,6 +290,8 @@ export default function Auth() {
                     window.history.replaceState(null, '', window.location.pathname);
                     localStorage.removeItem('resetting_password');
                     setMessage({ type: '', text: '' });
+                    setShowPassword(false);
+                    setShowConfirmPassword(false);
                   }}
                   className="text-purple-400 font-bold hover:text-purple-300 transition-colors cursor-pointer"
                 >
@@ -336,6 +354,8 @@ export default function Auth() {
                   onClick={() => {
                     setForgotMode(false);
                     setMessage({ type: '', text: '' });
+                    setShowPassword(false);
+                    setShowConfirmPassword(false);
                   }}
                   className="text-purple-400 font-bold hover:text-purple-300 transition-colors cursor-pointer"
                 >
@@ -353,23 +373,25 @@ export default function Auth() {
                 <p className="text-[11px] text-gray-400 mt-1">
                   {isLogin 
                     ? 'Insira suas credenciais abaixo para gerenciar sua escola.' 
-                    : 'Preencha os campos para iniciar sua experiência no DanceFlow.'}
+                    : 'Preencha os campos para iniciar sua experiência no DanceFlow-Escola.'}
                 </p>
               </div>
 
               {/* Toggle de Abas Login / Cadastro */}
-              <div className="flex gap-2 mb-6 p-1 bg-black/30 border border-white/5 rounded-xl">
+              <div className="flex bg-black/40 p-1 rounded-xl mb-6 border border-white/5">
                 <button
-                  onClick={() => { setIsLogin(true); setMessage({ type: '', text: '' }); }}
+                  type="button"
+                  onClick={() => { setIsLogin(true); setMessage({ type: '', text: '' }); setShowPassword(false); setShowConfirmPassword(false); }}
                   className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${isLogin ? 'bg-purple-600 text-white shadow-md' : 'text-gray-400 hover:text-white'}`}
                 >
                   Fazer Login
                 </button>
                 <button
-                  onClick={() => { setIsLogin(false); setMessage({ type: '', text: '' }); }}
+                  type="button"
+                  onClick={() => { setIsLogin(false); setMessage({ type: '', text: '' }); setShowPassword(false); setShowConfirmPassword(false); }}
                   className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${!isLogin ? 'bg-purple-600 text-white shadow-md' : 'text-gray-400 hover:text-white'}`}
                 >
-                  Criar Cadastro
+                  Cadastrar Escola
                 </button>
               </div>
 
@@ -414,15 +436,23 @@ export default function Auth() {
                   <div className="relative group">
                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-purple-500 transition-colors z-10" size={15} />
                     <input
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       required
                       disabled={lockoutRemaining > 0}
                       placeholder="Sua senha"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full bg-black/30 border border-white/10 rounded-xl pr-4 py-2.5 text-xs text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all disabled:opacity-55"
+                      className="w-full bg-black/30 border border-white/10 rounded-xl pr-10 py-2.5 text-xs text-white placeholder:text-gray-600 focus:outline-none focus:ring-1 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all disabled:opacity-55"
                       style={{ paddingLeft: '44px' }}
                     />
+                    <button
+                      type="button"
+                      disabled={lockoutRemaining > 0}
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-purple-400 transition-colors cursor-pointer z-10 disabled:opacity-50"
+                    >
+                      {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </button>
                   </div>
 
                   {isLogin && (
@@ -433,6 +463,8 @@ export default function Auth() {
                         onClick={() => {
                           setForgotMode(true);
                           setMessage({ type: '', text: '' });
+                          setShowPassword(false);
+                          setShowConfirmPassword(false);
                         }}
                         className="text-[11px] text-purple-400 font-medium hover:text-purple-300 transition-colors cursor-pointer disabled:opacity-50"
                       >
@@ -472,7 +504,7 @@ export default function Auth() {
                       >
                         Política de Privacidade
                       </button>{' '}
-                      do DanceFlow.
+                      do DanceFlow-Escola.
                     </label>
                   </div>
                 )}
@@ -502,7 +534,8 @@ export default function Auth() {
               <p className="text-center text-gray-500 text-xs mt-6">
                 {isLogin ? 'Novo por aqui?' : 'Já possui uma conta?'}
                 <button
-                  onClick={() => setIsLogin(!isLogin)}
+                  type="button"
+                  onClick={() => { setIsLogin(!isLogin); setShowPassword(false); setShowConfirmPassword(false); }}
                   className="ml-1 text-purple-400 font-bold hover:text-purple-300 transition-colors cursor-pointer"
                 >
                   {isLogin ? 'Cadastre sua escola' : 'Faça seu login'}
@@ -514,7 +547,7 @@ export default function Auth() {
 
         {/* Footer info */}
         <p className="text-left text-gray-600 text-[9px] font-semibold tracking-wider uppercase">
-          DanceFlow Management v1.1
+          DanceFlow-Escola Management v1.1
         </p>
       </div>
 

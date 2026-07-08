@@ -79,7 +79,7 @@ const COLORS = [
 
 export default function Schedule() {
   const [profile, setProfile] = useState<Profile | null>(null)
-  const [schoolName, setSchoolName] = useState('DanceFlow')
+  const [schoolName, setSchoolName] = useState('DanceFlow-Escola')
   const [viewMode, setViewMode] = useState<'monthly' | 'semestral' | 'annual'>('monthly')
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -185,7 +185,7 @@ export default function Schedule() {
         name: holidayForm.name,
         date: holidayForm.date
       }
-      if (profile?.role === 'secretary' && schoolAdminId) {
+      if (profile && ['secretary', 'coordinator', 'financial_director', 'teacher'].includes(profile.role) && schoolAdminId) {
         payload.user_id = schoolAdminId
       }
       const { error } = await supabase.from('school_holidays').insert([payload])
@@ -227,7 +227,7 @@ export default function Schedule() {
         setProfile(profileData)
         
         let adminId = user.id
-        if (profileData.role === 'secretary') {
+        if (profileData && ['secretary', 'coordinator', 'financial_director', 'teacher'].includes(profileData.role)) {
           const { data: teamData } = await supabase
             .from('team_members')
             .select('user_id')

@@ -32,7 +32,7 @@ export default function PrivacyPolicyModal({ isOpen, onClose, initialTab = 'term
                 {activeTab === 'terms' ? 'Termos de Uso' : 'Política de Privacidade'}
               </h2>
               <p className="text-[10px] text-[var(--text-muted)] font-semibold uppercase tracking-wider">
-                DanceFlow Platform • Conformidade LGPD
+                DanceFlow-Escola Platform • Conformidade LGPD
               </p>
             </div>
           </div>
@@ -77,17 +77,17 @@ export default function PrivacyPolicyModal({ isOpen, onClose, initialTab = 'term
               <section className="space-y-2">
                 <h3 className="text-base font-black text-white">1. Objeto e Aceite</h3>
                 <p>
-                  Estes Termos de Uso regulam o acesso e utilização da plataforma <strong>DanceFlow</strong>, um software como serviço (SaaS) dedicado à gestão administrativa, financeira e de fluxo escolar de estúdios e escolas de dança. Ao criar uma conta comercial, registrar funcionários ou inserir dados de alunos, o Diretor e/ou Administrador declara estar ciente e concordar integralmente com estas regras.
+                  Estes Termos de Uso regulam o acesso e utilização da plataforma <strong>DanceFlow-Escola</strong>, um software como serviço (SaaS) dedicado à gestão administrativa, financeira e de fluxo escolar de estúdios e escolas de dança. Ao criar uma conta comercial, registrar funcionários ou inserir dados de alunos, o Diretor e/ou Administrador declara estar ciente e concordar integralmente com estas regras.
                 </p>
               </section>
 
               <section className="space-y-2">
                 <h3 className="text-base font-black text-white">2. Responsabilidade pelos Dados Cadastrados</h3>
                 <p>
-                  O contratante (escola de dança) é o **Controlador** dos dados pessoais inseridos na plataforma (tais como nomes de alunos, CPFs, datas de nascimento, fotos e frequências), sendo a DanceFlow exclusivamente a **Operadora** técnica desses dados.
+                  O contratante (escola de dança) é o **Controlador** dos dados pessoais inseridos na plataforma (tais como nomes de alunos, CPFs, datas de nascimento, fotos e frequências), sendo a DanceFlow-Escola exclusivamente a **Operadora** técnica desses dados.
                 </p>
                 <p>
-                  A escola obriga-se a obter o consentimento dos alunos (ou de seus responsáveis legais, em caso de menores de idade) para o cadastro e tratamento dos dados dentro do sistema, isentando a DanceFlow de qualquer responsabilidade decorrente de cadastros indevidos ou sem autorização prévia.
+                  A escola obriga-se a obter o consentimento dos alunos (ou de seus responsáveis legais, em caso de menores de idade) para o cadastro e tratamento dos dados dentro do sistema, isentando a DanceFlow-Escola de qualquer responsabilidade decorrente de cadastros indevidos ou sem autorização prévia.
                 </p>
               </section>
 
@@ -104,14 +104,14 @@ export default function PrivacyPolicyModal({ isOpen, onClose, initialTab = 'term
               <section className="space-y-2">
                 <h3 className="text-base font-black text-white">4. Planos, Cobrança e Faturamento</h3>
                 <p>
-                  O DanceFlow é distribuído sob modelo de assinatura recorrente (Bronze, Prata, Ouro, Diamante). O não pagamento da assinatura acarreta a suspensão temporária do acesso à plataforma após o vencimento do prazo de tolerância. O cancelamento pode ser efetuado a qualquer momento e interromperá as cobranças do ciclo seguinte.
+                  O DanceFlow-Escola é distribuído sob modelo de assinatura recorrente (Bronze, Prata, Ouro, Diamante). O não pagamento da assinatura acarreta a suspensão temporária do acesso à plataforma após o vencimento do prazo de tolerância. O cancelamento pode ser efetuado a qualquer momento e interromperá as cobranças do ciclo seguinte.
                 </p>
               </section>
 
               <section className="space-y-2">
                 <h3 className="text-base font-black text-white">5. Limitação de Responsabilidade</h3>
                 <p>
-                  A DanceFlow envida seus melhores esforços para garantir a estabilidade do sistema e a segurança das informações. Contudo, não nos responsabilizamos por interrupções causadas por falhas de conexão à internet do usuário, problemas nos servidores globais do banco de dados (Supabase/Netlify) ou uso indevido de credenciais.
+                  A DanceFlow-Escola envida seus melhores esforços para garantir a estabilidade do sistema e a segurança das informações. Contudo, não nos responsabilizamos por interrupções causadas por falhas de conexão à internet do usuário, problemas nos servidores globais do banco de dados (Supabase/Netlify) ou uso indevido de credenciais.
                 </p>
               </section>
             </div>
@@ -122,7 +122,7 @@ export default function PrivacyPolicyModal({ isOpen, onClose, initialTab = 'term
               <section className="space-y-2">
                 <h3 className="text-base font-black text-white">1. Compromisso com a LGPD</h3>
                 <p>
-                  A DanceFlow tem como prioridade máxima a privacidade e a segurança dos dados pessoais. Esta Política explica de forma transparente como coletamos, usamos, armazenamos e protegemos as informações em conformidade com a <strong>Lei Geral de Proteção de Dados Pessoais (Lei nº 13.709/2018 - LGPD)</strong>.
+                  A DanceFlow-Escola tem como prioridade máxima a privacidade e a segurança dos dados pessoais. Esta Política explica de forma transparente como coletamos, usamos, armazenamos e protegemos as informações em conformidade com a <strong>Lei Geral de Proteção de Dados Pessoais (Lei nº 13.709/2018 - LGPD)</strong>.
                 </p>
               </section>
 
@@ -164,7 +164,7 @@ export default function PrivacyPolicyModal({ isOpen, onClose, initialTab = 'term
                   <li>Solicitar a exclusão definitiva de dados do banco de dados (observadas as obrigações legais de retenção financeira/fiscal).</li>
                 </ul>
                 <p>
-                  Essas requisições devem ser enviadas diretamente à administração da sua escola de dança (Controlador) ou, em caso de contas comerciais de diretores, por meio do suporte técnico do DanceFlow.
+                  Essas requisições devem ser enviadas diretamente à administração da sua escola de dança (Controlador) ou, em caso de contas comerciais de diretores, por meio do suporte técnico do DanceFlow-Escola.
                 </p>
               </section>
             </div>

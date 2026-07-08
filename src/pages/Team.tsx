@@ -123,7 +123,7 @@ export default function Team() {
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
       const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-      if (profile?.role === 'secretary') {
+      if (profile && ['secretary', 'coordinator', 'financial_director', 'teacher'].includes(profile.role)) {
         const { data: tm } = await supabase
           .from('team_members')
           .select('user_id')
@@ -305,6 +305,9 @@ export default function Team() {
     'Zelador': { bg: 'rgba(16,185,129,0.15)', text: '#10b981', label: 'Zelador' },
     'Porteiro': { bg: 'rgba(245,158,11,0.15)', text: '#f59e0b', label: 'Porteiro' },
     'Coordenador': { bg: 'rgba(236,72,153,0.15)', text: '#ec4899', label: 'Coordenador' },
+    'coordinator': { bg: 'rgba(236,72,153,0.15)', text: '#ec4899', label: 'Coordenador' },
+    'Diretor Financeiro': { bg: 'rgba(6,182,212,0.15)', text: '#06b6d4', label: 'Diretor Financeiro' },
+    'financial_director': { bg: 'rgba(6,182,212,0.15)', text: '#06b6d4', label: 'Diretor Financeiro' },
   }
 
   return (
@@ -751,6 +754,7 @@ export default function Team() {
                   <option value="Zelador">Zelador</option>
                   <option value="Porteiro">Porteiro</option>
                   <option value="Coordenador">Coordenador</option>
+                  <option value="Diretor Financeiro">Diretor Financeiro</option>
                 </select>
               </div>
               <div>

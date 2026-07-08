@@ -115,7 +115,7 @@ export default function LandingPage() {
           <div className="h-9 w-9 rounded-xl flex items-center justify-center bg-gradient-to-br from-purple-600 to-pink-500 shadow-lg shadow-purple-500/20">
             <span className="text-white text-base font-black">D</span>
           </div>
-          <span className="text-xl font-black tracking-tight">Dance<span className="text-purple-500">Flow</span></span>
+          <span className="text-xl font-black tracking-tight">Dance<span className="text-purple-500">Flow-Escola</span></span>
         </div>
         
         <div className="flex items-center gap-5">
@@ -177,7 +177,7 @@ export default function LandingPage() {
         <div className="w-full max-w-6xl mx-auto px-6 flex flex-col items-center gap-8 md:gap-12">
           <div className="w-full max-w-4xl mx-auto text-center space-y-4 flex flex-col items-center">
             <h2 className="text-3xl sm:text-4xl font-black tracking-tight">Gestão simplificada. Resultados reais.</h2>
-            <p className="text-gray-400 text-sm sm:text-base leading-relaxed max-w-xl">Foque no que você faz de melhor: ensinar a arte da dança. O DanceFlow cuida de todo o resto.</p>
+            <p className="text-gray-400 text-sm sm:text-base leading-relaxed max-w-xl">Foque no que você faz de melhor: ensinar a arte da dança. O DanceFlow-Escola cuida de todo o resto.</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
@@ -238,7 +238,7 @@ export default function LandingPage() {
               Liberdade e Produtividade para sua Equipe
             </h2>
             <p className="text-gray-400 text-base leading-relaxed">
-              O DanceFlow foi projetado do zero para economizar tempo. Nossos professores acessam uma interface otimizada para dispositivos móveis onde conseguem realizar a chamada das turmas e gerenciar presença na sala de aula em poucos segundos, eliminando diários de papel.
+              O DanceFlow-Escola foi projetado do zero para economizar tempo. Nossos professores acessam uma interface otimizada para dispositivos móveis onde conseguem realizar a chamada das turmas e gerenciar presença na sala de aula em poucos segundos, eliminando diários de papel.
             </p>
             <div className="pt-2">
               <Link to="/auth" className="inline-flex items-center gap-3 px-6 py-3.5 bg-white/5 border border-white/10 hover:border-white/20 text-white font-bold rounded-xl transition-all hover:-translate-y-0.5 group text-sm">
@@ -304,7 +304,7 @@ export default function LandingPage() {
               Previsão Híbrida de Gastos com Feriados Integrados
             </h2>
             <p className="text-gray-400 text-base leading-relaxed">
-              Saiba exatamente quanto vai pagar à sua equipe com antecedência! O DanceFlow calcula de forma automática os feriados nacionais e permite cadastrar feriados municipais diretamente na agenda escolar. O nosso inovador motor de <strong>Previsão Híbrida</strong> projeta os gastos de aulas futuras enquanto se autoajusta instantaneamente baseando-se nas faltas reais e chamadas já registradas dos professores no mês, prevenindo qualquer tipo de marcação indevida e mantendo o fluxo de caixa sempre preciso.
+              Saiba exatamente quanto vai pagar à sua equipe com antecedência! O DanceFlow-Escola calcula de forma automática os feriados nacionais e permite cadastrar feriados municipais diretamente na agenda escolar. O nosso inovador motor de <strong>Previsão Híbrida</strong> projeta os gastos de aulas futuras enquanto se autoajusta instantaneamente baseando-se nas faltas reais e chamadas já registradas dos professores no mês, prevenindo qualquer tipo de marcação indevida e mantendo o fluxo de caixa sempre preciso.
             </p>
             <div className="pt-2">
               <Link to="/auth" className="inline-flex items-center gap-3 px-6 py-3.5 bg-white/5 border border-white/10 hover:border-white/20 text-white font-bold rounded-xl transition-all hover:-translate-y-0.5 group text-sm">
@@ -337,7 +337,7 @@ export default function LandingPage() {
               Faturamento Automatizado e Conciliação Universal
             </h2>
             <p className="text-gray-400 text-base leading-relaxed">
-              Não mude de banco! O DanceFlow se conecta de forma segura e oficial à sua própria conta do <a href="https://www.cora.com.br" target="_blank" rel="noopener noreferrer" className="text-pink-400 hover:text-pink-300 underline font-bold transition-all">Banco Cora</a> ou <a href="https://www.asaas.com" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 underline font-bold transition-all">Asaas</a> (permitindo receber em qualquer banco com repasses automáticos via Pix). E se você usa outro banco convencional (Itaú, Bradesco, Nubank, Inter, etc.), basta arrastar o extrato bancário (OFX ou CSV) na plataforma para o sistema fazer o cruzamento inteligente e dar baixa automática em lote nos alunos.
+              Não mude de banco! O DanceFlow-Escola se conecta de forma segura e oficial à sua própria conta do <a href="https://www.cora.com.br" target="_blank" rel="noopener noreferrer" className="text-pink-400 hover:text-pink-300 underline font-bold transition-all">Banco Cora</a> ou <a href="https://www.asaas.com" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:text-purple-300 underline font-bold transition-all">Asaas</a> (permitindo receber em qualquer banco com repasses automáticos via Pix). E se você usa outro banco convencional (Itaú, Bradesco, Nubank, Inter, etc.), basta arrastar o extrato bancário (OFX ou CSV) na plataforma para o sistema fazer o cruzamento inteligente e dar baixa automática em lote nos alunos.
             </p>
             <div className="pt-2">
               <Link to="/auth" className="inline-flex items-center gap-3 px-6 py-3.5 bg-white/5 border border-white/10 hover:border-white/20 text-white font-bold rounded-xl transition-all hover:-translate-y-0.5 group text-sm">
@@ -370,7 +370,7 @@ export default function LandingPage() {
               Gestão de Espetáculos e Mapas de Assento Personalizados
             </h2>
             <p className="text-gray-400 text-base leading-relaxed">
-              Planejar um grande festival ou apresentação anual nunca foi tão simples! Com o DanceFlow, você pode cadastrar e mapear o teatro de forma visual, definindo fileiras de assentos customizadas e exceções de poltronas para refletir fielmente qualquer casa de espetáculos. Controle a ocupação em tempo real, venda ingressos numerados e integre a arrecadação de taxas de apresentação, kits e figurinos diretamente ao cadastro financeiro do aluno em lote.
+              Planejar um grande festival ou apresentação anual nunca foi tão simples! Com o DanceFlow-Escola, você pode cadastrar e mapear o teatro de forma visual, definindo fileiras de assentos customizadas e exceções de poltronas para refletir fielmente qualquer casa de espetáculos. Controle a ocupação em tempo real, venda ingressos numerados e integre a arrecadação de taxas de apresentação, kits e figurinos diretamente ao cadastro financeiro do aluno em lote.
             </p>
             <div className="pt-2">
               <Link to="/auth" className="inline-flex items-center gap-3 px-6 py-3.5 bg-white/5 border border-white/10 hover:border-white/20 text-white font-bold rounded-xl transition-all hover:-translate-y-0.5 group text-sm">
@@ -404,7 +404,7 @@ export default function LandingPage() {
                 role: 'Diretora Artística', 
                 image: carolinaImg,
                 initials: 'CS',
-                quote: 'A gestão do nosso espetáculo de fim de ano com roupas e convites era caótica. O DanceFlow organizou e automatizou tudo!' 
+                quote: 'A gestão do nosso espetáculo de fim de ano com roupas e convites era caótica. O DanceFlow-Escola organizou e automatizou tudo!' 
               },
               { 
                 name: 'Ricardo Mendes', 
@@ -600,7 +600,7 @@ export default function LandingPage() {
           <div className="h-5 w-5 rounded-md flex items-center justify-center bg-gradient-to-br from-purple-600 to-pink-500">
             <span className="text-white text-[10px] font-black">D</span>
           </div>
-          <span className="font-black tracking-tight text-base">Dance<span className="text-purple-500">Flow</span></span>
+          <span className="font-black tracking-tight text-base">Dance<span className="text-purple-500">Flow-Escola</span></span>
         </div>
         
         {/* Footer Navigation Links */}
@@ -620,7 +620,7 @@ export default function LandingPage() {
           </button>
         </div>
         
-        <p className="text-gray-600 text-xs font-semibold">© 2026 DanceFlow Management. Todos os direitos reservados.</p>
+        <p className="text-gray-600 text-xs font-semibold">© 2026 DanceFlow-Escola Management. Todos os direitos reservados.</p>
       </footer>
 
       {/* Contact Modal */}
@@ -650,7 +650,7 @@ export default function LandingPage() {
               <p className="text-xs text-gray-400 mt-1">
                 {contactType === 'support' 
                   ? 'Fale com nosso time técnico sobre dúvidas ou problemas no sistema.'
-                  : 'Quer fazer parte da equipe do DanceFlow? Envie sua vaga de interesse.'}
+                  : 'Quer fazer parte da equipe do DanceFlow-Escola? Envie sua vaga de interesse.'}
               </p>
             </div>
 

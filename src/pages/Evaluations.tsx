@@ -963,7 +963,7 @@ export default function Evaluations() {
             </div>
             <div className="text-right text-xs text-gray-500">
               <p><b>Emitido em:</b> {new Date().toLocaleDateString('pt-BR')}</p>
-              <p><b>Sistema:</b> DanceFlow</p>
+              <p><b>Sistema:</b> DanceFlow-Escola</p>
             </div>
           </div>
 

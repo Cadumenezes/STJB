@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Users, AlertTriangle, DollarSign, Cake, TrendingUp, TrendingDown, Calendar, Image as ImageIcon } from 'lucide-react'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Cell } from 'recharts'
+import { Users, AlertTriangle, DollarSign, Cake, TrendingUp, TrendingDown, Calendar, Image as ImageIcon, BookOpen } from 'lucide-react'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts'
 import { supabase } from '../lib/supabase'
 
 interface DashboardData {
@@ -11,6 +11,7 @@ interface DashboardData {
   todayExpense: number
   birthdaysThisWeek: { name: string; birth_date: string }[]
   monthlyChartData: any[]
+  totalClasses?: number
 }
 
 export default function Dashboard() {
@@ -22,6 +23,7 @@ export default function Dashboard() {
     todayExpense: 0,
     birthdaysThisWeek: [],
     monthlyChartData: [],
+    totalClasses: 0,
   })
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<any>(null)
@@ -112,21 +114,19 @@ export default function Dashboard() {
         return thisYearBday >= startOfWeek && thisYearBday <= endOfWeek
       })
 
-      // Fetch last 12 months for chart
-      const twelveMonthsAgo = new Date();
-      twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 11);
-      twelveMonthsAgo.setDate(1);
+      // Fetch current year data (from January 1st of current year)
+      const currentYear = new Date().getFullYear();
+      const startOfYear = `${currentYear}-01-01`;
       const { data: allFinances } = await supabase
           .from('financial_entries')
           .select('*')
-          .gte('date', twelveMonthsAgo.toISOString().split('T')[0]);
+          .gte('date', startOfYear);
 
       const monthlyDataMap: Record<string, any> = {};
       
-      // Initialize last 12 months
-      for (let i = 11; i >= 0; i--) {
-        const d = new Date();
-        d.setMonth(d.getMonth() - i);
+      // Initialize January to December of the current year
+      for (let month = 0; month < 12; month++) {
+        const d = new Date(currentYear, month, 1);
         const monthStr = d.toISOString().slice(0, 7);
         const monthLabel = d.toLocaleDateString('pt-BR', { month: 'short' }).toUpperCase();
         monthlyDataMap[monthStr] = { name: monthLabel, Entradas: 0, Saídas: 0, fullMonth: monthStr };
@@ -149,6 +149,11 @@ export default function Dashboard() {
       const filteredEvents = (eventsData || []).filter(e => e.photo_urls && e.photo_urls.length > 0)
       setEventsWithPhotos(filteredEvents)
 
+      // Fetch total active classes
+      const { count: classesCount } = await supabase
+        .from('dance_classes')
+        .select('*', { count: 'exact', head: true })
+
       setData({
         totalStudents: studentCount || 0,
         overduePayments: overdueCount || 0,
@@ -157,6 +162,7 @@ export default function Dashboard() {
         todayExpense,
         birthdaysThisWeek,
         monthlyChartData,
+        totalClasses: classesCount || 0,
       })
     } catch (err) {
       console.error('Error loading dashboard:', err)
@@ -172,20 +178,30 @@ export default function Dashboard() {
       gradient: 'linear-gradient(135deg, #8b5cf6, #6d28d9)',
       iconBg: 'rgba(139, 92, 246, 0.2)',
     },
-    {
-      title: 'Mensalidades Atrasadas',
-      value: data.overduePayments,
-      icon: AlertTriangle,
-      gradient: 'linear-gradient(135deg, #f43f5e, #be123c)',
-      iconBg: 'rgba(244, 63, 94, 0.2)',
-    },
-    {
-      title: 'Fluxo de Caixa Hoje',
-      value: `R$ ${data.cashFlowToday.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-      icon: DollarSign,
-      gradient: 'linear-gradient(135deg, #10b981, #059669)',
-      iconBg: 'rgba(16, 185, 129, 0.2)',
-    },
+    ...(profile?.role !== 'coordinator' ? [
+      {
+        title: 'Mensalidades Atrasadas',
+        value: data.overduePayments,
+        icon: AlertTriangle,
+        gradient: 'linear-gradient(135deg, #f43f5e, #be123c)',
+        iconBg: 'rgba(244, 63, 94, 0.2)',
+      },
+      {
+        title: 'Fluxo de Caixa Hoje',
+        value: `R$ ${data.cashFlowToday.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+        icon: DollarSign,
+        gradient: 'linear-gradient(135deg, #10b981, #059669)',
+        iconBg: 'rgba(16, 185, 129, 0.2)',
+      }
+    ] : [
+      {
+        title: 'Turmas Ativas',
+        value: data.totalClasses || 0,
+        icon: BookOpen,
+        gradient: 'linear-gradient(135deg, #06b6d4, #0891b2)',
+        iconBg: 'rgba(6, 182, 212, 0.2)',
+      }
+    ]),
     {
       title: 'Aniversariantes da Semana',
       value: data.birthdaysThisWeek.length,
@@ -487,106 +503,117 @@ export default function Dashboard() {
       )}
 
       {/* Charts Section - SQUARE */}
-      <div 
-        className="grid grid-cols-1 gap-4 sm:gap-6 max-w-7xl mx-auto w-full"
-        style={{ marginTop: '8px', marginBottom: '24px' }}
-      >
-        <div className="rounded-none p-4 sm:p-8 md:p-10 shadow-2xl" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
-          <h2 className="text-lg font-bold mb-6 flex items-center gap-3" style={{ color: 'var(--text-primary)' }}>
-            <div className="p-2 rounded-none bg-purple-500/20">
-              <TrendingUp size={20} className="text-purple-400" />
-            </div>
-            Faturamento Mensal (Últimos 12 meses)
-          </h2>
-          <div className="w-full overflow-x-auto pb-2 select-none scrollbar-thin">
-            <div className="h-[250px] sm:h-[350px] min-w-[600px] md:min-w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data.monthlyChartData} margin={{ top: 10, right: 5, left: -10, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" vertical={false} />
-                  <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} dy={10} />
-                  <YAxis 
-                    stroke="var(--text-muted)" 
-                    fontSize={11} 
-                    tickLine={false} 
-                    axisLine={false} 
-                    tickFormatter={(v) => {
-                      if (v >= 1000) return `R$ ${(v / 1000).toFixed(0)}k`;
-                      return `R$ ${v}`;
-                    }} 
-                  />
-                  <RechartsTooltip 
-                    cursor={{ fill: 'var(--border-color)', opacity: 0.4 }}
-                    contentStyle={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '0px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.5)' }}
-                    itemStyle={{ fontSize: '14px', fontWeight: 'bold' }}
-                  />
-                  <Bar dataKey="Entradas" fill="#10b981" radius={[0, 0, 0, 0]}>
-                    {data.monthlyChartData.map((entry: any, index: number) => (
-                      <Cell key={`cell-in-${index}`} fill="url(#colorEntradas)" />
-                    ))}
-                  </Bar>
-                  <Bar dataKey="Saídas" fill="#f43f5e" radius={[0, 0, 0, 0]}>
-                    {data.monthlyChartData.map((entry: any, index: number) => (
-                      <Cell key={`cell-out-${index}`} fill="url(#colorSaidas)" />
-                    ))}
-                  </Bar>
-                  <defs>
-                    <linearGradient id="colorEntradas" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#34d399" stopOpacity={0.9}/>
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0.6}/>
-                    </linearGradient>
-                    <linearGradient id="colorSaidas" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#fb7185" stopOpacity={0.9}/>
-                      <stop offset="95%" stopColor="#f43f5e" stopOpacity={0.6}/>
-                    </linearGradient>
-                  </defs>
-                </BarChart>
-              </ResponsiveContainer>
+      {profile?.role !== 'coordinator' && (
+        <div 
+          className="grid grid-cols-1 gap-4 sm:gap-6 max-w-7xl mx-auto w-full"
+          style={{ marginTop: '8px', marginBottom: '24px' }}
+        >
+          <div className="rounded-none p-4 sm:p-8 md:p-10 shadow-2xl" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)' }}>
+            <h2 className="text-lg font-bold mb-6 flex items-center gap-3" style={{ color: 'var(--text-primary)' }}>
+              <div className="p-2 rounded-none bg-purple-500/20">
+                <TrendingUp size={20} className="text-purple-400" />
+              </div>
+              Faturamento Mensal ({new Date().getFullYear()})
+            </h2>
+            <div className="w-full overflow-x-auto pb-2 select-none scrollbar-thin">
+              <div className="h-[250px] sm:h-[350px] min-w-[600px] md:min-w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={data.monthlyChartData} margin={{ top: 15, right: 10, left: -10, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" vertical={false} />
+                    <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={11} tickLine={false} axisLine={false} dy={10} />
+                    <YAxis 
+                      stroke="var(--text-muted)" 
+                      fontSize={11} 
+                      tickLine={false} 
+                      axisLine={false} 
+                      tickFormatter={(v) => {
+                        if (v >= 1000) return `R$ ${(v / 1000).toFixed(0)}k`;
+                        return `R$ ${v}`;
+                      }} 
+                    />
+                    <RechartsTooltip 
+                      cursor={{ stroke: 'var(--border-color)', strokeWidth: 1 }}
+                      contentStyle={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '16px', boxShadow: '0 10px 25px -5px rgba(0,0,0,0.5)' }}
+                      itemStyle={{ fontSize: '14px', fontWeight: 'bold' }}
+                      formatter={(v) => `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                    />
+                    <defs>
+                      <filter id="glowEntradas" x="-20%" y="-20%" width="140%" height="140%">
+                        <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#10b981" floodOpacity="0.4" />
+                      </filter>
+                      <filter id="glowSaidas" x="-20%" y="-20%" width="140%" height="140%">
+                        <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#f43f5e" floodOpacity="0.4" />
+                      </filter>
+                    </defs>
+                    <Line 
+                      type="monotone" 
+                      dataKey="Entradas" 
+                      stroke="#10b981" 
+                      strokeWidth={3} 
+                      dot={{ r: 4, strokeWidth: 1, fill: 'var(--bg-card)' }}
+                      activeDot={{ r: 7, strokeWidth: 0 }}
+                      filter="url(#glowEntradas)"
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="Saídas" 
+                      stroke="#f43f5e" 
+                      strokeWidth={3} 
+                      dot={{ r: 4, strokeWidth: 1, fill: 'var(--bg-card)' }}
+                      activeDot={{ r: 7, strokeWidth: 0 }}
+                      filter="url(#glowSaidas)"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Today's Flow Detail + Birthdays - SQUARE */}
-      <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2 max-w-7xl mx-auto w-full">
+      <div className={`grid grid-cols-1 gap-4 sm:gap-6 ${profile?.role === 'coordinator' ? 'lg:grid-cols-1 max-w-3xl' : 'lg:grid-cols-2 max-w-7xl'} mx-auto w-full`}>
         {/* Cash Flow Detail - SQUARE */}
-        <div
-          className="rounded-none p-4 sm:p-8 md:p-10 border shadow-2xl"
-          style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
-        >
-          <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
-            Fluxo de Caixa - Hoje
-          </h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between rounded-none p-4" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-              <div className="flex items-center gap-3">
-                <div className="rounded-none p-3" style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)' }}>
-                  <TrendingUp size={20} className="text-emerald-400" />
+        {profile?.role !== 'coordinator' && (
+          <div
+            className="rounded-none p-4 sm:p-8 md:p-10 border shadow-2xl"
+            style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+          >
+            <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+              Fluxo de Caixa - Hoje
+            </h2>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between rounded-none p-4" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                <div className="flex items-center gap-3">
+                  <div className="rounded-none p-3" style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)' }}>
+                    <TrendingUp size={20} className="text-emerald-400" />
+                  </div>
+                  <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Entradas</span>
                 </div>
-                <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Entradas</span>
+                <span className="text-lg font-bold text-emerald-400">
+                  R$ {data.todayIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </span>
               </div>
-              <span className="text-lg font-bold text-emerald-400">
-                R$ {data.todayIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-              </span>
-            </div>
-            <div className="flex items-center justify-between rounded-none p-4" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-              <div className="flex items-center gap-3">
-                <div className="rounded-none p-3" style={{ backgroundColor: 'rgba(244, 63, 94, 0.15)' }}>
-                  <TrendingDown size={20} className="text-rose-400" />
+              <div className="flex items-center justify-between rounded-none p-4" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                <div className="flex items-center gap-3">
+                  <div className="rounded-none p-3" style={{ backgroundColor: 'rgba(244, 63, 94, 0.15)' }}>
+                    <TrendingDown size={20} className="text-rose-400" />
+                  </div>
+                  <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Saídas</span>
                 </div>
-                <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Saídas</span>
+                <span className="text-lg font-bold text-rose-400">
+                  R$ {data.todayExpense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </span>
               </div>
-              <span className="text-lg font-bold text-rose-400">
-                R$ {data.todayExpense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-              </span>
-            </div>
-            <div className="flex items-center justify-between rounded-none p-4 border border-white/5" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-              <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Saldo do Dia</span>
-              <span className={`text-lg font-bold ${data.cashFlowToday >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                R$ {data.cashFlowToday.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-              </span>
+              <div className="flex items-center justify-between rounded-none p-4 border border-white/5" style={{ backgroundColor: 'var(--bg-secondary)' }}>
+                <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Saldo do Dia</span>
+                <span className={`text-lg font-bold ${data.cashFlowToday >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  R$ {data.cashFlowToday.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </span>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Birthdays - SQUARE */}
         <div

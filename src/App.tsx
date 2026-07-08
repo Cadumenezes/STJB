@@ -186,17 +186,17 @@ export default function App() {
           <Route index element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Dashboard />} />
           <Route path="students" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Students />} />
           <Route path="trials" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <TrialClasses />} />
-          <Route path="financial" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Financial />} />
+          <Route path="financial" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : (profile?.role === 'coordinator' ? <Navigate to="/" /> : <Financial />)} />
           <Route path="classes" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Classes />} />
           <Route path="events" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Events />} />
           <Route path="theaters" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Theaters />} />
           <Route path="attendance" element={<AttendancePage />} />
           <Route path="schedule" element={<Schedule />} />
           <Route path="evaluations" element={<Evaluations />} />
-          <Route path="inventory" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : (profile?.role === 'secretary' ? <Navigate to="/" /> : <Inventory />)} />
-          <Route path="team" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : (profile?.role === 'secretary' ? <Navigate to="/" /> : <Team />)} />
+          <Route path="inventory" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : (['secretary', 'coordinator'].includes(profile?.role || '') ? <Navigate to="/" /> : <Inventory />)} />
+          <Route path="team" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : (['secretary', 'coordinator'].includes(profile?.role || '') ? <Navigate to="/" /> : <Team />)} />
           <Route path="ai-consultant" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <AiConsultant />} />
-          <Route path="settings" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : (profile?.role === 'secretary' ? <Navigate to="/" /> : <SettingsPage />)} />
+          <Route path="settings" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : (['secretary', 'coordinator'].includes(profile?.role || '') ? <Navigate to="/" /> : <SettingsPage />)} />
           <Route path="shop" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Shop />} />
           <Route path="admin" element={(profile?.role === 'admin' || profile?.email === 'teste@flow.com.br') ? <Admin /> : <Navigate to="/" />} />
         </Route>

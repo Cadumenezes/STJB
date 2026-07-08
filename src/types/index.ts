@@ -225,7 +225,7 @@ export interface Profile {
   id: string
   email: string
   phone: string | null
-  role: 'admin' | 'user' | 'teacher' | 'secretary'
+  role: 'admin' | 'user' | 'teacher' | 'secretary' | 'coordinator' | 'financial_director'
   status: 'pending' | 'active' | 'suspended'
   plan: 'gratis' | 'bronze' | 'prata' | 'ouro' | 'diamante' | 'starter' | 'pro'
   expires_at: string | null

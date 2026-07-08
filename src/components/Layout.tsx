@@ -237,7 +237,7 @@ const manualChapters = [
 export default function Layout() {
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [schoolName, setSchoolName] = useState('DanceFlow')
+  const [schoolName, setSchoolName] = useState('DanceFlow-Escola')
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
   const [profile, setProfile] = useState<Profile | null>(null)
@@ -258,7 +258,7 @@ export default function Layout() {
   // IA Diagnostics Simulation HUD State
   const [showSimulator, setShowSimulator] = useState(false)
   const [isSimulating, setIsSimulating] = useState(false)
-  const [selectedRole, setSelectedRole] = useState<'director' | 'secretary' | 'teacher'>('director')
+  const [selectedRole, setSelectedRole] = useState<'director' | 'secretary' | 'teacher' | 'coordinator' | 'financial_director'>('director')
   const [simLogs, setSimLogs] = useState<string[]>([])
   const [diagnostics, setDiagnostics] = useState<Record<string, 'pending' | 'success' | 'error'>>({
     dashboard: 'pending',
@@ -741,6 +741,95 @@ export default function Layout() {
 
         navigate('/attendance')
         addLog('🏁 Varredura de Professor concluída! RLS e acessos de frequência validados. 🎉')
+      } else if (selectedRole === 'coordinator') {
+        // --- COORDINATOR SIMULATION FLOW ---
+        addLog('🧭 [IA] Iniciando Varredura do Perfil de Coordenador...')
+        navigate('/')
+        addLog('📊 Acessando Dashboard...')
+        await new Promise(r => setTimeout(r, 2000))
+        
+        try {
+          const { count: sCount } = await supabase.from('students').select('*', { count: 'exact', head: true }).in('status', ['active', 'scholarship', 'partial_scholarship'])
+          addLog(`✅ Dashboard OK! Alunos ativos: ${sCount || 0}`)
+          setDiagnostics(prev => ({ ...prev, dashboard: 'success' }))
+        } catch (err: any) {
+          addLog(`❌ Erro no Dashboard: ${err.message}`)
+          setDiagnostics(prev => ({ ...prev, dashboard: 'error' }))
+        }
+
+        navigate('/students')
+        addLog('👥 Acessando aba de Alunos - Verificando permissões de Leitura...')
+        await new Promise(r => setTimeout(r, 2000))
+
+        try {
+          const { data, error } = await supabase.from('students').select('id, name').limit(5)
+          if (error) throw error
+          addLog(`✅ Leitura de Alunos OK! Encontrados: ${data?.length || 0} alunos.`)
+          setDiagnostics(prev => ({ ...prev, students: 'success' }))
+        } catch (err: any) {
+          addLog(`❌ Erro na leitura de Alunos: ${err.message}`)
+          setDiagnostics(prev => ({ ...prev, students: 'error' }))
+        }
+
+        addLog('🛡️ Testando Bloqueio RLS no Módulo Financeiro (Negativo)...')
+        try {
+          const { data: insertedFin, error } = await supabase.from('financial_entries').insert([{ type: 'income', category: 'Mensalidade', description: '__TEST_COORDINATOR_RLS__', amount: 0, date: todayStr }]).select()
+          if (error) {
+            addLog('🛡️ RLS Financeiro: 🔒 Bloqueado com Sucesso! (Coordenador não pode registrar caixa)')
+            setDiagnostics(prev => ({ ...prev, financial: 'success' }))
+          } else {
+            if (insertedFin && insertedFin[0]) {
+              await supabase.from('financial_entries').delete().eq('id', insertedFin[0].id)
+            }
+            const currentRole = profile?.role
+            if (currentRole === 'admin' || currentRole === 'user') {
+              addLog('ℹ️ RLS Financeiro: Inserção permitida pois você está logado como Diretor (dono dos dados).')
+              setDiagnostics(prev => ({ ...prev, financial: 'success' }))
+            } else {
+              addLog('⚠️ Alerta: Coordenador conseguiu lançar no financeiro!')
+              setDiagnostics(prev => ({ ...prev, financial: 'error' }))
+            }
+          }
+        } catch (err) {
+          addLog('🛡️ RLS Financeiro: 🔒 Bloqueado com Sucesso!')
+          setDiagnostics(prev => ({ ...prev, financial: 'success' }))
+        }
+
+        navigate('/')
+        addLog('🏁 Varredura de Coordenador concluída! RLS e acessos validados. 🎉')
+
+      } else if (selectedRole === 'financial_director') {
+        // --- FINANCIAL DIRECTOR SIMULATION FLOW ---
+        addLog('💰 [IA] Iniciando Varredura do Perfil de Diretor Financeiro...')
+        navigate('/')
+        addLog('📊 Acessando Dashboard...')
+        await new Promise(r => setTimeout(r, 2000))
+        
+        try {
+          const { count: sCount } = await supabase.from('students').select('*', { count: 'exact', head: true }).in('status', ['active', 'scholarship', 'partial_scholarship'])
+          addLog(`✅ Dashboard OK! Alunos ativos: ${sCount || 0}`)
+          setDiagnostics(prev => ({ ...prev, dashboard: 'success' }))
+        } catch (err: any) {
+          addLog(`❌ Erro no Dashboard: ${err.message}`)
+          setDiagnostics(prev => ({ ...prev, dashboard: 'error' }))
+        }
+
+        navigate('/financial')
+        addLog('💰 Acessando Fluxo Financeiro...')
+        await new Promise(r => setTimeout(r, 2000))
+
+        try {
+          const { data: finData, error: finErr } = await supabase.from('financial_entries').select('*').limit(5)
+          if (finErr) throw finErr
+          addLog(`✅ Módulo Financeiro OK! Transações carregadas: ${finData?.length || 0}`)
+          setDiagnostics(prev => ({ ...prev, financial: 'success' }))
+        } catch (err: any) {
+          addLog(`❌ Erro no Módulo Financeiro: ${err.message}`)
+          setDiagnostics(prev => ({ ...prev, financial: 'error' }))
+        }
+
+        navigate('/')
+        addLog('🏁 Varredura de Diretor Financeiro concluída! 🎉')
       }
 
     } catch (globalErr: any) {
@@ -1074,7 +1163,7 @@ export default function Layout() {
   async function loadSettings() {
     const { data } = await supabase.from('school_settings').select('*').limit(1).single()
     if (data) {
-      setSchoolName(data.school_name || 'DanceFlow')
+      setSchoolName(data.school_name || 'DanceFlow-Escola')
       setLogoUrl(data.logo_url)
       if (data.bg_color) document.documentElement.style.setProperty('--bg-primary', data.bg_color)
       if (data.bg_card) document.documentElement.style.setProperty('--bg-card', data.bg_card)
@@ -1152,6 +1241,9 @@ export default function Layout() {
                 }
                 if (profile?.role === 'secretary') {
                   return item.path !== '/inventory' && item.path !== '/team' && item.path !== '/settings'
+                }
+                if (profile?.role === 'coordinator') {
+                  return item.path !== '/financial' && item.path !== '/inventory' && item.path !== '/team' && item.path !== '/settings'
                 }
                 return true
               })
@@ -1646,8 +1738,10 @@ export default function Layout() {
               <div className="flex gap-2">
                 {[
                   { value: 'director', label: '👑 Diretor' },
-                  { value: 'secretary', label: '📋 Secretária' },
-                  { value: 'teacher', label: '👟 Professor' }
+                  { value: 'secretary', label: '📋 Secr.' },
+                  { value: 'teacher', label: '👟 Prof.' },
+                  { value: 'coordinator', label: '🧭 Coord.' },
+                  { value: 'financial_director', label: '💰 Finan.' }
                 ].map(role => (
                   <button
                     key={role.value}

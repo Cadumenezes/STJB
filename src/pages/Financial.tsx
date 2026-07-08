@@ -4,11 +4,12 @@ import {
   DollarSign, TrendingUp, TrendingDown, Plus, Trash2, Edit,
   Wallet, ArrowUpCircle, ArrowDownCircle, Pin, CheckCircle2, Circle, Users,
   UploadCloud, Check, AlertCircle, HelpCircle, RefreshCw, FileText,
-  Copy, ExternalLink, QrCode, CreditCard, Printer
+  Copy, ExternalLink, QrCode, CreditCard, Printer, Calendar
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { FinancialEntry, Student, MonthlyPayment } from '../types'
 import Modal from '../components/Modal'
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts'
 
 interface FixedBill {
   id: string
@@ -52,6 +53,22 @@ export default function Financial() {
   const [reconciledItems, setReconciledItems] = useState<any[]>([])
   const [processingFile, setProcessingFile] = useState(false)
   const [batchSaving, setBatchSaving] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [selectedReportMonth, setSelectedReportMonth] = useState<string>(new Date().toISOString().slice(0, 7))
+  const [showMonthPicker, setShowMonthPicker] = useState(false)
+  const [pickerYear, setPickerYear] = useState<number>(new Date().getFullYear())
+
+  const openMonthPicker = () => {
+    const [year] = selectedReportMonth.split('-')
+    setPickerYear(parseInt(year))
+    setShowMonthPicker(true)
+  }
+
+  const getFormattedReportMonth = (monthStr: string) => {
+    const [year, month] = monthStr.split('-')
+    const date = new Date(parseInt(year), parseInt(month) - 1, 1)
+    return date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+  }
 
   const getRoleLabel = (role: string) => {
     const labels: Record<string, string> = {
@@ -64,7 +81,10 @@ export default function Financial() {
       'Professor': 'Professor',
       'Zelador': 'Zelador',
       'Porteiro': 'Porteiro',
-      'Coordenador': 'Coordenador'
+      'Coordenador': 'Coordenador',
+      'coordinator': 'Coordenador',
+      'Diretor Financeiro': 'Diretor Financeiro',
+      'financial_director': 'Diretor Financeiro'
     }
     return labels[role] || role || 'Professor'
   }
@@ -263,7 +283,7 @@ export default function Financial() {
         setProfile(profileData)
         
         let adminId = user.id
-        if (profileData && profileData.role === 'secretary') {
+        if (profileData && ['secretary', 'coordinator', 'financial_director', 'teacher'].includes(profileData.role)) {
           const { data: teamData } = await supabase
             .from('team_members')
             .select('user_id')
@@ -277,7 +297,7 @@ export default function Financial() {
       }
 
       // Load settings (to get discount_due_day, pay_on_holidays, open_on_holidays) and students for payment forecast
-      const { data: settingsData } = await supabase.from('school_settings').select('discount_due_day, pay_on_holidays, open_on_holidays, gateway_type, school_name, cnpj, address, director, logo_url').limit(1).maybeSingle()
+      const { data: settingsData } = await supabase.from('school_settings').select('discount_due_day, pay_on_holidays, open_on_holidays, gateway_type, school_name, cnpj, address, director, logo_url, accent_color').limit(1).maybeSingle()
       let payHolidaysVal = true
       let openHolidaysVal = false
       if (settingsData) {
@@ -514,12 +534,12 @@ export default function Financial() {
   }
 
   const today = new Date().toISOString().split('T')[0]
-  const todayEntries = entries.filter((e) => e.date === today)
+  const todayEntries = entries.filter((e) => e.date === today && e.date.startsWith(selectedReportMonth))
   const todayIncome = todayEntries.filter((e) => e.type === 'income').reduce((sum, e) => sum + Number(e.amount), 0)
   const todayExpense = todayEntries.filter((e) => e.type === 'expense').reduce((sum, e) => sum + Number(e.amount), 0)
 
   const currentMonthStr = new Date().toISOString().slice(0, 7)
-  const monthEntries = entries.filter((e) => e.date.startsWith(currentMonthStr))
+  const monthEntries = entries.filter((e) => e.date.startsWith(selectedReportMonth))
   const monthIncome = monthEntries.filter((e) => e.type === 'income').reduce((sum, e) => sum + Number(e.amount), 0)
   const monthExpense = monthEntries.filter((e) => e.type === 'expense').reduce((sum, e) => sum + Number(e.amount), 0)
   const currentBalance = entries.reduce((sum, e) => e.type === 'income' ? sum + Number(e.amount) : sum - Number(e.amount), 0)
@@ -544,18 +564,22 @@ export default function Financial() {
       // Se for parcelamento, verificar se já terminou de pagar em meses anteriores ao atual
       if (bill.installments) {
         const totalPaid = entries.filter(e => e.fixed_bill_id === bill.id).length
-        const isPaidThisMonth = entries.some(e => e.fixed_bill_id === bill.id && e.date.startsWith(currentMonthStr))
+        const isPaidThisMonth = entries.some(e => e.fixed_bill_id === bill.id && e.date.startsWith(selectedReportMonth))
         if (totalPaid >= bill.installments && !isPaidThisMonth) {
           return false // Já totalmente pago e não pago este mês -> não prevê gasto
         }
       }
       return true
     })
-    .reduce((sum, bill) => sum + getFixedBillAmountForMonth(bill.id, currentMonthStr, bill.amount), 0)
+    .reduce((sum, bill) => sum + getFixedBillAmountForMonth(bill.id, selectedReportMonth, bill.amount), 0)
 
   const previsaoGastos = fixedBillsTotal + payrollTotal
 
-  const filteredEntries = entries.filter((e) => filter === 'all' || e.type === filter)
+  const filteredEntries = entries.filter((e) => {
+    const matchesType = filter === 'all' || e.type === filter
+    const matchesMonth = e.date && e.date.startsWith(selectedReportMonth)
+    return matchesType && matchesMonth
+  })
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -563,20 +587,27 @@ export default function Financial() {
       ...formData, 
       amount: parseFloat(formData.amount) 
     }
-    if (profile?.role === 'secretary' && schoolAdminId) {
+    if (profile && ['secretary', 'coordinator', 'financial_director', 'teacher'].includes(profile.role) && schoolAdminId) {
       payload.user_id = schoolAdminId
     }
-    const { error } = editEntry 
-      ? await supabase.from('financial_entries').update(payload).eq('id', editEntry.id)
-      : await supabase.from('financial_entries').insert([payload])
+    setSaving(true)
+    try {
+      const { error } = editEntry 
+        ? await supabase.from('financial_entries').update(payload).eq('id', editEntry.id)
+        : await supabase.from('financial_entries').insert([payload])
 
-    if (error) {
+      if (error) {
+        throw error
+      } else {
+        setShowModal(false)
+        setEditEntry(null)
+        resetForm()
+        loadData()
+      }
+    } catch (error: any) {
       alert('Erro ao salvar lançamento: ' + error.message)
-    } else {
-      setShowModal(false)
-      setEditEntry(null)
-      resetForm()
-      loadData()
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -590,17 +621,24 @@ export default function Financial() {
       installments: fixedFormData.installments ? parseInt(fixedFormData.installments) : null
     }
     
-    const { error } = editFixed
-      ? await supabase.from('fixed_bills').update(payload).eq('id', editFixed.id)
-      : await supabase.from('fixed_bills').insert([payload])
+    setSaving(true)
+    try {
+      const { error } = editFixed
+        ? await supabase.from('fixed_bills').update(payload).eq('id', editFixed.id)
+        : await supabase.from('fixed_bills').insert([payload])
 
-    if (error) {
+      if (error) {
+        throw error
+      } else {
+        setShowFixedModal(false)
+        setEditFixed(null)
+        setFixedFormData({ description: '', amount: '', category: '', due_day: '1', installments: '' })
+        loadData()
+      }
+    } catch (error: any) {
       alert('Erro ao salvar conta fixa: ' + error.message)
-    } else {
-      setShowFixedModal(false)
-      setEditFixed(null)
-      setFixedFormData({ description: '', amount: '', category: '', due_day: '1', installments: '' })
-      loadData()
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -747,7 +785,11 @@ export default function Financial() {
   }
 
   function resetForm() {
-    setFormData({ type: 'income', category: '', description: '', amount: '', date: new Date().toISOString().split('T')[0] })
+    const today = new Date().toISOString().split('T')[0]
+    const defaultDate = today.startsWith(selectedReportMonth) 
+      ? today 
+      : `${selectedReportMonth}-01`
+    setFormData({ type: 'income', category: '', description: '', amount: '', date: defaultDate })
   }
 
   const inputStyle: React.CSSProperties = {
@@ -1073,9 +1115,10 @@ export default function Financial() {
               </button>
               <button
                 type="submit"
-                className="rounded-xl px-6 py-2 text-sm font-bold text-white bg-purple-600 hover:bg-purple-700 transition-all"
+                disabled={saving}
+                className="rounded-xl px-6 py-2 text-sm font-bold text-white bg-purple-600 hover:bg-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Salvar Lançamento
+                {saving ? 'Salvando...' : 'Salvar Lançamento'}
               </button>
             </div>
           </form>
@@ -1691,54 +1734,195 @@ export default function Financial() {
 
           {/* Monthly Report */}
           <div className="rounded-none p-8 shadow-xl mb-8" style={{ backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', marginTop: '48px' }}>
-            <h3 className="text-lg font-black uppercase tracking-tighter mb-6" style={{ color: 'var(--accent-color)' }}>
-              📊 Relatório de {new Date().toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
-            </h3>
-            <div className="space-y-6">
-              {/* Income bar */}
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-bold text-emerald-400">Entradas</span>
-                  <span className="text-sm font-black text-emerald-400">
-                    R$ {monthIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </span>
-                </div>
-                <div className="w-full h-4 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(16,185,129,0.1)' }}>
-                  <div
-                    className="h-full rounded-full transition-all duration-1000"
-                    style={{
-                      width: `${Math.max(monthIncome, monthExpense) > 0 ? (monthIncome / Math.max(monthIncome, monthExpense)) * 100 : 0}%`,
-                      background: 'linear-gradient(90deg, #10b981, #34d399)',
-                    }}
-                  />
-                </div>
-              </div>
-              {/* Expense bar */}
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-bold text-rose-400">Saídas</span>
-                  <span className="text-sm font-black text-rose-400">
-                    R$ {monthExpense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </span>
-                </div>
-                <div className="w-full h-4 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(244,63,94,0.1)' }}>
-                  <div
-                    className="h-full rounded-full transition-all duration-1000"
-                    style={{
-                      width: `${Math.max(monthIncome, monthExpense) > 0 ? (monthExpense / Math.max(monthIncome, monthExpense)) * 100 : 0}%`,
-                      background: 'linear-gradient(90deg, #f43f5e, #fb7185)',
-                    }}
-                  />
-                </div>
-              </div>
-              {/* Net result */}
-              <div className="pt-4 border-t border-white/5 flex justify-between items-center">
-                <span className="text-sm font-bold" style={{ color: 'var(--text-secondary)' }}>Resultado do Mês</span>
-                <span className={`text-xl font-black ${(monthIncome - monthExpense) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                  {(monthIncome - monthExpense) >= 0 ? '+' : ''} R$ {(monthIncome - monthExpense).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </span>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+              <h3 className="text-lg font-black uppercase tracking-tighter capitalize" style={{ color: 'var(--text-primary)' }}>
+                📊 Relatório de {getFormattedReportMonth(selectedReportMonth)}
+              </h3>
+              <div className="flex items-center gap-2 relative">
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Período:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (showMonthPicker) {
+                      setShowMonthPicker(false)
+                    } else {
+                      openMonthPicker()
+                    }
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.borderColor = schoolInfo?.accent_color || '#8b5cf6'}
+                  onMouseLeave={(e) => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'}
+                  className="bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none transition-all cursor-pointer font-bold flex items-center gap-2"
+                >
+                  <Calendar size={14} style={{ color: schoolInfo?.accent_color || '#8b5cf6' }} />
+                  <span className="capitalize">{getFormattedReportMonth(selectedReportMonth)}</span>
+                </button>
+                
+                {showMonthPicker && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-25" 
+                      onClick={() => setShowMonthPicker(false)} 
+                    />
+                    <div 
+                      className="absolute right-0 top-full mt-2 p-4 rounded-2xl shadow-2xl border z-30 w-64 select-none animate-fade-in"
+                      style={{ 
+                        backgroundColor: 'var(--bg-card)', 
+                        borderColor: 'var(--border-color)',
+                        boxShadow: '0 20px 25px -5px rgba(0,0,0,0.7), 0 10px 10px -5px rgba(0,0,0,0.5)'
+                      }}
+                    >
+                      <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-2">
+                        <button
+                          type="button"
+                          onClick={() => setPickerYear(prev => prev - 1)}
+                          className="p-1 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white transition-colors cursor-pointer font-black text-sm"
+                        >
+                          &larr;
+                        </button>
+                        <span className="text-sm font-black text-white">{pickerYear}</span>
+                        <button
+                          type="button"
+                          onClick={() => setPickerYear(prev => prev + 1)}
+                          className="p-1 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white transition-colors cursor-pointer font-black text-sm"
+                        >
+                          &rarr;
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { label: 'Jan', value: '01' },
+                          { label: 'Fev', value: '02' },
+                          { label: 'Mar', value: '03' },
+                          { label: 'Abr', value: '04' },
+                          { label: 'Mai', value: '05' },
+                          { label: 'Jun', value: '06' },
+                          { label: 'Jul', value: '07' },
+                          { label: 'Ago', value: '08' },
+                          { label: 'Set', value: '09' },
+                          { label: 'Out', value: '10' },
+                          { label: 'Nov', value: '11' },
+                          { label: 'Dez', value: '12' }
+                        ].map((m) => {
+                          const isSelected = selectedReportMonth === `${pickerYear}-${m.value}`
+                          return (
+                            <button
+                              key={m.value}
+                              type="button"
+                              onClick={() => {
+                                setSelectedReportMonth(`${pickerYear}-${m.value}`)
+                                setShowMonthPicker(false)
+                              }}
+                              className={`py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                                isSelected 
+                                  ? 'text-white shadow-lg shadow-black/20' 
+                                  : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                              }`}
+                              style={{
+                                backgroundColor: isSelected ? (schoolInfo?.accent_color || '#8b5cf6') : 'transparent'
+                              }}
+                            >
+                              {m.label}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
+            
+            {monthIncome === 0 && monthExpense === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 text-center">
+                <p className="text-sm text-[var(--text-muted)]">Nenhuma transação registrada neste mês.</p>
+              </div>
+            ) : (
+              <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+                {/* Chart Column */}
+                <div className="relative w-full md:w-1/2 h-[220px] flex items-center justify-center">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { name: 'Entradas', value: monthIncome },
+                          { name: 'Saídas', value: monthExpense },
+                        ]}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={65}
+                        outerRadius={85}
+                        paddingAngle={5}
+                        dataKey="value"
+                      >
+                        <Cell fill="#10b981" />
+                        <Cell fill="#f43f5e" />
+                      </Pie>
+                      <RechartsTooltip
+                        formatter={(value: any) => `R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                        contentStyle={{
+                          backgroundColor: 'var(--bg-card)',
+                          borderColor: 'var(--border-color)',
+                          borderRadius: '8px',
+                          color: '#fff',
+                        }}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  
+                  {/* Center Text inside the Doughnut */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Saldo Líquido</span>
+                    <span className={`text-base font-black ${(monthIncome - monthExpense) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {(monthIncome - monthExpense) >= 0 ? '+' : ''}R$ {Math.abs(monthIncome - monthExpense).toLocaleString('pt-BR', { maximumFractionDigits: 0 })}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Details Column */}
+                <div className="w-full md:w-1/2 space-y-4">
+                  {/* Entradas */}
+                  <div className="flex items-center justify-between p-4 rounded-xl border border-emerald-500/10 bg-emerald-500/5">
+                    <div className="flex items-center gap-3">
+                      <div className="w-3 h-3 rounded-full bg-emerald-500" />
+                      <div>
+                        <p className="text-xs font-bold text-gray-400 uppercase">Entradas</p>
+                        <p className="text-lg font-black text-emerald-400">
+                          R$ {monthIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-bold text-emerald-500/80 bg-emerald-500/10 px-2 py-1 rounded-lg">
+                      {((monthIncome / (monthIncome + monthExpense)) * 100).toFixed(0)}%
+                    </span>
+                  </div>
+
+                  {/* Saídas */}
+                  <div className="flex items-center justify-between p-4 rounded-xl border border-rose-500/10 bg-rose-500/5">
+                    <div className="flex items-center gap-3">
+                      <div className="w-3 h-3 rounded-full bg-rose-500" />
+                      <div>
+                        <p className="text-xs font-bold text-gray-400 uppercase">Saídas</p>
+                        <p className="text-lg font-black text-rose-400">
+                          R$ {monthExpense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-bold text-rose-500/80 bg-rose-500/10 px-2 py-1 rounded-lg">
+                      {((monthExpense / (monthIncome + monthExpense)) * 100).toFixed(0)}%
+                    </span>
+                  </div>
+
+                  {/* Resultado do Mês */}
+                  <div className="pt-4 border-t border-white/5 flex justify-between items-center px-2">
+                    <span className="text-xs font-bold text-gray-400 uppercase">Resultado do Mês</span>
+                    <span className={`text-base font-black ${(monthIncome - monthExpense) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {(monthIncome - monthExpense) >= 0 ? 'Lucro de' : 'Prejuízo de'} R$ {Math.abs(monthIncome - monthExpense).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Filter */}
@@ -3216,10 +3400,11 @@ export default function Financial() {
             </button>
             <button
               type="submit"
-              className="rounded-xl px-5 py-2.5 text-sm font-medium text-white transition-all hover:opacity-90"
+              disabled={saving}
+              className="rounded-xl px-5 py-2.5 text-sm font-medium text-white transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)' }}
             >
-              {editEntry ? 'Salvar' : 'Cadastrar'}
+              {saving ? 'Salvando...' : (editEntry ? 'Salvar' : 'Cadastrar')}
             </button>
           </div>
         </form>
@@ -3284,10 +3469,11 @@ export default function Financial() {
             </button>
             <button
               type="submit"
-              className="rounded-xl px-5 py-2.5 text-sm font-medium text-white transition-all hover:opacity-90"
+              disabled={saving}
+              className="rounded-xl px-5 py-2.5 text-sm font-medium text-white transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)' }}
             >
-              {editFixed ? 'Salvar Alterações' : 'Salvar Conta Fixa'}
+              {saving ? 'Salvando...' : (editFixed ? 'Salvar Alterações' : 'Salvar Conta Fixa')}
             </button>
           </div>
         </form>
@@ -3446,7 +3632,7 @@ export default function Financial() {
           </div>
           <div className="text-right text-xs text-gray-500">
             <p><b>Data de Emissão:</b> {new Date().toLocaleDateString('pt-BR')}</p>
-            <p><b>Sistema:</b> DanceFlow</p>
+            <p><b>Sistema:</b> DanceFlow-Escola</p>
           </div>
         </div>
 
@@ -3658,7 +3844,7 @@ export default function Financial() {
             </div>
             <div className="text-right">
               <p className="italic">Documento gerado eletronicamente.</p>
-              <p className="text-[9px] text-gray-400 mt-1">DanceFlow System • Relatório Financeiro</p>
+              <p className="text-[9px] text-gray-400 mt-1">DanceFlow-Escola System • Relatório Financeiro</p>
             </div>
           </div>
         </div>

@@ -16,12 +16,13 @@ export default function Events() {
   const [showEventModal, setShowEventModal] = useState(false)
   const [editEvent, setEditEvent] = useState<Event | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
-  const [paymentFilter, setPaymentFilter] = useState<'all' | 'paid' | 'pending'>('all')
+  const [paymentFilter, setPaymentFilter] = useState<'all' | 'paid' | 'pending' | 'exempt'>('all')
   const [pendingInstallmentFilter, setPendingInstallmentFilter] = useState<number | null>(null)
   const [profile, setProfile] = useState<Profile | null>(null)
   const [reportSchoolData, setReportSchoolData] = useState<any | null>(null)
   const [gatewayType, setGatewayType] = useState<'none' | 'asaas' | 'cora'>('none')
   const [generatingBillingId, setGeneratingBillingId] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
 
   // Estados e Funções para Mapa de Teatro
   const [showMapModal, setShowMapModal] = useState(false)
@@ -328,35 +329,42 @@ export default function Events() {
     e.preventDefault()
     if (!activeEventId) return
 
-    const { data: { user } } = await supabase.auth.getUser()
-    const payload = {
-      event_id: activeEventId,
-      description: expenseFormData.description,
-      amount: parseFloat(expenseFormData.amount) || 0,
-      expense_date: expenseFormData.expense_date,
-      user_id: user?.id
-    }
+    setSaving(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      const payload = {
+        event_id: activeEventId,
+        description: expenseFormData.description,
+        amount: parseFloat(expenseFormData.amount) || 0,
+        expense_date: expenseFormData.expense_date,
+        user_id: user?.id
+      }
 
-    let error = null
-    if (editExpense) {
-      const res = await supabase.from('event_expenses').update(payload).eq('id', editExpense.id)
-      error = res.error
-    } else {
-      const res = await supabase.from('event_expenses').insert([payload])
-      error = res.error
-    }
+      let error = null
+      if (editExpense) {
+        const res = await supabase.from('event_expenses').update(payload).eq('id', editExpense.id)
+        error = res.error
+      } else {
+        const res = await supabase.from('event_expenses').insert([payload])
+        error = res.error
+      }
 
-    if (error) {
+      if (error) {
+        throw error
+      } else {
+        setShowExpenseModal(false)
+        setEditExpense(null)
+        setExpenseFormData({
+          description: '',
+          amount: '',
+          expense_date: new Date().toISOString().split('T')[0]
+        })
+        loadData()
+      }
+    } catch (error: any) {
       alert('Erro ao salvar despesa: ' + error.message)
-    } else {
-      setShowExpenseModal(false)
-      setEditExpense(null)
-      setExpenseFormData({
-        description: '',
-        amount: '',
-        expense_date: new Date().toISOString().split('T')[0]
-      })
-      loadData()
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -484,42 +492,49 @@ export default function Events() {
       payload.theater_id = null
     }
 
-    let error = null
-    if (editEvent) {
-      const res = await supabase.from('events').update(payload).eq('id', editEvent.id)
-      error = res.error
-    } else {
-      const res = await supabase.from('events').insert([payload]).select()
-      error = res.error
-      if (!error && res.data && res.data.length > 0) {
-        setActiveEventId(res.data[0].id)
+    setSaving(true)
+    try {
+      let error = null
+      if (editEvent) {
+        const res = await supabase.from('events').update(payload).eq('id', editEvent.id)
+        error = res.error
+      } else {
+        const res = await supabase.from('events').insert([payload]).select()
+        error = res.error
+        if (!error && res.data && res.data.length > 0) {
+          setActiveEventId(res.data[0].id)
+        }
       }
-    }
-    
-    if (error) {
+      
+      if (error) {
+        throw error
+      } else {
+        setShowEventModal(false)
+        setEditEvent(null)
+        setUploadedPhotos([])
+        setEventFormData({
+          name: '',
+          date: new Date().toISOString().split('T')[0],
+          location: '',
+          description: '',
+          ticket_price: 0,
+          cost: 0,
+          base_choreography_price: 0,
+          base_clothes_cost: 0,
+          has_kit: false,
+          kit_price: 0,
+          photos: '',
+          sessions: [] as EventSession[],
+          theater_id: '',
+          sessions_count: 0,
+          due_date: ''
+        })
+        loadData()
+      }
+    } catch (error: any) {
       alert('Erro ao salvar evento: ' + error.message)
-    } else {
-      setShowEventModal(false)
-      setEditEvent(null)
-      setUploadedPhotos([])
-      setEventFormData({
-        name: '',
-        date: new Date().toISOString().split('T')[0],
-        location: '',
-        description: '',
-        ticket_price: 0,
-        cost: 0,
-        base_choreography_price: 0,
-        base_clothes_cost: 0,
-        has_kit: false,
-        kit_price: 0,
-        photos: '',
-        sessions: [] as EventSession[],
-        theater_id: '',
-        sessions_count: 0,
-        due_date: ''
-      })
-      loadData()
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -645,12 +660,19 @@ export default function Events() {
       installments
     }
 
-    const { error } = await supabase.from('event_participants').insert([payload])
-    if (error) {
+    setSaving(true)
+    try {
+      const { error } = await supabase.from('event_participants').insert([payload])
+      if (error) {
+        throw error
+      } else {
+        setShowAddParticipantModal(false)
+        loadData()
+      }
+    } catch (error: any) {
       alert('Erro ao adicionar participante: ' + error.message)
-    } else {
-      setShowAddParticipantModal(false)
-      loadData()
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -983,6 +1005,9 @@ export default function Events() {
           const targetInst = (p.installments || [])[pendingInstallmentFilter - 1]
           if (!targetInst || targetInst.paid) return false
         }
+      }
+      if (paymentFilter === 'exempt') {
+        if (p.payment_method?.toLowerCase() !== 'isento') return false
       }
       
       return true
@@ -1387,6 +1412,16 @@ export default function Events() {
                           className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer text-center justify-center ${paymentFilter === 'pending' && pendingInstallmentFilter === null ? 'bg-amber-400 text-slate-950 shadow' : 'text-white hover:text-amber-400 hover:bg-amber-400/10'}`}
                         >
                           Falta Pagar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPaymentFilter('exempt')
+                            setPendingInstallmentFilter(null)
+                          }}
+                          className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer text-center justify-center ${paymentFilter === 'exempt' ? 'bg-cyan-400 text-slate-950 shadow' : 'text-white hover:text-cyan-400 hover:bg-cyan-400/10'}`}
+                        >
+                          Isentos
                         </button>
                       </div>
 
@@ -2790,8 +2825,8 @@ export default function Events() {
           </div>
           <div className="flex justify-end gap-3 pt-6">
             <button type="button" onClick={() => setShowEventModal(false)} className="px-6 py-3 rounded-2xl text-sm font-bold text-white/50 hover:text-white transition-all">Cancelar</button>
-            <button type="submit" className="px-8 py-3 rounded-2xl text-sm font-bold text-white transition-all hover:scale-105 shadow-xl" style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}>
-              {editEvent ? 'Salvar' : 'Criar Evento'}
+            <button type="submit" disabled={saving} className="px-8 py-3 rounded-2xl text-sm font-bold text-white transition-all hover:scale-105 shadow-xl disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}>
+              {saving ? 'Salvando...' : (editEvent ? 'Salvar' : 'Criar Evento')}
             </button>
           </div>
         </form>
@@ -3034,8 +3069,8 @@ export default function Events() {
 
           <div className="flex justify-end gap-3 pt-6 border-t border-white/5">
             <button type="button" onClick={() => setShowAddParticipantModal(false)} className="px-6 py-3 rounded-2xl text-sm font-bold text-white/50 hover:text-white transition-all">Cancelar</button>
-            <button type="submit" className="px-8 py-3 rounded-2xl text-sm font-bold text-white transition-all hover:scale-105 shadow-xl" style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}>
-              Confirmar
+            <button type="submit" disabled={saving} className="px-8 py-3 rounded-2xl text-sm font-bold text-white transition-all hover:scale-105 shadow-xl disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}>
+              {saving ? 'Salvando...' : 'Confirmar'}
             </button>
           </div>
         </form>
@@ -3068,7 +3103,7 @@ export default function Events() {
             </div>
             <div className="text-right text-xs">
               <p>Gerado em: {new Date().toLocaleDateString('pt-BR')}</p>
-              <p>DanceFlow System</p>
+              <p>DanceFlow-Escola System</p>
             </div>
           </div>
 
@@ -3440,7 +3475,7 @@ export default function Events() {
           </div>
           <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
             <button type="button" onClick={() => { setShowExpenseModal(false); setEditExpense(null); }} className="rounded-2xl px-6 py-3 text-sm font-bold transition-all hover:bg-white/5" style={{ color: 'var(--text-secondary)' }}>Cancelar</button>
-            <button type="submit" className="rounded-2xl px-8 py-3 text-sm font-bold text-white transition-all hover:scale-105 shadow-lg shadow-purple-500/20" style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}>{editExpense ? 'Salvar' : 'Cadastrar'}</button>
+            <button type="submit" disabled={saving} className="rounded-2xl px-8 py-3 text-sm font-bold text-white transition-all hover:scale-105 shadow-lg shadow-purple-500/20 disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}>{saving ? 'Salvando...' : (editExpense ? 'Salvar' : 'Cadastrar')}</button>
           </div>
         </form>
       </Modal>
