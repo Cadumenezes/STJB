@@ -1210,44 +1210,44 @@ export default function Events() {
               </div>
 
               {/* Event Summary Cards */}
-              <div className="flex flex-wrap md:flex-nowrap gap-4">
-                <div className="flex-1 min-w-0 p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-8 xl:grid-cols-9 gap-4">
+                <div className="w-full p-4 sm:p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
                   <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">Participantes</p>
                   <p className={`font-black text-white ${getDynamicFontSize(currentParticipants.length)}`}>{currentParticipants.length}</p>
                 </div>
                 {profile?.role !== 'secretary' && (
                   <>
-                    <div className="flex-1 min-w-0 p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center animate-fade-in" style={{ backgroundColor: 'var(--bg-card)' }}>
+                    <div className="w-full p-4 sm:p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center animate-fade-in" style={{ backgroundColor: 'var(--bg-card)' }}>
                       <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">Custo Orçado</p>
                       <p className={`font-black text-white/50 ${getDynamicFontSize(`R$ ${Number(eventCost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`)}`}>
                         R$ {Number(eventCost).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </p>
                     </div>
-                    <div className="flex-1 min-w-0 p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center animate-fade-in" style={{ backgroundColor: 'var(--bg-card)' }}>
+                    <div className="w-full p-4 sm:p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center animate-fade-in" style={{ backgroundColor: 'var(--bg-card)' }}>
                       <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">Despesa Real</p>
                       <p className={`font-black text-rose-400 ${getDynamicFontSize(`R$ ${Number(totalRealExpenses).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`)}`}>
                         R$ {Number(totalRealExpenses).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </p>
                     </div>
-                    <div className="flex-1 min-w-0 p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center animate-fade-in" style={{ backgroundColor: 'var(--bg-card)' }}>
+                    <div className="w-full p-4 sm:p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center animate-fade-in" style={{ backgroundColor: 'var(--bg-card)' }}>
                       <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">Saldo Orçamento</p>
                       <p className={`font-black ${budgetBalance >= 0 ? 'text-emerald-400' : 'text-rose-400'} ${getDynamicFontSize(`R$ ${Number(budgetBalance).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`)}`}>
                         R$ {Number(budgetBalance).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </p>
                     </div>
-                    <div className="flex-1 min-w-0 p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center animate-fade-in" style={{ backgroundColor: 'var(--bg-card)' }}>
+                    <div className="w-full p-4 sm:p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center animate-fade-in" style={{ backgroundColor: 'var(--bg-card)' }}>
                       <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">A Receber Total</p>
                       <p className={`font-black text-blue-400 ${getDynamicFontSize(`R$ ${Number(expectedRevenue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`)}`}>
                         R$ {Number(expectedRevenue).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </p>
                     </div>
-                    <div className="flex-1 min-w-0 p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center animate-fade-in" style={{ backgroundColor: 'var(--bg-card)' }}>
+                    <div className="w-full p-4 sm:p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center animate-fade-in" style={{ backgroundColor: 'var(--bg-card)' }}>
                       <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">Já Recebido</p>
                       <p className={`font-black text-emerald-400 ${getDynamicFontSize(`R$ ${Number(totalReceived).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`)}`}>
                         R$ {Number(totalReceived).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </p>
                     </div>
-                    <div className="flex-1 min-w-0 p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center animate-fade-in" style={{ backgroundColor: 'var(--bg-card)' }}>
+                    <div className="w-full p-4 sm:p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center animate-fade-in" style={{ backgroundColor: 'var(--bg-card)' }}>
                       <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">Falta Receber</p>
                       <p className={`font-black text-amber-400 ${getDynamicFontSize(`R$ ${Number(expectedRevenue - totalReceived).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`)}`}>
                         R$ {Number(expectedRevenue - totalReceived).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
@@ -1255,12 +1255,12 @@ export default function Events() {
                     </div>
                   </>
                 )}
-                <div className="flex-1 min-w-0 p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
+                <div className="w-full p-4 sm:p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
                   <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">Convites Vendidos</p>
                   <p className={`font-black text-purple-400 ${getDynamicFontSize(totalTickets)}`}>{totalTickets}</p>
                 </div>
                 {activeEvent.has_kit && (
-                  <div className="flex-1 min-w-0 p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
+                  <div className="w-full p-4 sm:p-6 rounded-none border border-white/5 text-center flex flex-col items-center justify-center" style={{ backgroundColor: 'var(--bg-card)' }}>
                     <p className="text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest mb-1 text-center">Total de Kits</p>
                     <p className={`font-black text-blue-400 ${getDynamicFontSize(totalKits)}`}>{totalKits}</p>
                   </div>
