@@ -2217,7 +2217,7 @@ export default function Events() {
 
                           {/* Stage */}
                           <div 
-                            className="w-full max-w-md py-3 mb-10 rounded-b-2xl border-b-2 text-center text-xs font-black uppercase tracking-widest text-white/70 shadow-lg shrink-0 select-none"
+                            className="w-full max-w-md py-3 mb-4 rounded-b-2xl border-b-2 text-center text-xs font-black uppercase tracking-widest text-white/70 shadow-lg shrink-0 select-none"
                             style={{ 
                               background: 'linear-gradient(to bottom, color-mix(in srgb, var(--accent-color) 8%, transparent), color-mix(in srgb, var(--accent-color) 20%, transparent))',
                               borderBottomColor: 'var(--accent-color)',
@@ -2225,6 +2225,11 @@ export default function Events() {
                             }}
                           >
                             PALCO / TELA
+                          </div>
+
+                          {/* Corridor between Stage and first row */}
+                          <div className="w-full max-w-md py-2.5 mb-6 border-y border-dashed border-white/10 text-[9px] text-[var(--text-muted)] uppercase tracking-widest font-black shrink-0 text-center select-none bg-white/[0.01]">
+                            🛣️ Corredor de Acesso ao Palco
                           </div>
 
                           {/* Seating Grid */}
@@ -3471,7 +3476,7 @@ export default function Events() {
               <div className="flex-1 flex flex-col items-center justify-center p-6 rounded-3xl border border-white/5 relative overflow-hidden" style={{ backgroundColor: 'var(--bg-secondary)' }}>
                 {/* Stage */}
                 <div 
-                  className="w-full max-w-xs py-2 mb-8 rounded-b-xl border-b-2 text-center text-[10px] font-black uppercase tracking-widest text-white/70 shadow-lg"
+                  className="w-full max-w-xs py-2 mb-3 rounded-b-xl border-b-2 text-center text-[10px] font-black uppercase tracking-widest text-white/70 shadow-lg"
                   style={{ 
                     background: 'linear-gradient(to bottom, rgba(139,92,246,0.1), rgba(139,92,246,0.25))',
                     borderBottomColor: 'var(--accent-color)',
@@ -3479,6 +3484,11 @@ export default function Events() {
                   }}
                 >
                   PALCO / TELA
+                </div>
+
+                {/* Corridor between Stage and first row */}
+                <div className="w-full max-w-xs py-1.5 mb-4 border-y border-dashed border-white/10 text-[8px] text-gray-500 uppercase tracking-widest font-black shrink-0 text-center select-none bg-white/[0.01]">
+                  🛣️ Corredor de Acesso ao Palco
                 </div>
 
                 {/* Seating Grid Wrapper */}

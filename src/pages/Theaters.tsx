@@ -481,7 +481,7 @@ export default function Theaters() {
               
               <div className="flex-1 flex flex-col items-center justify-center p-6 rounded-3xl border border-white/5 relative overflow-hidden" style={{ backgroundColor: 'var(--bg-secondary)', minHeight: '260px' }}>
                 <div 
-                  className="w-full max-w-xs py-1.5 mb-6 rounded-b-xl border-b-2 text-center text-[9px] font-black uppercase tracking-widest text-white/70 shadow-lg shrink-0"
+                  className="w-full max-w-xs py-1.5 mb-3 rounded-b-xl border-b-2 text-center text-[9px] font-black uppercase tracking-widest text-white/70 shadow-lg shrink-0"
                   style={{ 
                     background: 'linear-gradient(to bottom, rgba(139,92,246,0.1), rgba(139,92,246,0.25))',
                     borderBottomColor: 'var(--accent-color)',
@@ -489,6 +489,11 @@ export default function Theaters() {
                   }}
                 >
                   PALCO / TELA
+                </div>
+
+                {/* Corridor between Stage and first row */}
+                <div className="w-full max-w-xs py-1.5 mb-4 border-y border-dashed border-white/10 text-[8px] text-gray-500 uppercase tracking-widest font-black shrink-0 text-center select-none bg-white/[0.01]">
+                  🛣️ Corredor de Acesso ao Palco
                 </div>
 
                 <div className="w-full overflow-auto max-h-60 py-1 custom-scrollbar flex flex-col">
@@ -658,7 +663,7 @@ export default function Theaters() {
               {/* Stage Visualizer */}
               <div className="flex flex-col items-center justify-center p-6 rounded-3xl border border-white/5 relative overflow-hidden bg-black/30">
                 <div 
-                  className="w-full max-w-xs py-2 mb-8 rounded-b-xl border-b-2 text-center text-[10px] font-black uppercase tracking-widest text-white/70 shadow-lg shrink-0"
+                  className="w-full max-w-xs py-2 mb-3 rounded-b-xl border-b-2 text-center text-[10px] font-black uppercase tracking-widest text-white/70 shadow-lg shrink-0"
                   style={{ 
                     background: 'linear-gradient(to bottom, rgba(139,92,246,0.1), rgba(139,92,246,0.25))',
                     borderBottomColor: 'var(--accent-color)',
@@ -666,6 +671,11 @@ export default function Theaters() {
                   }}
                 >
                   PALCO / TELA
+                </div>
+
+                {/* Corridor between Stage and first row */}
+                <div className="w-full max-w-xs py-1.5 mb-4 border-y border-dashed border-white/10 text-[8px] text-gray-500 uppercase tracking-widest font-black shrink-0 text-center select-none bg-white/[0.01]">
+                  🛣️ Corredor de Acesso ao Palco
                 </div>
 
                 {/* Seating Grid */}
