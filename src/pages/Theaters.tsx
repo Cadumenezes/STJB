@@ -479,8 +479,8 @@ export default function Theaters() {
                   PALCO / TELA
                 </div>
 
-                <div className="w-full overflow-auto max-h-60 pr-1 py-1 custom-scrollbar flex flex-col items-center">
-                  <div className="flex flex-col gap-1.5 min-w-max p-1">
+                <div className="w-full overflow-auto max-h-60 py-1 custom-scrollbar flex flex-col">
+                  <div className="flex flex-col gap-1.5 mx-auto py-1 px-1 w-fit">
                     {(() => {
                     let previewSeatCounter = 1;
                     const previewStartNumbers = Array.from({ length: rowsCount }).map((_, rIdx) => {

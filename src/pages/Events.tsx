@@ -2228,8 +2228,8 @@ export default function Events() {
                           </div>
 
                           {/* Seating Grid */}
-                          <div className="w-full overflow-auto max-h-[450px] pr-2 py-2 custom-scrollbar flex flex-col items-center">
-                            <div className="flex flex-col gap-2.5 min-w-max py-2 pr-2">
+                          <div className="w-full overflow-auto max-h-[450px] py-2 custom-scrollbar flex flex-col">
+                            <div className="flex flex-col gap-2.5 mx-auto py-2 px-2 w-fit">
                               {(() => {
                               const config = displaySeatingMap
                               const rows = config.rows_count || 10
@@ -3482,84 +3482,86 @@ export default function Events() {
                 </div>
 
                 {/* Seating Grid Wrapper */}
-                <div className="w-full overflow-auto max-h-80 pr-1 py-1 custom-scrollbar flex flex-col gap-2 items-center">
-                  {(() => {
-                    let previewSeatCounter = 1;
-                    const previewStartNumbers = Array.from({ length: rowsCount }).map((_, rIdx) => {
-                      const rowName = getRowLabel(rIdx)
-                      const count = exceptions[rowName] !== undefined ? exceptions[rowName] : seatsPerRow
-                      const startNum = previewSeatCounter
-                      previewSeatCounter += count
-                      return startNum
-                    })
-                    const hCorridors = (exceptions._horizontal_corridors || []) as string[]
+                <div className="w-full overflow-auto max-h-80 py-1 custom-scrollbar flex flex-col">
+                  <div className="flex flex-col gap-2 mx-auto py-1 px-1 w-fit">
+                    {(() => {
+                      let previewSeatCounter = 1;
+                      const previewStartNumbers = Array.from({ length: rowsCount }).map((_, rIdx) => {
+                        const rowName = getRowLabel(rIdx)
+                        const count = exceptions[rowName] !== undefined ? exceptions[rowName] : seatsPerRow
+                        const startNum = previewSeatCounter
+                        previewSeatCounter += count
+                        return startNum
+                      })
+                      const hCorridors = (exceptions._horizontal_corridors || []) as string[]
 
-                    return Array.from({ length: rowsCount }).map((_, rIdx) => {
-                      const rowName = getRowLabel(rIdx)
-                      const count = exceptions[rowName] !== undefined ? exceptions[rowName] : seatsPerRow
-                      const rowStartNum = previewStartNumbers[rIdx]
-                      const hasHorizontalCorridorAfter = hCorridors.includes(rowName)
+                      return Array.from({ length: rowsCount }).map((_, rIdx) => {
+                        const rowName = getRowLabel(rIdx)
+                        const count = exceptions[rowName] !== undefined ? exceptions[rowName] : seatsPerRow
+                        const rowStartNum = previewStartNumbers[rIdx]
+                        const hasHorizontalCorridorAfter = hCorridors.includes(rowName)
 
-                      return (
-                        <React.Fragment key={rowName}>
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            {/* Left row label */}
-                            <span className="text-[10px] font-black text-gray-500 w-4 text-center shrink-0">{rowName}</span>
-                            
-                            {/* Seats list */}
-                            <div className="flex gap-1 items-center">
-                              {count === 0 ? (
-                                <span className="text-[9px] text-rose-400 italic font-semibold">Sem cadeiras nesta fileira</span>
-                              ) : (
-                                Array.from({ length: count }).map((_, sIdx) => {
-                                  const seatNum = rowStartNum + sIdx
-                                  const seatLabel = `${rowName}${seatNum}`
-                                  const isCorridorAfter = corridors.includes(sIdx + 1)
-                                  const isThreeDigits = seatNum > 99
-                                  const previewSeatFontSize = isThreeDigits
-                                    ? Math.max(7, seatSize * 0.35)
-                                    : Math.max(8, seatSize * 0.45)
-                                  return (
-                                    <React.Fragment key={seatLabel}>
-                                      <div 
-                                        className="rounded-md flex items-center justify-center font-bold border shrink-0 transition-all select-none hover:scale-110 cursor-help"
-                                        style={{ 
-                                          width: `${seatSize}px`,
-                                          height: `${seatSize}px`,
-                                          fontSize: `${previewSeatFontSize}px`,
-                                          backgroundColor: 'rgba(139, 92, 246, 0.15)',
-                                          borderColor: 'rgba(139, 92, 246, 0.3)',
-                                          color: '#c084fc'
-                                        }}
-                                        title={`Poltrona ${seatLabel}`}
-                                      >
-                                        {seatSize >= 15 ? seatNum : ''}
-                                      </div>
-                                      {isCorridorAfter && sIdx < count - 1 && (
+                        return (
+                          <React.Fragment key={rowName}>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              {/* Left row label */}
+                              <span className="text-[10px] font-black text-gray-500 w-4 text-center shrink-0">{rowName}</span>
+                              
+                              {/* Seats list */}
+                              <div className="flex gap-1 items-center">
+                                {count === 0 ? (
+                                  <span className="text-[9px] text-rose-400 italic font-semibold">Sem cadeiras nesta fileira</span>
+                                ) : (
+                                  Array.from({ length: count }).map((_, sIdx) => {
+                                    const seatNum = rowStartNum + sIdx
+                                    const seatLabel = `${rowName}${seatNum}`
+                                    const isCorridorAfter = corridors.includes(sIdx + 1)
+                                    const isThreeDigits = seatNum > 99
+                                    const previewSeatFontSize = isThreeDigits
+                                      ? Math.max(7, seatSize * 0.35)
+                                      : Math.max(8, seatSize * 0.45)
+                                    return (
+                                      <React.Fragment key={seatLabel}>
                                         <div 
-                                          className="shrink-0 select-none pointer-events-none" 
-                                          style={{ width: `${seatSize * 0.6}px` }} 
-                                        />
-                                      )}
-                                    </React.Fragment>
-                                  )
-                                })
-                              )}
-                            </div>
+                                          className="rounded-md flex items-center justify-center font-bold border shrink-0 transition-all select-none hover:scale-110 cursor-help"
+                                          style={{ 
+                                            width: `${seatSize}px`,
+                                            height: `${seatSize}px`,
+                                            fontSize: `${previewSeatFontSize}px`,
+                                            backgroundColor: 'rgba(139, 92, 246, 0.15)',
+                                            borderColor: 'rgba(139, 92, 246, 0.3)',
+                                            color: '#c084fc'
+                                          }}
+                                          title={`Poltrona ${seatLabel}`}
+                                        >
+                                          {seatSize >= 15 ? seatNum : ''}
+                                        </div>
+                                        {isCorridorAfter && sIdx < count - 1 && (
+                                          <div 
+                                            className="shrink-0 select-none pointer-events-none" 
+                                            style={{ width: `${seatSize * 0.6}px` }} 
+                                          />
+                                        )}
+                                      </React.Fragment>
+                                    )
+                                  })
+                                )}
+                              </div>
 
-                            {/* Right row label */}
-                            <span className="text-[10px] font-black text-gray-500 w-4 text-center shrink-0">{rowName}</span>
-                          </div>
-                          {hasHorizontalCorridorAfter && rIdx < rowsCount - 1 && (
-                            <div 
-                              className="shrink-0 select-none pointer-events-none" 
-                              style={{ height: '14px' }} 
-                            />
-                          )}
-                        </React.Fragment>
-                      )
-                    })
-                  })()}
+                              {/* Right row label */}
+                              <span className="text-[10px] font-black text-gray-500 w-4 text-center shrink-0">{rowName}</span>
+                            </div>
+                            {hasHorizontalCorridorAfter && rIdx < rowsCount - 1 && (
+                              <div 
+                                className="shrink-0 select-none pointer-events-none" 
+                                style={{ height: '14px' }} 
+                              />
+                            )}
+                          </React.Fragment>
+                        )
+                      })
+                    })()}
+                  </div>
                 </div>
               </div>
             </div>
