@@ -16,6 +16,7 @@ export default function Theaters() {
   const [exceptions, setExceptions] = useState<Record<string, any>>({})
   const [corridorsInput, setCorridorsInput] = useState('')
   const [horizontalCorridorsInput, setHorizontalCorridorsInput] = useState('')
+  const [selectedPreviewTheater, setSelectedPreviewTheater] = useState<Theater | null>(null)
 
   useEffect(() => {
     loadTheaters()
@@ -226,7 +227,8 @@ export default function Theaters() {
             return (
               <div 
                 key={t.id}
-                className="group rounded-3xl border border-white/5 p-6 hover:border-purple-500/30 transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] flex flex-col justify-between"
+                onClick={() => setSelectedPreviewTheater(t)}
+                className="group rounded-3xl border border-white/5 p-6 hover:border-purple-500/50 transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] flex flex-col justify-between cursor-pointer"
                 style={{ backgroundColor: 'var(--bg-card)' }}
               >
                 <div>
@@ -244,8 +246,18 @@ export default function Theaters() {
                     
                     {/* Action buttons */}
                     <div className="flex gap-1 shrink-0">
-                      <button onClick={() => openEdit(t)} className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-all cursor-pointer"><Edit size={14} /></button>
-                      <button onClick={() => handleDelete(t.id)} className="p-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 transition-all cursor-pointer"><Trash2 size={14} /></button>
+                      <button 
+                        onClick={(ev) => { ev.stopPropagation(); openEdit(t); }} 
+                        className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-all cursor-pointer"
+                      >
+                        <Edit size={14} />
+                      </button>
+                      <button 
+                        onClick={(ev) => { ev.stopPropagation(); handleDelete(t.id); }} 
+                        className="p-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 transition-all cursor-pointer"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
                   </div>
 
@@ -578,6 +590,165 @@ export default function Theaters() {
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* Modal Visualização Prévia do Teatro */}
+      <Modal 
+        isOpen={!!selectedPreviewTheater} 
+        onClose={() => setSelectedPreviewTheater(null)} 
+        title={`Mapa do Teatro: ${selectedPreviewTheater?.name}`} 
+        size="2xl"
+      >
+        {selectedPreviewTheater && (() => {
+          const config = selectedPreviewTheater
+          const rows = config.rows_count || 10
+          const stdSeats = config.seats_per_row || 12
+          const excs = config.exceptions || {}
+          
+          const rowExceptions = Object.entries(excs)
+            .filter(([key]) => !key.startsWith('_'))
+            .map(([, val]) => val as number)
+          const mapCorridors = (excs._corridors || []) as number[]
+          const maxSeatsInRow = Math.max(
+            stdSeats,
+            ...rowExceptions,
+            1
+          ) + (mapCorridors.length * 0.6)
+          const displaySeatSize = Math.max(26, Math.min(36, Math.floor((550 - (maxSeatsInRow - 1) * 4) / maxSeatsInRow)))
+
+          let currentSeatCounter = 1;
+          const rowStartNumbers = Array.from({ length: rows }).map((_, rIdx) => {
+            const rowName = getRowLabel(rIdx)
+            const count = excs[rowName] !== undefined ? excs[rowName] : stdSeats
+            const startNum = currentSeatCounter
+            currentSeatCounter += count
+            return startNum
+          })
+
+          const hCorridors = (excs._horizontal_corridors || []) as string[]
+
+          return (
+            <div className="space-y-6 max-h-[80vh] overflow-y-auto pr-2 custom-scrollbar">
+              {/* Info stats */}
+              <div className="grid grid-cols-3 gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 text-center">
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-gray-400">Total Fileiras</p>
+                  <p className="text-lg font-black text-white">{rows}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-gray-400">Cadeiras Padrão</p>
+                  <p className="text-lg font-black text-white">{stdSeats}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-gray-400">Capacidade Total</p>
+                  <p className="text-lg font-black text-purple-400">
+                    {(() => {
+                      let total = 0
+                      for (let r = 0; r < rows; r++) {
+                        const rowName = getRowLabel(r)
+                        const count = excs[rowName] !== undefined ? excs[rowName] : stdSeats
+                        total += count
+                      }
+                      return total
+                    })()}
+                  </p>
+                </div>
+              </div>
+
+              {/* Stage Visualizer */}
+              <div className="flex flex-col items-center justify-center p-6 rounded-3xl border border-white/5 relative overflow-hidden bg-black/30">
+                <div 
+                  className="w-full max-w-xs py-2 mb-8 rounded-b-xl border-b-2 text-center text-[10px] font-black uppercase tracking-widest text-white/70 shadow-lg shrink-0"
+                  style={{ 
+                    background: 'linear-gradient(to bottom, rgba(139,92,246,0.1), rgba(139,92,246,0.25))',
+                    borderBottomColor: 'var(--accent-color)',
+                    boxShadow: '0 5px 15px -5px rgba(139,92,246,0.3)'
+                  }}
+                >
+                  PALCO / TELA
+                </div>
+
+                {/* Seating Grid */}
+                <div className="w-full overflow-auto max-h-96 py-2 custom-scrollbar flex flex-col">
+                  <div className="flex flex-col gap-2.5 mx-auto py-2 px-2 w-fit">
+                    {Array.from({ length: rows }).map((_, rIdx) => {
+                      const rowName = getRowLabel(rIdx)
+                      const count = excs[rowName] !== undefined ? excs[rowName] : stdSeats
+                      const rowStartNum = rowStartNumbers[rIdx]
+                      const hasHorizontalCorridorAfter = hCorridors.includes(rowName)
+
+                      return (
+                        <React.Fragment key={rowName}>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className="text-[10px] font-black text-gray-500 w-4 text-center shrink-0">{rowName}</span>
+                            <div className="flex gap-1 items-center">
+                              {count === 0 ? (
+                                <span className="text-[9px] text-rose-400 italic font-semibold">Sem cadeiras</span>
+                              ) : (
+                                Array.from({ length: count }).map((_, sIdx) => {
+                                  const seatNum = rowStartNum + sIdx
+                                  const seatLabel = `${rowName}${seatNum}`
+                                  const isCorridorAfter = mapCorridors.includes(sIdx + 1)
+                                  const isThreeDigits = seatNum > 99
+                                  const seatFontSize = isThreeDigits 
+                                    ? Math.max(8, displaySeatSize * 0.35) 
+                                    : Math.max(9, displaySeatSize * 0.45)
+                                  return (
+                                    <React.Fragment key={seatLabel}>
+                                      <div 
+                                        className="rounded flex items-center justify-center font-bold border shrink-0 transition-all select-none hover:scale-110 cursor-help"
+                                        style={{ 
+                                          width: `${displaySeatSize}px`,
+                                          height: `${displaySeatSize}px`,
+                                          fontSize: `${seatFontSize}px`,
+                                          backgroundColor: 'rgba(139, 92, 246, 0.15)',
+                                          borderColor: 'rgba(139, 92, 246, 0.35)',
+                                          color: 'var(--text-primary)',
+                                        }}
+                                        title={`Assento ${seatLabel}`}
+                                      >
+                                        {seatNum}
+                                      </div>
+                                      {isCorridorAfter && sIdx < count - 1 && (
+                                        <div 
+                                          className="shrink-0 select-none pointer-events-none" 
+                                          style={{ width: `${displaySeatSize * 0.6}px` }} 
+                                        />
+                                      )}
+                                    </React.Fragment>
+                                  )
+                                })
+                              )}
+                            </div>
+                            <span className="text-[10px] font-black text-gray-500 w-4 text-center shrink-0">{rowName}</span>
+                          </div>
+                          {hasHorizontalCorridorAfter && rIdx < rows - 1 && (
+                            <div 
+                              className="shrink-0 select-none pointer-events-none" 
+                              style={{ height: '14px' }} 
+                            />
+                          )}
+                        </React.Fragment>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Close Button */}
+              <div className="flex justify-end pt-4 border-t border-white/5">
+                <button 
+                  type="button" 
+                  onClick={() => setSelectedPreviewTheater(null)} 
+                  className="rounded-2xl px-6 py-3 text-sm font-bold text-white transition-all hover:scale-105"
+                  style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}
+                >
+                  Fechar Visualização
+                </button>
+              </div>
+            </div>
+          )
+        })()}
       </Modal>
     </div>
   )
