@@ -20,16 +20,35 @@
     </filter>
   </defs>
 
-  <!-- Corpo do Fluxo / Onda de Dança -->
-  <!-- Um traço suave em 'S' ou fita contínua que representa dinâmica de movimento -->
+  <!-- Letra 'D' em estilo de Fita Fluida / Onda de Dança -->
   <g filter="url(#glow)">
-    <!-- Onda secundária (fundo) -->
-    <path d="M14 44C10 38 12 28 20 20C28 12 38 8 46 14C54 20 52 30 44 38C36 46 26 50 18 50C13 50 16 46 16 44Z" fill="url(#grad-secondary)" opacity="0.85" />
+    <!-- Onda secundária (Fundo - Azul/Ciano para dar profundidade e efeito neon) -->
+    <path 
+      d="M25 14 C22 26 22 38 25 48 C30 50 49 44 49 31 C49 18 39 14 29 16 C23 18 21 26 27 28" 
+      stroke="url(#grad-secondary)" 
+      stroke-width="11" 
+      stroke-linecap="round" 
+      stroke-linejoin="round"
+      opacity="0.75"
+    />
     
-    <!-- Onda primária (frente) - Formato de infinito/fluxo elegante -->
-    <path d="M16 48C10 42 8 32 16 22C24 12 36 10 44 16C52 22 50 34 42 42C34 50 22 54 16 48Z" fill="url(#grad-primary)" />
+    <!-- Onda primária (Frente - Roxo para Rosa) -->
+    <path 
+      d="M24 14 C22 26 22 38 24 48 C28 50 48 44 48 31 C48 18 38 14 28 16 C22 18 20 26 26 28" 
+      stroke="url(#grad-primary)" 
+      stroke-width="7" 
+      stroke-linecap="round" 
+      stroke-linejoin="round"
+    />
     
     <!-- Núcleo de brilho dinâmico para dar aspecto 3D premium -->
-    <path d="M22 26C28 18 36 16 42 22C46 26 44 32 38 36C32 40 24 34 22 26Z" fill="#ffffff" opacity="0.2" />
+    <path 
+      d="M24 16 C22.5 26 22.5 38 24 46 C27.5 48 46 42.5 46 31 C46 19.5 37 15.5 28 17.5 C23.5 19 21.5 25 25.5 27" 
+      stroke="#ffffff" 
+      stroke-width="1.8" 
+      stroke-linecap="round" 
+      stroke-linejoin="round"
+      opacity="0.3"
+    />
   </g>
 </svg>
