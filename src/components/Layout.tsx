@@ -1213,7 +1213,7 @@ export default function Layout() {
       >
         <div className="flex h-full flex-col">
           {/* Logo */}
-          <div className="flex flex-col items-center justify-center pt-8 pb-5 px-4 relative" style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+          <div className="flex flex-col items-center justify-center px-4 relative" style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '32px', paddingBottom: '20px' }}>
             <button
               className="absolute top-4 right-4 lg:hidden"
               onClick={() => setSidebarOpen(false)}
