@@ -27,6 +27,7 @@ import {
   GraduationCap,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
+import { gsap } from 'gsap'
 import { supabase } from '../lib/supabase'
 import { Profile } from '../types'
 import Modal from './Modal'
@@ -46,14 +47,14 @@ const navItems = [
   { path: '/classes', label: 'Turmas', icon: Music },
   { path: '/attendance', label: 'Chamada', icon: ClipboardCheck },
   { path: '/evaluations', label: 'Avaliações', icon: GraduationCap },
-  { path: '/schedule', label: 'Agenda', icon: CalendarDays },
-  { path: '/events', label: 'Eventos', icon: Calendar },
+  { path: '/schedule', label: 'Agenda', icon: CalendarDays, anim: 'icon-bounce' },
+  { path: '/events', label: 'Eventos', icon: Calendar, anim: 'icon-bounce' },
   { path: '/theaters', label: 'Teatros', icon: Map },
-  { path: '/shop', label: 'Loja', icon: ShoppingBag },
-  { path: '/inventory', label: 'Estoque', icon: Package },
+  { path: '/shop', label: 'Loja', icon: ShoppingBag, anim: 'icon-bounce' },
+  { path: '/inventory', label: 'Estoque', icon: Package, anim: 'icon-bounce' },
   { path: '/team', label: 'Equipe', icon: UserCog },
-  { path: '/ai-consultant', label: 'Pirueta (IA)', icon: Sparkles },
-  { path: '/settings', label: 'Configurações', icon: Settings },
+  { path: '/ai-consultant', label: 'Pirueta (IA)', icon: Sparkles, anim: 'icon-spin' },
+  { path: '/settings', label: 'Configurações', icon: Settings, anim: 'icon-spin' },
 ]
 
 const manualChapters = [
@@ -237,6 +238,29 @@ const manualChapters = [
 
 export default function Layout() {
   const navigate = useNavigate()
+  
+  const handleIconHover = (e: React.MouseEvent<HTMLElement>) => {
+    const icon = e.currentTarget.querySelector('.menu-icon-animate');
+    if (!icon) return;
+    
+    if (icon.classList.contains('icon-spin')) {
+      gsap.to(icon, { rotate: 360, scale: 1.25, duration: 0.5, ease: 'back.out(1.5)' });
+    } else if (icon.classList.contains('icon-slide')) {
+      gsap.to(icon, { x: 4, scale: 1.15, duration: 0.3, ease: 'back.out(2)' });
+    } else if (icon.classList.contains('icon-bounce')) {
+      gsap.to(icon, { y: -3, scale: 1.2, duration: 0.3, ease: 'back.out(2)' });
+    } else {
+      gsap.to(icon, { scale: 1.25, rotate: 10, y: -2, duration: 0.3, ease: 'back.out(2)' });
+    }
+  };
+
+  const handleIconLeave = (e: React.MouseEvent<HTMLElement>) => {
+    const icon = e.currentTarget.querySelector('.menu-icon-animate');
+    if (!icon) return;
+    
+    gsap.to(icon, { scale: 1, rotate: 0, x: 0, y: 0, duration: 0.3, ease: 'power2.out' });
+  };
+
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [schoolName, setSchoolName] = useState('DanceFlow-Escola')
   const [logoUrl, setLogoUrl] = useState<string | null>(null)
@@ -1257,6 +1281,8 @@ export default function Layout() {
                   to={item.path}
                   end={item.path === '/'}
                   onClick={() => setSidebarOpen(false)}
+                  onMouseEnter={handleIconHover}
+                  onMouseLeave={handleIconLeave}
                   className={({ isActive }) =>
                     `flex items-center gap-3 rounded-2xl px-3 py-2 text-base font-semibold transition-all duration-200 ${
                       isActive ? 'shadow-lg' : 'hover:opacity-80'
@@ -1267,7 +1293,7 @@ export default function Layout() {
                     color: isActive ? '#fff' : 'var(--text-secondary)',
                   })}
                 >
-                  <item.icon size={20} />
+                  <item.icon size={20} className={`menu-icon-animate ${item.anim || ''}`} />
                   {item.label}
                 </NavLink>
               ))}
@@ -1276,6 +1302,8 @@ export default function Layout() {
               <NavLink
                 to="/admin"
                 onClick={() => setSidebarOpen(false)}
+                onMouseEnter={handleIconHover}
+                onMouseLeave={handleIconLeave}
                 className={({ isActive }) =>
                   `flex items-center gap-3 rounded-2xl px-3 py-2 text-base font-semibold transition-all duration-200 ${
                     isActive ? 'shadow-lg' : 'hover:opacity-80'
@@ -1286,18 +1314,18 @@ export default function Layout() {
                   color: isActive ? '#fff' : 'var(--text-secondary)',
                 })}
               >
-                <Shield size={20} />
+                <Shield size={20} className="menu-icon-animate" />
                 Painel Admin
               </NavLink>
             )}
 
-
-
             <button
               onClick={() => { setTourStep(0); setShowTour(true); setSidebarOpen(false); }}
+              onMouseEnter={handleIconHover}
+              onMouseLeave={handleIconLeave}
               className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-base font-semibold text-[var(--text-secondary)] hover:opacity-80 transition-all duration-200 cursor-pointer"
             >
-              <Sparkles size={20} className="text-purple-450" />
+              <Sparkles size={20} className="text-purple-450 menu-icon-animate icon-spin" />
               Reassistir Tour 🎬
             </button>
           </nav>
@@ -1306,9 +1334,11 @@ export default function Layout() {
           <div className="p-3 space-y-2" style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
             <button
               onClick={() => supabase.auth.signOut()}
+              onMouseEnter={handleIconHover}
+              onMouseLeave={handleIconLeave}
               className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-sm font-semibold text-rose-400 hover:bg-rose-500/10 transition-all duration-200"
             >
-              <LogOut size={20} />
+              <LogOut size={20} className="menu-icon-animate icon-slide" />
               Sair do Sistema
             </button>
 
