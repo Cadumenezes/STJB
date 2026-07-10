@@ -1358,7 +1358,7 @@ export default function Layout() {
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-4 pt-6 sm:p-6 sm:pt-8 md:p-8 md:pt-10 lg:p-12 lg:pt-12 xl:p-16 xl:pt-16" style={{ backgroundColor: 'var(--bg-primary)' }}>
+        <main className="flex-1 overflow-y-auto" style={{ backgroundColor: 'var(--bg-primary)', padding: '24px 16px' }}>
           <Outlet context={{ fluidCursorEnabled, setFluidCursorEnabled }} />
         </main>
       </div>

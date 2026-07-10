@@ -1164,7 +1164,7 @@ export default function Students() {
   }
 
   return (
-    <div className="flex flex-col pb-10 px-4">
+    <div className="flex flex-col pb-10">
       {/* Print-only template */}
       <style dangerouslySetInnerHTML={{__html: `
         @media print {
