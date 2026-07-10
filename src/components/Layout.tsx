@@ -1293,8 +1293,8 @@ export default function Layout() {
                     color: isActive ? '#fff' : 'var(--text-secondary)',
                     paddingLeft: '28px',
                     paddingRight: '16px',
-                    paddingTop: '8px',
-                    paddingBottom: '8px'
+                    paddingTop: '5px',
+                    paddingBottom: '5px'
                   })}
                 >
                   <item.icon size={20} className={`menu-icon-animate ${item.anim || ''}`} />
@@ -1318,8 +1318,8 @@ export default function Layout() {
                   color: isActive ? '#fff' : 'var(--text-secondary)',
                   paddingLeft: '28px',
                   paddingRight: '16px',
-                  paddingTop: '8px',
-                  paddingBottom: '8px'
+                  paddingTop: '5px',
+                  paddingBottom: '5px'
                 })}
               >
                 <Shield size={20} className="menu-icon-animate" />
@@ -1335,8 +1335,8 @@ export default function Layout() {
               style={{
                 paddingLeft: '28px',
                 paddingRight: '16px',
-                paddingTop: '8px',
-                paddingBottom: '8px'
+                paddingTop: '5px',
+                paddingBottom: '5px'
               }}
             >
               <Sparkles size={20} className="text-purple-450 menu-icon-animate icon-spin" />
@@ -1354,8 +1354,8 @@ export default function Layout() {
               style={{
                 paddingLeft: '28px',
                 paddingRight: '16px',
-                paddingTop: '8px',
-                paddingBottom: '8px'
+                paddingTop: '5px',
+                paddingBottom: '5px'
               }}
             >
               <LogOut size={20} className="menu-icon-animate icon-slide" />
