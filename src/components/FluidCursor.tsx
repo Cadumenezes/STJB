@@ -2,6 +2,26 @@ import React, { useEffect, useRef } from 'react';
 // @ts-ignore
 import WebGLFluid from 'webgl-fluid';
 
+// Custom MouseEvent subclass to safely override offsetX and offsetY
+class CustomMouseEvent extends MouseEvent {
+  private _offsetX: number;
+  private _offsetY: number;
+
+  constructor(type: string, dict: MouseEventInit & { offsetX: number; offsetY: number }) {
+    super(type, dict);
+    this._offsetX = dict.offsetX;
+    this._offsetY = dict.offsetY;
+  }
+
+  get offsetX() {
+    return this._offsetX;
+  }
+
+  get offsetY() {
+    return this._offsetY;
+  }
+}
+
 interface FluidCursorProps {
   enabled?: boolean;
   densityDissipation?: number;
@@ -24,7 +44,6 @@ export const FluidCursor: React.FC<FluidCursorProps> = ({
   transparent = true,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const simulationRef = useRef<any>(null);
 
   // 1. Initialize WebGL Fluid Simulation on canvas once
   useEffect(() => {
@@ -32,8 +51,9 @@ export const FluidCursor: React.FC<FluidCursorProps> = ({
     if (!canvas) return;
 
     try {
-      simulationRef.current = WebGLFluid(canvas, {
-        IMMEDIATE: true,
+      WebGLFluid(canvas, {
+        IMMEDIATE: false, // Turn off initial explosion
+        SPLAT_COUNT: 0,   // Set initial splat count to 0
         TRIGGER: 'hover',
         SIM_RESOLUTION: 128,
         DYE_RESOLUTION: 512,
@@ -60,38 +80,9 @@ export const FluidCursor: React.FC<FluidCursorProps> = ({
     } catch (err) {
       console.error('Failed to initialize WebGL Fluid Simulation:', err);
     }
-
-    return () => {
-      if (simulationRef.current && typeof simulationRef.current.destroy === 'function') {
-        try {
-          simulationRef.current.destroy();
-        } catch (e) {
-          // ignore
-        }
-      }
-    };
   }, []);
 
-  // 2. Sync config updates when props change
-  useEffect(() => {
-    if (simulationRef.current) {
-      try {
-        simulationRef.current.config({
-          PAUSED: !enabled,
-          DENSITY_DISSIPATION: 1 - (densityDissipation / 100),
-          VELOCITY_DISSIPATION: 1 - (velocityDissipation / 100),
-          PRESSURE: pressure,
-          CURL: curl,
-          SPLAT_RADIUS: splatRadius,
-          SPLAT_FORCE: splatForce,
-        });
-      } catch (err) {
-        // ignore
-      }
-    }
-  }, [enabled, densityDissipation, velocityDissipation, pressure, curl, splatRadius, splatForce]);
-
-  // 3. Captures cursor and touch events on window and forwards them to the pointer-events: none canvas
+  // 2. Captures cursor and touch events on window and forwards them to the pointer-events: none canvas
   useEffect(() => {
     if (!enabled) return;
 
@@ -99,26 +90,28 @@ export const FluidCursor: React.FC<FluidCursorProps> = ({
     if (!canvas) return;
 
     const forwardMouseEvent = (type: string, e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      const offsetX = e.clientX - rect.left;
-      const offsetY = e.clientY - rect.top;
+      try {
+        const rect = canvas.getBoundingClientRect();
+        const offsetX = e.clientX - rect.left;
+        const offsetY = e.clientY - rect.top;
 
-      const event = new MouseEvent(type, {
-        clientX: e.clientX,
-        clientY: e.clientY,
-        screenX: e.screenX,
-        screenY: e.screenY,
-        bubbles: true,
-        cancelable: true,
-        buttons: e.buttons,
-      });
+        // Use CustomMouseEvent subclass to avoid TypeError on read-only offsetX/offsetY
+        const event = new CustomMouseEvent(type, {
+          clientX: e.clientX,
+          clientY: e.clientY,
+          screenX: e.screenX,
+          screenY: e.screenY,
+          bubbles: true,
+          cancelable: true,
+          buttons: e.buttons,
+          offsetX,
+          offsetY,
+        });
 
-      Object.defineProperties(event, {
-        offsetX: { value: offsetX },
-        offsetY: { value: offsetY }
-      });
-
-      canvas.dispatchEvent(event);
+        canvas.dispatchEvent(event);
+      } catch (err) {
+        console.error('Error forwarding mouse event to fluid canvas:', err);
+      }
     };
 
     const handleMouseMove = (e: MouseEvent) => forwardMouseEvent('mousemove', e);
@@ -126,15 +119,18 @@ export const FluidCursor: React.FC<FluidCursorProps> = ({
     const handleMouseUp = (e: MouseEvent) => forwardMouseEvent('mouseup', e);
 
     const forwardTouchEvent = (type: string, e: TouchEvent) => {
-      // Touch events use pageX/pageY inside webgl-fluid
-      const event = new TouchEvent(type, {
-        touches: Array.from(e.touches),
-        targetTouches: Array.from(e.targetTouches),
-        changedTouches: Array.from(e.changedTouches),
-        bubbles: true,
-        cancelable: true,
-      });
-      canvas.dispatchEvent(event);
+      try {
+        const event = new TouchEvent(type, {
+          touches: Array.from(e.touches),
+          targetTouches: Array.from(e.targetTouches),
+          changedTouches: Array.from(e.changedTouches),
+          bubbles: true,
+          cancelable: true,
+        });
+        canvas.dispatchEvent(event);
+      } catch (err) {
+        console.error('Error forwarding touch event to fluid canvas:', err);
+      }
     };
 
     const handleTouchStart = (e: TouchEvent) => forwardTouchEvent('touchstart', e);
@@ -170,7 +166,7 @@ export const FluidCursor: React.FC<FluidCursorProps> = ({
         width: '100vw',
         height: '100vh',
         pointerEvents: 'none',
-        zIndex: 9999, // Displays on top of background but behind clicks
+        zIndex: 9999,
         display: enabled ? 'block' : 'none',
       }}
     />
