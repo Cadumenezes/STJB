@@ -5,6 +5,7 @@ import loginBgImage from '../assets/dance_auth_login.png'
 import danceLoginJazz from '../assets/dance_login_jazz.png'
 import danceLoginKids from '../assets/dance_login_kids.png'
 import PrivacyPolicyModal from '../components/PrivacyPolicyModal'
+import { FluidCursor } from '../components/FluidCursor'
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true)
@@ -592,6 +593,7 @@ export default function Auth() {
       </div>
 
       <PrivacyPolicyModal isOpen={policyOpen} onClose={() => setPolicyOpen(false)} initialTab={policyTab} />
+      <FluidCursor enabled={true} />
     </div>
   )
 }

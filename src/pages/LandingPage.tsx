@@ -14,6 +14,7 @@ import gustavoImg from '../assets/teacher_gustavo.png'
 import hybridForecastImg from '../assets/hybrid_forecast_mockup.png'
 import theaterMapImg from '../assets/theater_map_mockup.png'
 import financialMockupImg from '../assets/financial_dashboard_mockup.png'
+import { FluidCursor } from '../components/FluidCursor'
 
 export default function LandingPage() {
   const [showContactModal, setShowContactModal] = useState(false)
@@ -701,6 +702,7 @@ export default function LandingPage() {
           </div>
         </div>
       )}
+      <FluidCursor enabled={true} />
     </div>
   )
 }

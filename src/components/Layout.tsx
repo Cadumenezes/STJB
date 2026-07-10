@@ -30,6 +30,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import { Profile } from '../types'
 import Modal from './Modal'
+import { FluidCursor } from './FluidCursor'
 import virtualDirectorUrl from '../assets/virtual_director.png'
 import Dashboard from '../pages/Dashboard'
 import Financial from '../pages/Financial'
@@ -254,6 +255,15 @@ export default function Layout() {
   const [isSubmittingHelp, setIsSubmittingHelp] = useState(false)
   const [helpTab, setHelpTab] = useState<'manual' | 'feedback'>('manual')
   const [activeManualChapter, setActiveManualChapter] = useState(0)
+
+  // Fluid Cursor Global State
+  const [fluidCursorEnabled, setFluidCursorEnabled] = useState(() => {
+    return localStorage.getItem('fluidCursorEnabled') === 'true'
+  })
+
+  useEffect(() => {
+    localStorage.setItem('fluidCursorEnabled', String(fluidCursorEnabled))
+  }, [fluidCursorEnabled])
 
   // IA Diagnostics Simulation HUD State
   const [showSimulator, setShowSimulator] = useState(false)
@@ -1288,10 +1298,23 @@ export default function Layout() {
             )}
 
             <button
+              onClick={() => setFluidCursorEnabled(prev => !prev)}
+              className="flex w-full items-center justify-between rounded-2xl px-3 py-2 text-base font-semibold text-[var(--text-secondary)] hover:opacity-80 transition-all duration-200 cursor-pointer"
+            >
+              <div className="flex items-center gap-3">
+                <Sparkles size={20} className={fluidCursorEnabled ? "text-purple-400 animate-pulse" : "text-gray-400"} />
+                <span>Cursor Fluido ✨</span>
+              </div>
+              <div className={`w-8 h-4 rounded-full transition-all relative ${fluidCursorEnabled ? 'bg-purple-650' : 'bg-white/10'}`}>
+                <div className={`absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all ${fluidCursorEnabled ? 'right-0.5' : 'left-0.5'}`} />
+              </div>
+            </button>
+
+            <button
               onClick={() => { setTourStep(0); setShowTour(true); setSidebarOpen(false); }}
               className="flex w-full items-center gap-3 rounded-2xl px-3 py-2 text-base font-semibold text-[var(--text-secondary)] hover:opacity-80 transition-all duration-200 cursor-pointer"
             >
-              <Sparkles size={20} className="text-purple-400" />
+              <Sparkles size={20} className="text-purple-450" />
               Reassistir Tour 🎬
             </button>
           </nav>
@@ -2121,6 +2144,7 @@ export default function Layout() {
           </div>
         </div>
       )}
+      <FluidCursor enabled={fluidCursorEnabled} />
     </div>
   )
 }
