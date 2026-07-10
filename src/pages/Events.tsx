@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Plus, Edit, Trash2, Calendar, MapPin, DollarSign, Users, Download, PlusCircle, CheckCircle, CreditCard, Box, Search, Printer, Map, ExternalLink, Copy, Loader2, QrCode } from 'lucide-react'
+import { Plus, Edit, Trash2, Calendar, MapPin, DollarSign, Users, Download, PlusCircle, CheckCircle, CreditCard, Box, Search, Printer, Map, ExternalLink, Copy, Loader2, QrCode, UploadCloud } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { Event, EventParticipant, Student, Installment, Profile, EventSession, SeatingMapConfig, Theater, EventExpense } from '../types'
 import Modal from '../components/Modal'
@@ -2863,7 +2863,7 @@ export default function Events() {
               }}
               onClick={() => document.getElementById('photo-uploader')?.click()}
             >
-              <span className="text-2xl mb-2">📤</span>
+              <UploadCloud size={28} className="mb-2 text-gray-400" />
               <span className="text-xs font-bold text-gray-300">Arraste ou Clique para fazer Upload</span>
               <span className="text-[10px] text-gray-500 mt-1">PNG, JPG, JPEG (Múltiplas Fotos permitidas)</span>
               

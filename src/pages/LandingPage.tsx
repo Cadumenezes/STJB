@@ -178,7 +178,7 @@ export default function LandingPage() {
         <div className="w-full max-w-6xl mx-auto px-6 flex flex-col items-center gap-8 md:gap-12">
           <div className="w-full max-w-4xl mx-auto text-center space-y-4 flex flex-col items-center">
             <h2 className="text-3xl sm:text-4xl font-black tracking-tight">Gestão simplificada. Resultados reais.</h2>
-            <p className="text-gray-400 text-sm sm:text-base leading-relaxed whitespace-nowrap">Foque no que você faz de melhor: ensinar a arte da dança. O DanceFlow-Escola cuida de todo o resto.</p>
+            <p className="text-gray-400 text-sm sm:text-base leading-relaxed sm:whitespace-nowrap">Foque no que você faz de melhor: ensinar a arte da dança. O DanceFlow-Escola cuida de todo o resto.</p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">

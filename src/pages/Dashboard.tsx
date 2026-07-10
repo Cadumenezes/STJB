@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Users, AlertTriangle, DollarSign, Cake, TrendingUp, TrendingDown, Calendar, Image as ImageIcon, BookOpen } from 'lucide-react'
+import { Users, AlertTriangle, DollarSign, Cake, TrendingUp, TrendingDown, Calendar, Image as ImageIcon, BookOpen, MapPin, ChevronLeft, ChevronRight } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts'
 import { supabase } from '../lib/supabase'
 import QuantumLoader from '../components/QuantumLoader'
@@ -382,8 +382,8 @@ export default function Dashboard() {
                         {activePhotoObj.eventDescription || 'Um espetáculo inesquecível da nossa escola'}
                       </h4>
                       <p className="text-[10px] text-gray-300 mt-2 font-bold flex items-center gap-2">
-                        📅 {new Date(activePhotoObj.eventDate + 'T12:00:00').toLocaleDateString('pt-BR')} 
-                        {activePhotoObj.eventLocation && ` 📍 ${activePhotoObj.eventLocation}`}
+                        <Calendar size={10} className="shrink-0" /> {new Date(activePhotoObj.eventDate + 'T12:00:00').toLocaleDateString('pt-BR')} 
+                        {activePhotoObj.eventLocation && <><MapPin size={10} className="shrink-0" /> {activePhotoObj.eventLocation}</>}
                       </p>
                     </div>
      
@@ -392,13 +392,13 @@ export default function Dashboard() {
                       onClick={prevSlide}
                       className="absolute left-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/60 border border-white/10 flex items-center justify-center hover:bg-purple-650 hover:border-purple-500 text-white transition-all cursor-pointer shadow-lg z-20"
                     >
-                      ◀
+                      <ChevronLeft size={16} />
                     </button>
                     <button 
                       onClick={nextSlide}
                       className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-black/60 border border-white/10 flex items-center justify-center hover:bg-purple-650 hover:border-purple-500 text-white transition-all cursor-pointer shadow-lg z-20"
                     >
-                      ▶
+                      <ChevronRight size={16} />
                     </button>
                   </div>
                 </div>
@@ -599,8 +599,9 @@ export default function Dashboard() {
           className="rounded-none p-4 sm:p-8 md:p-10 border shadow-2xl"
           style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
         >
-          <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
-            🎂 Aniversariantes da Semana
+          <h2 className="text-lg font-semibold mb-4 flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+            <Cake size={18} />
+            Aniversariantes da Semana
           </h2>
           {data.birthdaysThisWeek.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
@@ -622,10 +623,10 @@ export default function Dashboard() {
                     style={{ backgroundColor: 'var(--bg-secondary)' }}
                   >
                     <div
-                      className="flex h-10 w-10 items-center justify-center rounded-none text-lg"
+                      className="flex h-10 w-10 items-center justify-center rounded-none"
                       style={{ background: 'linear-gradient(135deg, #f59e0b, #f97316)' }}
                     >
-                      🎉
+                      <Cake size={18} className="text-white" />
                     </div>
                     <div>
                       <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{student.name}</p>

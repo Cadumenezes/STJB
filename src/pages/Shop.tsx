@@ -188,7 +188,7 @@ export default function Shop() {
       await loadProducts()
       await loadRecentSales()
       
-      alert('Venda registrada com sucesso! ✅💰')
+      alert('Venda registrada com sucesso!')
       setShowSaleModal(false)
       setCustomSaleForm({ productId: '', quantity: 1, hasDiscount: false, discountAmount: '0' })
     } catch (err: any) {
@@ -252,7 +252,7 @@ export default function Shop() {
               style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}
             >
               <ShoppingBag size={20} />
-              Nova Venda 🛍️
+              Nova Venda
             </button>
           </div>
         </div>
@@ -419,7 +419,7 @@ export default function Shop() {
       )}
 
       {/* Modal Nova Venda */}
-      <Modal isOpen={showSaleModal} onClose={() => setShowSaleModal(false)} title="Registrar Nova Venda 🛍️">
+      <Modal isOpen={showSaleModal} onClose={() => setShowSaleModal(false)} title="Registrar Nova Venda">
         <form onSubmit={handleCustomSale} className="space-y-4">
           <div className="space-y-4">
             <div>
@@ -534,7 +534,7 @@ export default function Shop() {
               className="rounded-2xl px-5 py-2.5 text-sm font-bold text-white transition-all hover:scale-105 cursor-pointer disabled:opacity-50 disabled:hover:scale-100" 
               style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}
             >
-              Confirmar Venda 💰
+              Confirmar Venda
             </button>
           </div>
         </form>

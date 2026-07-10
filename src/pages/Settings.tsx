@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useOutletContext } from 'react-router-dom'
-import { Save, Settings, Upload, FileText, Calendar, Code, GraduationCap, Shield, Lock, AlertTriangle, Trash2 } from 'lucide-react'
+import { Save, Settings, Upload, FileText, Calendar, Code, GraduationCap, Shield, Lock, AlertTriangle, Trash2, Lightbulb, Sparkles, Star, Landmark, Award } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import QuantumLoader from '../components/QuantumLoader'
 
@@ -828,14 +828,14 @@ export default function SettingsPage() {
                       </div>
                       {!hasBgMenuColumn && (
                         <div className="text-[10px] text-yellow-500/80 p-2.5 rounded-none border border-yellow-500/20 bg-yellow-500/5 leading-normal mt-2">
-                          💡 <strong>Dica:</strong> Para salvar a cor do menu de forma persistente, rode o script <code>migration_bg_menu.sql</code> no <strong>SQL Editor</strong>! Por enquanto, ela será aplicada apenas nesta sessão.
+                          <Lightbulb size={14} className="inline mr-1 text-yellow-400" /> <strong>Dica:</strong> Para salvar a cor do menu de forma persistente, rode o script <code>migration_bg_menu.sql</code> no <strong>SQL Editor</strong>! Por enquanto, ela será aplicada apenas nesta sessão.
                         </div>
                       )}
                       
                       <div className="pt-4 border-t mt-4" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
                         <div className="flex justify-between items-center">
                           <div>
-                            <span className="text-sm font-bold block" style={{ color: 'var(--text-primary)' }}>Cursor Fluido ✨</span>
+                            <span className="text-sm font-bold flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}>Cursor Fluido <Sparkles size={14} className="text-purple-400" /></span>
                             <span className="text-[10px] block mt-0.5" style={{ color: 'var(--text-muted)' }}>Rastro interativo de fumaça colorida.</span>
                           </div>
                           <button
@@ -943,7 +943,7 @@ export default function SettingsPage() {
                         required
                       />
                       <div className="p-3 rounded-none bg-purple-500/10 border border-purple-500/20 text-xs text-purple-300 mt-2 space-y-1">
-                        <p className="font-bold">🌟 Como funciona para Outros Bancos:</p>
+                        <p className="font-bold flex items-center gap-1.5"><Star size={14} className="text-purple-400" /> Como funciona para Outros Bancos:</p>
                         <p>Você pode ter conta em <strong>qualquer banco comercial</strong> (Itaú, Bradesco, Nubank, etc.). O Asaas gera os boletos/Pix automáticos para seus alunos e você programa repasses automáticos diários de todo o saldo acumulado diretamente para o seu banco tradicional!</p>
                       </div>
                     </div>
@@ -978,7 +978,7 @@ export default function SettingsPage() {
                       </div>
                     </div>
                     <div className="p-3 rounded-none bg-blue-500/10 border border-blue-500/20 text-xs text-blue-300 space-y-1">
-                      <p className="font-bold">🏦 Conexão Direta com sua Conta Cora:</p>
+                      <p className="font-bold flex items-center gap-1.5"><Landmark size={14} className="text-blue-400" /> Conexão Direta com sua Conta Cora:</p>
                       <p>Ideal se sua escola já usa a conta digital PJ da Cora. Os boletos e Pix são gerados diretamente dentro da sua conta, sem taxas adicionais de gateway intermediário.</p>
                     </div>
                   </div>
@@ -987,7 +987,7 @@ export default function SettingsPage() {
                 {formData.gateway_type === 'none' && (
                   <div className="pt-3 border-t border-purple-500/10 space-y-4">
                     <div className="p-3 rounded-none bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 space-y-1">
-                      <p className="font-bold">📂 Conciliação Universal via Extrato Bancário:</p>
+                      <p className="font-bold flex items-center gap-1.5"><FileText size={14} className="text-emerald-400" /> Conciliação Universal via Extrato Bancário:</p>
                       <p>Mantenha a conta do seu banco atual (Itaú, Banco do Brasil, Bradesco, Inter, Cora, etc.). Basta baixar o extrato diário no seu banco (OFX ou CSV) e fazer o upload para dar baixa automática em lote em poucos segundos!</p>
                     </div>
                     
@@ -1027,7 +1027,7 @@ export default function SettingsPage() {
             </div>
             <h3 className="text-lg font-black uppercase tracking-wider text-white">Modelos de Documentos</h3>
             <span className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider bg-purple-500/20 text-purple-300 rounded-full border border-purple-500/30">
-              Em Construção 🚧
+              Em Construção
             </span>
             <p className="text-sm text-gray-400 leading-relaxed max-w-md">
               Estamos preparando uma experiência incrível e simplificada para você personalizar as declarações de Imposto de Renda (IRPF) e Fichas de Matrícula da sua escola. Esta aba estará disponível em breve!
@@ -1321,11 +1321,11 @@ export default function SettingsPage() {
                   </span>
                   <div className="flex items-baseline gap-2 mt-1">
                     <h4 className="text-2xl font-black text-white capitalize">
-                      {profile.plan === 'gratis' ? '🌱 Grátis' : 
-                       profile.plan === 'bronze' ? '🥉 Bronze' :
-                       profile.plan === 'prata' ? '🥈 Prata' :
-                       profile.plan === 'ouro' ? '🥇 Ouro' :
-                       profile.plan === 'diamante' ? '💎 Diamante' : `✨ ${profile.plan}`}
+                      {profile.plan === 'gratis' ? <><Award size={20} className="inline mr-1" /> Grátis</> : 
+                       profile.plan === 'bronze' ? <><Award size={20} className="inline mr-1 text-amber-600" /> Bronze</> :
+                       profile.plan === 'prata' ? <><Award size={20} className="inline mr-1 text-slate-400" /> Prata</> :
+                       profile.plan === 'ouro' ? <><Award size={20} className="inline mr-1 text-yellow-400" /> Ouro</> :
+                       profile.plan === 'diamante' ? <><Award size={20} className="inline mr-1 text-cyan-400" /> Diamante</> : <><Award size={20} className="inline mr-1" /> {profile.plan}</>}
                     </h4>
                     <span className="text-xs text-[var(--text-secondary)]">
                       {profile.plan === 'gratis' ? '(R$ 0,00)' :
@@ -1401,7 +1401,7 @@ export default function SettingsPage() {
 
                 {profile.cancel_at_period_end && (
                   <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-400 leading-normal">
-                    ⚠️ <strong>Cancelamento programado:</strong> Sua assinatura não será renovada. O acesso permanecerá liberado até {profile.email === 'teste@flow.com.br' ? '12/06/2027' : (profile.expires_at ? new Date(profile.expires_at).toLocaleDateString('pt-BR') : '')}.
+                    <AlertTriangle size={14} className="inline mr-1" /> <strong>Cancelamento programado:</strong> Sua assinatura não será renovada. O acesso permanecerá liberado até {profile.email === 'teste@flow.com.br' ? '12/06/2027' : (profile.expires_at ? new Date(profile.expires_at).toLocaleDateString('pt-BR') : '')}.
                   </div>
                 )}
               </div>
@@ -1413,7 +1413,7 @@ export default function SettingsPage() {
               <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
                 <div className="relative w-full max-w-md bg-[#0a0a0f] border border-white/10 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl animate-scale-up">
                   <div className="space-y-2">
-                    <h4 className="text-lg font-black text-white uppercase tracking-tight">Sentiremos sua falta 😢</h4>
+                    <h4 className="text-lg font-black text-white uppercase tracking-tight">Sentiremos sua falta</h4>
                     <p className="text-xs text-[var(--text-secondary)] leading-relaxed">
                       Sua assinatura ficará ativa até {profile.email === 'teste@flow.com.br' ? '12/06/2027' : (profile.expires_at ? new Date(profile.expires_at).toLocaleDateString('pt-BR') : '')}. Por favor, nos diga o motivo do cancelamento para nos ajudar a melhorar o DanceFlow:
                     </p>

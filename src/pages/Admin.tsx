@@ -360,7 +360,7 @@ export default function Admin() {
                             <span>{p.email}</span>
                             {p.cancel_at_period_end && (
                               <span className="w-fit text-[8px] font-black uppercase text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
-                                ⚠️ Cancelamento Programado
+                                <AlertTriangle size={10} className="inline mr-1 -mt-0.5" /> Cancelamento Programado
                               </span>
                             )}
                           </div>
@@ -582,12 +582,12 @@ export default function Admin() {
                         // Traduzir motivo do cancelamento
                         const translateReason = (r: string) => {
                           switch (r) {
-                            case 'preço_alto': return '💰 Preço muito alto / Sem orçamento';
-                            case 'falta_recursos': return '⚙️ Falta de recursos necessários';
-                            case 'dificuldade_uso': return '🧭 Dificuldade de usar a plataforma';
-                            case 'fechamento_escola': return '🚪 Escola de dança fechou';
-                            case 'mudanca_sistema': return '🔄 Migrando para outro sistema';
-                            case 'outro': return '❓ Outro motivo';
+                            case 'preço_alto': return 'Preço muito alto / Sem orçamento';
+                            case 'falta_recursos': return 'Falta de recursos necessários';
+                            case 'dificuldade_uso': return 'Dificuldade de usar a plataforma';
+                            case 'fechamento_escola': return 'Escola de dança fechou';
+                            case 'mudanca_sistema': return 'Migrando para outro sistema';
+                            case 'outro': return 'Outro motivo';
                             default: return r;
                           }
                         };
@@ -814,12 +814,12 @@ export default function Admin() {
               
               <p className="text-xs text-gray-400 pt-2">Motivo Escolhido</p>
               <p className="text-sm font-semibold text-purple-400">
-                {editingFeedback.reason === 'preço_alto' ? '💰 Preço muito alto / Sem orçamento' :
-                 editingFeedback.reason === 'falta_recursos' ? '⚙️ Falta de recursos necessários' :
-                 editingFeedback.reason === 'dificuldade_uso' ? '🧭 Dificuldade de usar a plataforma' :
-                 editingFeedback.reason === 'fechamento_escola' ? '🚪 Escola de dança fechou' :
-                 editingFeedback.reason === 'mudanca_sistema' ? '🔄 Migrando para outro sistema' :
-                 '❓ Outro motivo'}
+                {editingFeedback.reason === 'preço_alto' ? 'Preço muito alto / Sem orçamento' :
+                 editingFeedback.reason === 'falta_recursos' ? 'Falta de recursos necessários' :
+                 editingFeedback.reason === 'dificuldade_uso' ? 'Dificuldade de usar a plataforma' :
+                 editingFeedback.reason === 'fechamento_escola' ? 'Escola de dança fechou' :
+                 editingFeedback.reason === 'mudanca_sistema' ? 'Migrando para outro sistema' :
+                 'Outro motivo'}
               </p>
 
               {editingFeedback.comments && (

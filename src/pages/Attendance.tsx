@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ClipboardCheck, Check, X, Clock, Users, Calendar } from 'lucide-react'
+import { ClipboardCheck, Check, X, Clock, Users, Calendar, User } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { DanceClass, Student } from '../types'
 import QuantumLoader from '../components/QuantumLoader'
@@ -481,7 +481,7 @@ export default function AttendancePage() {
                         style={{ backgroundColor: 'rgba(0,0,0,0.15)', border: '1px solid var(--border-color)' }}
                       >
                         <div className="h-10 w-10 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-300 font-bold">
-                          👨‍🏫
+                          <User size={20} />
                         </div>
                         <div>
                           <h4 className="text-sm font-semibold text-white">

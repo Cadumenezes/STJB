@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Plus, Edit, Trash2, Map } from 'lucide-react'
+import { Plus, Edit, Trash2, Map, Rows, Grid, Zap, SplitSquareHorizontal } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { Theater } from '../types'
 import Modal from '../components/Modal'
@@ -259,20 +259,20 @@ export default function Theaters() {
 
                   {/* Config details tags */}
                   <div className="flex flex-wrap gap-2 mb-6">
-                    <span className="text-[10px] font-bold uppercase tracking-wider bg-white/5 border border-white/10 px-2.5 py-1 rounded-full text-[var(--text-secondary)]">
-                      📁 {totalRows} Fileiras
+                    <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider bg-white/5 border border-white/10 px-2.5 py-1 rounded-full text-[var(--text-secondary)]">
+                      <Rows size={12} /> {totalRows} Fileiras
                     </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider bg-white/5 border border-white/10 px-2.5 py-1 rounded-full text-[var(--text-secondary)]">
-                      🪑 {defaultSeats} Assentos/Fil.
+                    <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider bg-white/5 border border-white/10 px-2.5 py-1 rounded-full text-[var(--text-secondary)]">
+                      <Grid size={12} /> {defaultSeats} Assentos/Fil.
                     </span>
                     {Object.keys(t.exceptions || {}).filter(k => !k.startsWith('_')).length > 0 && (
-                      <span className="text-[10px] font-bold uppercase tracking-wider bg-purple-500/10 border border-purple-500/20 px-2.5 py-1 rounded-full text-purple-400">
-                        ⚡ {Object.keys(t.exceptions || {}).filter(k => !k.startsWith('_')).length} Customizadas
+                      <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider bg-purple-500/10 border border-purple-500/20 px-2.5 py-1 rounded-full text-purple-400">
+                        <Zap size={12} /> {Object.keys(t.exceptions || {}).filter(k => !k.startsWith('_')).length} Customizadas
                       </span>
                     )}
                     {t.exceptions?._corridors && t.exceptions._corridors.length > 0 && (
-                      <span className="text-[10px] font-bold uppercase tracking-wider bg-sky-500/10 border border-sky-500/20 px-2.5 py-1 rounded-full text-sky-400">
-                        🛣️ {t.exceptions._corridors.length} Corredores
+                      <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider bg-sky-500/10 border border-sky-500/20 px-2.5 py-1 rounded-full text-sky-400">
+                        <SplitSquareHorizontal size={12} /> {t.exceptions._corridors.length} Corredores
                       </span>
                     )}
                   </div>
@@ -507,7 +507,7 @@ export default function Theaters() {
 
                 {/* Corridor between Stage and first row */}
                 <div className="w-full max-w-xs py-1.5 mb-4 border-y border-dashed border-white/10 text-[8px] text-gray-500 uppercase tracking-widest font-black shrink-0 text-center select-none bg-white/[0.01]">
-                  🛣️ Corredor de Acesso ao Palco
+                  <SplitSquareHorizontal size={16} className="inline mr-2" /> Corredor de Acesso ao Palco
                 </div>
 
                 <div className="w-full overflow-auto max-h-60 py-1 custom-scrollbar flex flex-col">
@@ -689,7 +689,7 @@ export default function Theaters() {
 
                 {/* Corridor between Stage and first row */}
                 <div className="w-full max-w-xs py-1.5 mb-4 border-y border-dashed border-white/10 text-[8px] text-gray-500 uppercase tracking-widest font-black shrink-0 text-center select-none bg-white/[0.01]">
-                  🛣️ Corredor de Acesso ao Palco
+                  <SplitSquareHorizontal size={16} className="inline mr-2" /> Corredor de Acesso ao Palco
                 </div>
 
                 {/* Seating Grid */}

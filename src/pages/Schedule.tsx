@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Calendar as CalendarIcon, Plus, ChevronLeft, ChevronRight, Clock, MapPin, AlignLeft, User, Mail, ShieldAlert } from 'lucide-react'
+import { Calendar as CalendarIcon, Plus, ChevronLeft, ChevronRight, Clock, MapPin, AlignLeft, User, Mail, ShieldAlert, Flag } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { Profile } from '../types'
 import Modal from '../components/Modal'
@@ -421,7 +421,7 @@ export default function Schedule() {
                 className="hidden sm:block text-[9px] px-2 py-0.5 rounded font-black truncate text-[#ef4444] border border-[#ef4444]/30 bg-[#ef4444]/10"
                 title={`Feriado: ${holidayName}`}
               >
-                🎉 {holidayName}
+                <Flag size={10} className="inline-block mr-1 -mt-0.5" />{holidayName}
               </div>
             )}
             {dayEvents.map(event => (
@@ -487,7 +487,7 @@ export default function Schedule() {
         if (hDate.getFullYear() === curYear && hDate.getMonth() === curMonth) {
           monthHolidays.push({
             id: `holiday-${dateStr}`,
-            title: `🎉 Feriado: ${name}`,
+            title: `Feriado: ${name}`,
             date: dateStr,
             time: '--:--',
             category: 'Feriado',
@@ -866,7 +866,7 @@ export default function Schedule() {
                 if (selectedHoliday) {
                   return (
                     <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-200 text-xs font-bold flex items-center gap-2">
-                      <span className="text-base">🎉</span>
+                      <Flag size={20} className="shrink-0" />
                       <div>
                         <p className="font-extrabold uppercase text-[10px] text-red-400 tracking-wider">Feriado Escolar</p>
                         <p>{selectedHoliday}</p>
