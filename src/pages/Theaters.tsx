@@ -234,11 +234,11 @@ export default function Theaters() {
                 <div>
                   {/* Card Title & Info */}
                   <div className="flex items-start justify-between gap-4 mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="rounded-2xl p-3 bg-purple-500/10 border border-purple-500/20 group-hover:bg-purple-500/20 transition-all">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="rounded-2xl p-3 bg-purple-500/10 border border-purple-500/20 group-hover:bg-purple-500/20 transition-all shrink-0">
                         <Map size={22} style={{ color: 'var(--accent-color)' }} />
                       </div>
-                      <div>
+                      <div className="min-w-0 flex-1">
                         <h3 className="text-base font-black text-white uppercase tracking-tight line-clamp-1">{t.name}</h3>
                         <p className="text-[10px] uppercase font-bold tracking-widest text-purple-400 mt-0.5">{totalSeatsCount} Poltronas</p>
                       </div>
