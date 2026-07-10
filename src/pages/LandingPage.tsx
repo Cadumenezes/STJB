@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, CheckCircle2, Shield, Sparkles, Award, User, X } from 'lucide-react'
+import { ArrowRight, CheckCircle2, Shield, Sparkles, Award, User, X, Zap, Star, Calendar, LayoutDashboard, Music } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import heroImage from '../assets/dance_hero_trio.png'
 import feature1Image from '../assets/dance_black_ballerina.png'
@@ -233,7 +233,8 @@ export default function LandingPage() {
         <div className="w-full max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center gap-16">
           <div className="flex-1 space-y-6 text-center md:text-left flex flex-col items-center md:items-start">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-400 font-bold text-xs uppercase tracking-wider">
-              🩰 Praticidade no Dia a Dia
+              <Music size={12} className="shrink-0" />
+              Praticidade no Dia a Dia
             </div>
             <h2 className="text-3xl sm:text-4xl font-black tracking-tight leading-tight">
               Liberdade e Produtividade para sua Equipe
@@ -266,7 +267,8 @@ export default function LandingPage() {
         <div className="w-full max-w-6xl mx-auto px-6 flex flex-col md:flex-row-reverse items-center gap-16">
           <div className="flex-1 space-y-6 text-center md:text-left flex flex-col items-center md:items-start">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 font-bold text-xs uppercase tracking-wider">
-              ⭐ Ficha Completa & Documentos
+              <Star size={12} className="shrink-0" />
+              Ficha Completa &amp; Documentos
             </div>
             <h2 className="text-3xl sm:text-4xl font-black tracking-tight leading-tight">
               Perfil Completo do Aluno e Declaração de IR Automatizada
@@ -299,7 +301,8 @@ export default function LandingPage() {
         <div className="w-full max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center gap-16">
           <div className="flex-1 space-y-6 text-center md:text-left flex flex-col items-center md:items-start">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 font-bold text-xs uppercase tracking-wider">
-              🎉 Feriados & Previsão Inteligente
+              <Calendar size={12} className="shrink-0" />
+              Feriados &amp; Previsão Inteligente
             </div>
             <h2 className="text-3xl sm:text-4xl font-black tracking-tight leading-tight">
               Previsão Híbrida de Gastos com Feriados Integrados
@@ -332,7 +335,8 @@ export default function LandingPage() {
         <div className="w-full max-w-6xl mx-auto px-6 flex flex-col md:flex-row-reverse items-center gap-16">
           <div className="flex-1 space-y-6 text-center md:text-left flex flex-col items-center md:items-start">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 font-bold text-xs uppercase tracking-wider">
-              ⚡ Controle Absoluto
+              <Zap size={12} className="shrink-0" />
+              Controle Absoluto
             </div>
             <h2 className="text-3xl sm:text-4xl font-black tracking-tight leading-tight">
               Faturamento Automatizado e Conciliação Universal
@@ -365,7 +369,8 @@ export default function LandingPage() {
         <div className="w-full max-w-6xl mx-auto px-6 flex flex-col md:flex-row items-center gap-16">
           <div className="flex-1 space-y-6 text-center md:text-left flex flex-col items-center md:items-start">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-400 font-bold text-xs uppercase tracking-wider">
-              ⭐ Eventos & Bilheteria
+              <LayoutDashboard size={12} className="shrink-0" />
+              Eventos &amp; Bilheteria
             </div>
             <h2 className="text-3xl sm:text-4xl font-black tracking-tight leading-tight">
               Gestão de Espetáculos e Mapas de Assento Personalizados
