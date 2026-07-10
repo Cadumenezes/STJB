@@ -1,31 +1,33 @@
 import { Routes, Route, Navigate, Link, useLocation, useNavigate } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, lazy, Suspense } from 'react'
 import { supabase } from './lib/supabase'
 import { Profile } from './types'
 import Layout from './components/Layout'
-import Dashboard from './pages/Dashboard'
-import Students from './pages/Students'
-import TrialClasses from './pages/TrialClasses'
-import Financial from './pages/Financial'
-import Classes from './pages/Classes'
-import AttendancePage from './pages/Attendance'
-import Inventory from './pages/Inventory'
-import Team from './pages/Team'
-import Events from './pages/Events'
-import Theaters from './pages/Theaters'
-import SettingsPage from './pages/Settings'
-import AiConsultant from './pages/AiConsultant'
-import Auth from './pages/Auth'
-import Admin from './pages/Admin'
-import LandingPage from './pages/LandingPage'
 import QuantumLoader from './components/QuantumLoader'
-import Checkout from './pages/Checkout'
-import Schedule from './pages/Schedule'
-import Shop from './pages/Shop'
-import Evaluations from './pages/Evaluations'
-import MfaChallenge from './components/MfaChallenge'
 import CookieBanner from './components/CookieBanner'
 import PrivacyPolicyModal from './components/PrivacyPolicyModal'
+import MfaChallenge from './components/MfaChallenge'
+
+// Lazy-load de todas as páginas: carregadas só quando o usuário navegar até elas
+const Dashboard     = lazy(() => import('./pages/Dashboard'))
+const Students      = lazy(() => import('./pages/Students'))
+const TrialClasses  = lazy(() => import('./pages/TrialClasses'))
+const Financial     = lazy(() => import('./pages/Financial'))
+const Classes       = lazy(() => import('./pages/Classes'))
+const AttendancePage= lazy(() => import('./pages/Attendance'))
+const Inventory     = lazy(() => import('./pages/Inventory'))
+const Team          = lazy(() => import('./pages/Team'))
+const Events        = lazy(() => import('./pages/Events'))
+const Theaters      = lazy(() => import('./pages/Theaters'))
+const SettingsPage  = lazy(() => import('./pages/Settings'))
+const AiConsultant  = lazy(() => import('./pages/AiConsultant'))
+const Auth          = lazy(() => import('./pages/Auth'))
+const Admin         = lazy(() => import('./pages/Admin'))
+const LandingPage   = lazy(() => import('./pages/LandingPage'))
+const Checkout      = lazy(() => import('./pages/Checkout'))
+const Schedule      = lazy(() => import('./pages/Schedule'))
+const Shop          = lazy(() => import('./pages/Shop'))
+const Evaluations   = lazy(() => import('./pages/Evaluations'))
 
 function PendingApproval({ status, onSignOut }: { status: string, onSignOut: () => void }) {
   return (
@@ -195,31 +197,37 @@ export default function App() {
 
   return (
     <>
-      <Routes>
-        <Route path="/auth" element={(!session || isResettingPassword) ? <Auth /> : <Navigate to="/" />} />
-        <Route path="/checkout" element={session ? <Checkout /> : <Navigate to="/auth" />} />
-        
-        <Route path="/" element={!session ? <LandingPage /> : (profile?.status === 'active' && !isExpired ? <Layout /> : <Navigate to="/auth" />)}>
-          <Route index element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Dashboard />} />
-          <Route path="students" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Students />} />
-          <Route path="trials" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <TrialClasses />} />
-          <Route path="financial" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : (profile?.role === 'coordinator' ? <Navigate to="/" /> : <Financial />)} />
-          <Route path="classes" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Classes />} />
-          <Route path="events" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Events />} />
-          <Route path="theaters" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Theaters />} />
-          <Route path="attendance" element={<AttendancePage />} />
-          <Route path="schedule" element={<Schedule />} />
-          <Route path="evaluations" element={<Evaluations />} />
-          <Route path="inventory" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : (['secretary', 'coordinator'].includes(profile?.role || '') ? <Navigate to="/" /> : <Inventory />)} />
-          <Route path="team" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : (['secretary', 'coordinator'].includes(profile?.role || '') ? <Navigate to="/" /> : <Team />)} />
-          <Route path="ai-consultant" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <AiConsultant />} />
-          <Route path="settings" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : (['secretary', 'coordinator'].includes(profile?.role || '') ? <Navigate to="/" /> : <SettingsPage />)} />
-          <Route path="shop" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Shop />} />
-          <Route path="admin" element={(profile?.role === 'admin' || profile?.email === 'teste@flow.com.br') ? <Admin /> : <Navigate to="/" />} />
-        </Route>
+      <Suspense fallback={
+        <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f]">
+          <QuantumLoader size={40} speed={1.75} color="#8b5cf6" />
+        </div>
+      }>
+        <Routes>
+          <Route path="/auth" element={(!session || isResettingPassword) ? <Auth /> : <Navigate to="/" />} />
+          <Route path="/checkout" element={session ? <Checkout /> : <Navigate to="/auth" />} />
+          
+          <Route path="/" element={!session ? <LandingPage /> : (profile?.status === 'active' && !isExpired ? <Layout /> : <Navigate to="/auth" />)}>
+            <Route index element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Dashboard />} />
+            <Route path="students" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Students />} />
+            <Route path="trials" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <TrialClasses />} />
+            <Route path="financial" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : (profile?.role === 'coordinator' ? <Navigate to="/" /> : <Financial />)} />
+            <Route path="classes" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Classes />} />
+            <Route path="events" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Events />} />
+            <Route path="theaters" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Theaters />} />
+            <Route path="attendance" element={<AttendancePage />} />
+            <Route path="schedule" element={<Schedule />} />
+            <Route path="evaluations" element={<Evaluations />} />
+            <Route path="inventory" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : (['secretary', 'coordinator'].includes(profile?.role || '') ? <Navigate to="/" /> : <Inventory />)} />
+            <Route path="team" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : (['secretary', 'coordinator'].includes(profile?.role || '') ? <Navigate to="/" /> : <Team />)} />
+            <Route path="ai-consultant" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <AiConsultant />} />
+            <Route path="settings" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : (['secretary', 'coordinator'].includes(profile?.role || '') ? <Navigate to="/" /> : <SettingsPage />)} />
+            <Route path="shop" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Shop />} />
+            <Route path="admin" element={(profile?.role === 'admin' || profile?.email === 'teste@flow.com.br') ? <Admin /> : <Navigate to="/" />} />
+          </Route>
 
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </Suspense>
       <CookieBanner onOpenTerms={openTerms} onOpenPrivacy={openPrivacy} />
       <PrivacyPolicyModal isOpen={policyModalOpen} onClose={() => setPolicyModalOpen(false)} initialTab={policyInitialTab} />
     </>

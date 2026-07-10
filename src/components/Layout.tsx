@@ -26,17 +26,19 @@ import {
   Map,
   GraduationCap,
 } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { gsap } from 'gsap'
 import { supabase } from '../lib/supabase'
 import { Profile } from '../types'
 import Modal from './Modal'
 import { FluidCursor } from './FluidCursor'
 import virtualDirectorUrl from '../assets/virtual_director.png'
-import Dashboard from '../pages/Dashboard'
-import Financial from '../pages/Financial'
-import AttendancePage from '../pages/Attendance'
-import Events from '../pages/Events'
+
+// Lazy imports para os previews do tour (não bloquear o chunk principal)
+const Dashboard     = lazy(() => import('../pages/Dashboard'))
+const Financial     = lazy(() => import('../pages/Financial'))
+const AttendancePage= lazy(() => import('../pages/Attendance'))
+const Events        = lazy(() => import('../pages/Events'))
 
 
 const navItems = [
@@ -2029,11 +2031,13 @@ export default function Layout() {
                         )}
 
                         <div className="scaled-tour-preview w-[333.33%] h-[333.33%] transform scale-[0.3] origin-top-left overflow-y-auto overflow-x-hidden pointer-events-none select-none pr-8 pb-8 scroll-smooth">
-                          {activeChapter.mockup === 'dashboard' && <Dashboard />}
-                          {activeChapter.mockup === 'financial' && <Financial />}
-                          {activeChapter.mockup === 'security' && <Dashboard />}
-                          {activeChapter.mockup === 'attendance' && <AttendancePage />}
-                          {activeChapter.mockup === 'events' && <Events />}
+                          <Suspense fallback={<div className="flex h-64 items-center justify-center"><div className="h-6 w-6 rounded-full border-2 border-purple-500/30 border-t-purple-500 animate-spin" /></div>}>
+                            {activeChapter.mockup === 'dashboard' && <Dashboard />}
+                            {activeChapter.mockup === 'financial' && <Financial />}
+                            {activeChapter.mockup === 'security' && <Dashboard />}
+                            {activeChapter.mockup === 'attendance' && <AttendancePage />}
+                            {activeChapter.mockup === 'events' && <Events />}
+                          </Suspense>
                         </div>
                         <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent pointer-events-none" />
                       </div>
