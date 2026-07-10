@@ -319,7 +319,7 @@ export default function Theaters() {
                   </div>
 
                   {/* Action buttons footer */}
-                  <div className="flex gap-2 justify-end mt-4 pt-3 border-t" style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}>
+                  <div className="flex gap-2 justify-center mt-4 pt-3 border-t" style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}>
                     <button 
                       onClick={(ev) => { ev.stopPropagation(); openEdit(t); }} 
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-all text-[10px] font-bold uppercase tracking-wider cursor-pointer"
