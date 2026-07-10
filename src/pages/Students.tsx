@@ -36,6 +36,7 @@ import {
 import { supabase } from '../lib/supabase'
 import { Student, MonthlyPayment, DanceClass, Attendance } from '../types'
 import Modal from '../components/Modal'
+import QuantumLoader from '../components/QuantumLoader'
 
 type PaymentFilter = 'all' | 'paid' | 'pending' | 'overdue' | 'scholarship' | 'partial_scholarship' | 'locked'
 
@@ -1158,7 +1159,7 @@ export default function Students() {
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-2xl border-2 border-transparent" style={{ borderTopColor: 'var(--accent-color)' }} />
+        <QuantumLoader size={40} speed={1.75} color="var(--accent-color)" />
       </div>
     )
   }

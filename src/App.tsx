@@ -18,6 +18,7 @@ import AiConsultant from './pages/AiConsultant'
 import Auth from './pages/Auth'
 import Admin from './pages/Admin'
 import LandingPage from './pages/LandingPage'
+import QuantumLoader from './components/QuantumLoader'
 import Checkout from './pages/Checkout'
 import Schedule from './pages/Schedule'
 import Shop from './pages/Shop'
@@ -173,7 +174,7 @@ export default function App() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f]">
-        <div className="h-12 w-12 border-4 border-purple-600/20 border-t-purple-600 rounded-full animate-spin" />
+        <QuantumLoader size={45} speed={1.75} color="#8b5cf6" />
       </div>
     )
   }

@@ -3,6 +3,7 @@ import { Plus, Edit, Trash2, Map } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { Theater } from '../types'
 import Modal from '../components/Modal'
+import QuantumLoader from '../components/QuantumLoader'
 
 export default function Theaters() {
   const [theaters, setTheaters] = useState<Theater[]>([])
@@ -187,7 +188,7 @@ export default function Theaters() {
 
       {loading ? (
         <div className="flex h-64 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-transparent" style={{ borderTopColor: 'var(--accent-color)' }} />
+          <QuantumLoader size={40} speed={1.75} color="var(--accent-color)" />
         </div>
       ) : theaters.length === 0 ? (
         <div className="max-w-2xl mx-auto w-full rounded-2xl p-8 sm:p-12 text-center border border-white/5" style={{ backgroundColor: 'var(--bg-card)' }}>
