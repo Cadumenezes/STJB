@@ -58,55 +58,50 @@ export default function Dashboard() {
   async function loadDashboard() {
     setLoading(true)
     try {
-      const { data: { user } } = await supabase.auth.getUser()
+      const today = new Date().toISOString().split('T')[0]
+      const currentYear = new Date().getFullYear()
+      const startOfYear = `${currentYear}-01-01`
+
+      // ── Todas as queries em paralelo ──────────────────────────────────────
+      const [
+        { data: { user } },
+        { count: studentCount },
+        { count: overdueCount },
+        { data: incomeData },
+        { data: expenseData },
+        { data: students },
+        { data: allFinances },
+        { data: eventsData },
+        { count: classesCount },
+      ] = await Promise.all([
+        supabase.auth.getUser(),
+        supabase.from('students').select('*', { count: 'exact', head: true }).in('status', ['active', 'scholarship', 'partial_scholarship']),
+        supabase.from('monthly_payments').select('*', { count: 'exact', head: true }).eq('status', 'overdue'),
+        supabase.from('financial_entries').select('amount').eq('type', 'income').eq('date', today),
+        supabase.from('financial_entries').select('amount').eq('type', 'expense').eq('date', today),
+        supabase.from('students').select('name, birth_date').in('status', ['active', 'scholarship', 'partial_scholarship']),
+        supabase.from('financial_entries').select('*').gte('date', startOfYear),
+        supabase.from('events').select('*').order('date', { ascending: true }),
+        supabase.from('dance_classes').select('*', { count: 'exact', head: true }),
+      ])
+      // ─────────────────────────────────────────────────────────────────────
+
+      // Profile (separado pois depende do user)
       if (user) {
         const { data: profileData } = await supabase.from('profiles').select('*').eq('id', user.id).single()
         setProfile(profileData)
       }
-      
-      // Total students
-      const { count: studentCount } = await supabase
-        .from('students')
-        .select('*', { count: 'exact', head: true })
-        .in('status', ['active', 'scholarship', 'partial_scholarship'])
 
-      // Overdue payments
-      const today = new Date().toISOString().split('T')[0]
-      const { count: overdueCount } = await supabase
-        .from('monthly_payments')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'overdue')
-
-      // Today's income
-      const { data: incomeData } = await supabase
-        .from('financial_entries')
-        .select('amount')
-        .eq('type', 'income')
-        .eq('date', today)
-
-      const todayIncome = incomeData?.reduce((sum, e) => sum + Number(e.amount), 0) || 0
-
-      // Today's expenses
-      const { data: expenseData } = await supabase
-        .from('financial_entries')
-        .select('amount')
-        .eq('type', 'expense')
-        .eq('date', today)
-
+      const todayIncome  = incomeData?.reduce((sum, e) => sum + Number(e.amount), 0) || 0
       const todayExpense = expenseData?.reduce((sum, e) => sum + Number(e.amount), 0) || 0
 
-      // Birthdays this week
+      // Aniversários da semana
       const now = new Date()
       const dayOfWeek = now.getDay()
       const startOfWeek = new Date(now)
       startOfWeek.setDate(now.getDate() - dayOfWeek)
       const endOfWeek = new Date(startOfWeek)
       endOfWeek.setDate(startOfWeek.getDate() + 6)
-
-      const { data: students } = await supabase
-        .from('students')
-        .select('name, birth_date')
-        .in('status', ['active', 'scholarship', 'partial_scholarship'])
 
       const birthdaysThisWeek = (students || []).filter((s) => {
         if (!s.birth_date) return false
@@ -115,50 +110,33 @@ export default function Dashboard() {
         return thisYearBday >= startOfWeek && thisYearBday <= endOfWeek
       })
 
-      // Fetch current year data (from January 1st of current year)
-      const currentYear = new Date().getFullYear();
-      const startOfYear = `${currentYear}-01-01`;
-      const { data: allFinances } = await supabase
-          .from('financial_entries')
-          .select('*')
-          .gte('date', startOfYear);
-
-      const monthlyDataMap: Record<string, any> = {};
-      
-      // Initialize January to December of the current year
+      // Gráfico mensal
+      const monthlyDataMap: Record<string, any> = {}
       for (let month = 0; month < 12; month++) {
-        const d = new Date(currentYear, month, 1);
-        const monthStr = d.toISOString().slice(0, 7);
-        const monthLabel = d.toLocaleDateString('pt-BR', { month: 'short' }).toUpperCase();
-        monthlyDataMap[monthStr] = { name: monthLabel, Entradas: 0, Saídas: 0, fullMonth: monthStr };
+        const d = new Date(currentYear, month, 1)
+        const monthStr = d.toISOString().slice(0, 7)
+        const monthLabel = d.toLocaleDateString('pt-BR', { month: 'short' }).toUpperCase()
+        monthlyDataMap[monthStr] = { name: monthLabel, Entradas: 0, Saídas: 0, fullMonth: monthStr }
       }
-
       if (allFinances) {
         allFinances.forEach(entry => {
-          const monthStr = entry.date.slice(0, 7);
+          const monthStr = entry.date.slice(0, 7)
           if (monthlyDataMap[monthStr]) {
-            if (entry.type === 'income') monthlyDataMap[monthStr].Entradas += Number(entry.amount);
-            else if (entry.type === 'expense') monthlyDataMap[monthStr].Saídas += Number(entry.amount);
+            if (entry.type === 'income') monthlyDataMap[monthStr].Entradas += Number(entry.amount)
+            else if (entry.type === 'expense') monthlyDataMap[monthStr].Saídas += Number(entry.amount)
           }
-        });
+        })
       }
+      const monthlyChartData = Object.values(monthlyDataMap).sort((a, b) => a.fullMonth.localeCompare(b.fullMonth))
 
-      const monthlyChartData = Object.values(monthlyDataMap).sort((a, b) => a.fullMonth.localeCompare(b.fullMonth));
-
-      // Fetch events with photos
-      const { data: eventsData } = await supabase.from('events').select('*').order('date', { ascending: true })
+      // Eventos com fotos
       const filteredEvents = (eventsData || []).filter(e => e.photo_urls && e.photo_urls.length > 0)
       setEventsWithPhotos(filteredEvents)
 
-      // Fetch total active classes
-      const { count: classesCount } = await supabase
-        .from('dance_classes')
-        .select('*', { count: 'exact', head: true })
-
       setData({
-        totalStudents: studentCount || 0,
+        totalStudents:   studentCount || 0,
         overduePayments: overdueCount || 0,
-        cashFlowToday: todayIncome - todayExpense,
+        cashFlowToday:   todayIncome - todayExpense,
         todayIncome,
         todayExpense,
         birthdaysThisWeek,
