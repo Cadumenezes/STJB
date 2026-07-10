@@ -499,12 +499,11 @@ export default function Theaters() {
                     
                     {/* PALCO / TELA */}
                     <div 
-                      className="w-full self-stretch py-1.5 mb-2 rounded-b-xl border-b-2 text-center text-[9px] font-black uppercase tracking-widest text-white/70 shadow-lg shrink-0"
+                      className="w-full max-w-[180px] py-1.5 mb-2 rounded-b-xl border-b-2 text-center text-[9px] font-black uppercase tracking-widest text-white/70 shadow-lg shrink-0"
                       style={{ 
                         background: 'linear-gradient(to bottom, rgba(139,92,246,0.1), rgba(139,92,246,0.25))',
                         borderBottomColor: 'var(--accent-color)',
-                        boxShadow: '0 5px 15px -5px rgba(139,92,246,0.3)',
-                        minWidth: '200px'
+                        boxShadow: '0 5px 15px -5px rgba(139,92,246,0.3)'
                       }}
                     >
                       PALCO / TELA
@@ -688,12 +687,11 @@ export default function Theaters() {
                   <div className="flex flex-col gap-2.5 mx-auto py-2 px-2 w-fit items-center">
                     {/* PALCO / TELA */}
                     <div 
-                      className="w-full self-stretch py-2 mb-2 rounded-b-xl border-b-2 text-center text-[10px] font-black uppercase tracking-widest text-white/70 shadow-lg shrink-0"
+                      className="w-full max-w-[220px] py-2 mb-2 rounded-b-xl border-b-2 text-center text-[10px] font-black uppercase tracking-widest text-white/70 shadow-lg shrink-0"
                       style={{ 
                         background: 'linear-gradient(to bottom, rgba(139,92,246,0.1), rgba(139,92,246,0.25))',
                         borderBottomColor: 'var(--accent-color)',
-                        boxShadow: '0 5px 15px -5px rgba(139,92,246,0.3)',
-                        minWidth: '200px'
+                        boxShadow: '0 5px 15px -5px rgba(139,92,246,0.3)'
                       }}
                     >
                       PALCO / TELA

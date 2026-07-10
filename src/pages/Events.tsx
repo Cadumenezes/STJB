@@ -2254,12 +2254,11 @@ export default function Events() {
                             <div className="flex flex-col gap-2.5 mx-auto py-2 px-2 w-fit items-center">
                               {/* Stage */}
                               <div 
-                                className="w-full self-stretch py-3 mb-2 rounded-b-2xl border-b-2 text-center text-xs font-black uppercase tracking-widest text-white/70 shadow-lg shrink-0 select-none"
+                                className="w-full max-w-[240px] py-3 mb-2 rounded-b-2xl border-b-2 text-center text-xs font-black uppercase tracking-widest text-white/70 shadow-lg shrink-0 select-none"
                                 style={{ 
                                   background: 'linear-gradient(to bottom, color-mix(in srgb, var(--accent-color) 8%, transparent), color-mix(in srgb, var(--accent-color) 20%, transparent))',
                                   borderBottomColor: 'var(--accent-color)',
-                                  boxShadow: '0 8px 20px -8px color-mix(in srgb, var(--accent-color) 30%, transparent)',
-                                  minWidth: '250px'
+                                  boxShadow: '0 8px 20px -8px color-mix(in srgb, var(--accent-color) 30%, transparent)'
                                 }}
                               >
                                 PALCO / TELA
@@ -3514,12 +3513,11 @@ export default function Events() {
                   <div className="flex flex-col gap-2 mx-auto py-1 px-1 w-fit items-center">
                     {/* Stage */}
                     <div 
-                      className="w-full self-stretch py-2 mb-2 rounded-b-xl border-b-2 text-center text-[10px] font-black uppercase tracking-widest text-white/70 shadow-lg shrink-0"
+                      className="w-full max-w-[200px] py-2 mb-2 rounded-b-xl border-b-2 text-center text-[10px] font-black uppercase tracking-widest text-white/70 shadow-lg shrink-0"
                       style={{ 
                         background: 'linear-gradient(to bottom, rgba(139,92,246,0.1), rgba(139,92,246,0.25))',
                         borderBottomColor: 'var(--accent-color)',
-                        boxShadow: '0 5px 15px -5px rgba(139,92,246,0.3)',
-                        minWidth: '200px'
+                        boxShadow: '0 5px 15px -5px rgba(139,92,246,0.3)'
                       }}
                     >
                       PALCO / TELA
