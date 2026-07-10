@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useOutletContext } from 'react-router-dom'
 import { Save, Settings, Upload, FileText, Calendar, Code, GraduationCap, Shield, Lock, AlertTriangle, Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
@@ -33,6 +33,10 @@ Direção Geral`;
 
 export default function SettingsPage() {
   const navigate = useNavigate()
+  const { fluidCursorEnabled, setFluidCursorEnabled } = useOutletContext<{
+    fluidCursorEnabled: boolean;
+    setFluidCursorEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+  }>()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [settingsId, setSettingsId] = useState<string | null>(null)
@@ -827,6 +831,22 @@ export default function SettingsPage() {
                         </div>
                       )}
                       
+                      <div className="pt-4 border-t mt-4" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <span className="text-sm font-bold block" style={{ color: 'var(--text-primary)' }}>Cursor Fluido ✨</span>
+                            <span className="text-[10px] block mt-0.5" style={{ color: 'var(--text-muted)' }}>Rastro interativo de fumaça colorida.</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setFluidCursorEnabled(!fluidCursorEnabled)}
+                            className={`w-10 h-5 rounded-full transition-all relative ${fluidCursorEnabled ? 'bg-purple-650' : 'bg-white/10'}`}
+                          >
+                            <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${fluidCursorEnabled ? 'right-0.5' : 'left-0.5'}`} />
+                          </button>
+                        </div>
+                      </div>
+
                       <button
                         type="button"
                         onClick={handleRestoreDefaultColors}
