@@ -2,26 +2,6 @@ import React, { useEffect, useRef } from 'react';
 // @ts-ignore
 import WebGLFluid from 'webgl-fluid';
 
-// Custom MouseEvent subclass to safely override offsetX and offsetY
-class CustomMouseEvent extends MouseEvent {
-  private _offsetX: number;
-  private _offsetY: number;
-
-  constructor(type: string, dict: MouseEventInit & { offsetX: number; offsetY: number }) {
-    super(type, dict);
-    this._offsetX = dict.offsetX;
-    this._offsetY = dict.offsetY;
-  }
-
-  get offsetX() {
-    return this._offsetX;
-  }
-
-  get offsetY() {
-    return this._offsetY;
-  }
-}
-
 interface FluidCursorProps {
   enabled?: boolean;
   densityDissipation?: number;
@@ -95,17 +75,19 @@ export const FluidCursor: React.FC<FluidCursorProps> = ({
         const offsetX = e.clientX - rect.left;
         const offsetY = e.clientY - rect.top;
 
-        // Use CustomMouseEvent subclass to avoid TypeError on read-only offsetX/offsetY
-        const event = new CustomMouseEvent(type, {
-          clientX: e.clientX,
-          clientY: e.clientY,
-          screenX: e.screenX,
-          screenY: e.screenY,
+        // Dispatch a plain Event instead of MouseEvent to prevent the browser from overriding offsetX/offsetY
+        const event = new Event(type, {
           bubbles: true,
           cancelable: true,
-          buttons: e.buttons,
-          offsetX,
-          offsetY,
+        });
+
+        // Define properties directly on the event object
+        Object.defineProperties(event, {
+          offsetX: { value: offsetX, writable: true, enumerable: true, configurable: true },
+          offsetY: { value: offsetY, writable: true, enumerable: true, configurable: true },
+          clientX: { value: e.clientX, writable: true, enumerable: true, configurable: true },
+          clientY: { value: e.clientY, writable: true, enumerable: true, configurable: true },
+          buttons: { value: e.buttons, writable: true, enumerable: true, configurable: true },
         });
 
         canvas.dispatchEvent(event);
