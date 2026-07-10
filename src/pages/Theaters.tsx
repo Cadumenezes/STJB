@@ -239,7 +239,18 @@ export default function Theaters() {
                         <Map size={22} style={{ color: 'var(--accent-color)' }} />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h3 className="text-base font-black text-white uppercase tracking-tight line-clamp-1">{t.name}</h3>
+                        <h3 
+                          className="text-base font-black text-white uppercase tracking-tight"
+                          style={{ 
+                            overflow: 'hidden', 
+                            textOverflow: 'ellipsis', 
+                            whiteSpace: 'nowrap',
+                            display: 'block',
+                            width: '100%'
+                          }}
+                        >
+                          {t.name}
+                        </h3>
                         <p className="text-[10px] uppercase font-bold tracking-widest text-purple-400 mt-0.5">{totalSeatsCount} Poltronas</p>
                       </div>
                     </div>
