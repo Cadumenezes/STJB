@@ -2250,7 +2250,7 @@ export default function Events() {
                           </div>
 
                           {/* Seating Grid */}
-                          <div className="w-full overflow-auto max-h-[450px] py-2 custom-scrollbar flex flex-col">
+                          <div className="w-full overflow-auto max-h-[450px] py-2 custom-scrollbar flex flex-col items-center">
                             <div className="flex flex-col gap-2.5 mx-auto py-2 px-2 w-fit items-center">
                               {/* Stage */}
                               <div 
@@ -3509,7 +3509,7 @@ export default function Events() {
               {/* Palco glow layout */}
               <div className="flex-1 flex flex-col items-center justify-center p-6 rounded-3xl border border-white/5 relative overflow-hidden" style={{ backgroundColor: 'var(--bg-secondary)' }}>
                 {/* Seating Grid Wrapper */}
-                <div className="w-full overflow-auto max-h-80 py-1 custom-scrollbar flex flex-col">
+                <div className="w-full overflow-auto max-h-80 py-1 custom-scrollbar flex flex-col items-center">
                   <div className="flex flex-col gap-2 mx-auto py-1 px-1 w-fit items-center">
                     {/* Stage */}
                     <div 
@@ -3789,7 +3789,7 @@ export default function Events() {
                 ) : (
                   <>
                     {/* Seating Grid */}
-                    <div className="w-full overflow-auto max-h-[380px] py-2 custom-scrollbar flex flex-col">
+                    <div className="w-full overflow-auto max-h-[380px] py-2 custom-scrollbar flex flex-col items-center">
                       <div className="flex flex-col gap-2.5 mx-auto py-2 px-2 w-fit items-center">
                         {/* Stage */}
                         <div 
