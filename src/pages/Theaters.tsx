@@ -254,22 +254,6 @@ export default function Theaters() {
                         <p className="text-[10px] uppercase font-bold tracking-widest text-purple-400 mt-0.5">{totalSeatsCount} Poltronas</p>
                       </div>
                     </div>
-                    
-                    {/* Action buttons */}
-                    <div className="flex gap-1 shrink-0">
-                      <button 
-                        onClick={(ev) => { ev.stopPropagation(); openEdit(t); }} 
-                        className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-all cursor-pointer"
-                      >
-                        <Edit size={14} />
-                      </button>
-                      <button 
-                        onClick={(ev) => { ev.stopPropagation(); handleDelete(t.id); }} 
-                        className="p-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 transition-all cursor-pointer"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
                   </div>
 
                   {/* Config details tags */}
@@ -332,6 +316,24 @@ export default function Theaters() {
                         </div>
                       )}
                     </div>
+                  </div>
+
+                  {/* Action buttons footer */}
+                  <div className="flex gap-2 justify-end mt-4 pt-3 border-t" style={{ borderColor: 'rgba(255, 255, 255, 0.05)' }}>
+                    <button 
+                      onClick={(ev) => { ev.stopPropagation(); openEdit(t); }} 
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-all text-[10px] font-bold uppercase tracking-wider cursor-pointer"
+                    >
+                      <Edit size={12} />
+                      Editar
+                    </button>
+                    <button 
+                      onClick={(ev) => { ev.stopPropagation(); handleDelete(t.id); }} 
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 transition-all text-[10px] font-bold uppercase tracking-wider cursor-pointer"
+                    >
+                      <Trash2 size={12} />
+                      Excluir
+                    </button>
                   </div>
                 </div>
               </div>
