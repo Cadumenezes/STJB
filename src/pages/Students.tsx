@@ -1430,7 +1430,7 @@ export default function Students() {
 
       {/* Search & Filter */}
       <div className="flex flex-col gap-4 sm:flex-row" style={{ marginBottom: '20px' }}>
-        <div className="flex flex-1 items-center gap-3 rounded-xl px-4 py-2.5 border" style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border-color)' }}>
+        <div className="flex flex-1 items-center gap-3 rounded-xl px-4 py-3.5 border" style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border-color)' }}>
           <Search size={18} className="shrink-0" style={{ color: 'var(--text-muted)' }} />
           <input
             placeholder="Buscar aluno por nome ou email..."
@@ -1440,7 +1440,7 @@ export default function Students() {
             style={{ color: 'var(--text-primary)' }}
           />
         </div>
-        <div className="flex items-center gap-3 rounded-xl px-4 py-2.5 border" style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border-color)' }}>
+        <div className="flex items-center gap-3 rounded-xl px-4 py-3.5 border" style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border-color)' }}>
           <Filter size={18} className="shrink-0" style={{ color: 'var(--text-muted)' }} />
           <select
             value={paymentFilter}
