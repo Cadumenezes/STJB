@@ -1284,7 +1284,7 @@ export default function Layout() {
                   onMouseEnter={handleIconHover}
                   onMouseLeave={handleIconLeave}
                   className={({ isActive }) =>
-                    `flex items-center justify-center gap-3 rounded-2xl px-3 py-2 text-base font-semibold transition-all duration-200 ${
+                    `flex items-center gap-3 rounded-2xl pl-10 pr-4 py-2 text-base font-semibold transition-all duration-200 ${
                       isActive ? 'shadow-lg' : 'hover:opacity-80'
                     }`
                   }
@@ -1305,7 +1305,7 @@ export default function Layout() {
                 onMouseEnter={handleIconHover}
                 onMouseLeave={handleIconLeave}
                 className={({ isActive }) =>
-                  `flex items-center justify-center gap-3 rounded-2xl px-3 py-2 text-base font-semibold transition-all duration-200 ${
+                  `flex items-center gap-3 rounded-2xl pl-10 pr-4 py-2 text-base font-semibold transition-all duration-200 ${
                     isActive ? 'shadow-lg' : 'hover:opacity-80'
                   }`
                 }
@@ -1323,7 +1323,7 @@ export default function Layout() {
               onClick={() => { setTourStep(0); setShowTour(true); setSidebarOpen(false); }}
               onMouseEnter={handleIconHover}
               onMouseLeave={handleIconLeave}
-              className="flex w-full items-center justify-center gap-3 rounded-2xl px-3 py-2 text-base font-semibold text-[var(--text-secondary)] hover:opacity-80 transition-all duration-200 cursor-pointer"
+              className="flex w-full items-center gap-3 rounded-2xl pl-10 pr-4 py-2 text-base font-semibold text-[var(--text-secondary)] hover:opacity-80 transition-all duration-200 cursor-pointer"
             >
               <Sparkles size={20} className="text-purple-450 menu-icon-animate icon-spin" />
               Reassistir Tour 🎬
@@ -1336,7 +1336,7 @@ export default function Layout() {
               onClick={() => supabase.auth.signOut()}
               onMouseEnter={handleIconHover}
               onMouseLeave={handleIconLeave}
-              className="flex w-full items-center justify-center gap-3 rounded-2xl px-3 py-2 text-sm font-semibold text-rose-400 hover:bg-rose-500/10 transition-all duration-200"
+              className="flex w-full items-center gap-3 rounded-2xl pl-10 pr-4 py-2 text-sm font-semibold text-rose-400 hover:bg-rose-500/10 transition-all duration-200"
             >
               <LogOut size={20} className="menu-icon-animate icon-slide" />
               Sair do Sistema
