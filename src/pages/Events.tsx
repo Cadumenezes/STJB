@@ -2254,7 +2254,7 @@ export default function Events() {
                             <div className="flex flex-col gap-2.5 mx-auto py-2 px-2 w-fit items-center">
                               {/* Stage */}
                               <div 
-                                className="w-full py-3 mb-2 rounded-b-2xl border-b-2 text-center text-xs font-black uppercase tracking-widest text-white/70 shadow-lg shrink-0 select-none"
+                                className="w-full self-stretch py-3 mb-2 rounded-b-2xl border-b-2 text-center text-xs font-black uppercase tracking-widest text-white/70 shadow-lg shrink-0 select-none"
                                 style={{ 
                                   background: 'linear-gradient(to bottom, color-mix(in srgb, var(--accent-color) 8%, transparent), color-mix(in srgb, var(--accent-color) 20%, transparent))',
                                   borderBottomColor: 'var(--accent-color)',
@@ -2267,7 +2267,7 @@ export default function Events() {
 
                               {/* Corridor between Stage and first row */}
                               <div 
-                                className="w-full py-2.5 mb-4 border-y border-dashed border-white/10 text-[9px] text-[var(--text-muted)] uppercase tracking-widest font-black shrink-0 text-center select-none bg-white/[0.01]"
+                                className="w-full self-stretch py-2.5 mb-4 border-y border-dashed border-white/10 text-[9px] text-[var(--text-muted)] uppercase tracking-widest font-black shrink-0 text-center select-none bg-white/[0.01]"
                                 style={{ minWidth: '250px' }}
                               >
                                 🛣️ Corredor de Acesso ao Palco
@@ -3514,7 +3514,7 @@ export default function Events() {
                   <div className="flex flex-col gap-2 mx-auto py-1 px-1 w-fit items-center">
                     {/* Stage */}
                     <div 
-                      className="w-full py-2 mb-2 rounded-b-xl border-b-2 text-center text-[10px] font-black uppercase tracking-widest text-white/70 shadow-lg shrink-0"
+                      className="w-full self-stretch py-2 mb-2 rounded-b-xl border-b-2 text-center text-[10px] font-black uppercase tracking-widest text-white/70 shadow-lg shrink-0"
                       style={{ 
                         background: 'linear-gradient(to bottom, rgba(139,92,246,0.1), rgba(139,92,246,0.25))',
                         borderBottomColor: 'var(--accent-color)',
@@ -3527,7 +3527,7 @@ export default function Events() {
 
                     {/* Corridor between Stage and first row */}
                     <div 
-                      className="w-full py-1.5 mb-3 border-y border-dashed border-white/10 text-[8px] text-gray-500 uppercase tracking-widest font-black shrink-0 text-center select-none bg-white/[0.01]"
+                      className="w-full self-stretch py-1.5 mb-3 border-y border-dashed border-white/10 text-[8px] text-gray-500 uppercase tracking-widest font-black shrink-0 text-center select-none bg-white/[0.01]"
                       style={{ minWidth: '200px' }}
                     >
                       🛣️ Corredor de Acesso ao Palco

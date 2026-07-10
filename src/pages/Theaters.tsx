@@ -499,7 +499,7 @@ export default function Theaters() {
                     
                     {/* PALCO / TELA */}
                     <div 
-                      className="w-full py-1.5 mb-2 rounded-b-xl border-b-2 text-center text-[9px] font-black uppercase tracking-widest text-white/70 shadow-lg shrink-0"
+                      className="w-full self-stretch py-1.5 mb-2 rounded-b-xl border-b-2 text-center text-[9px] font-black uppercase tracking-widest text-white/70 shadow-lg shrink-0"
                       style={{ 
                         background: 'linear-gradient(to bottom, rgba(139,92,246,0.1), rgba(139,92,246,0.25))',
                         borderBottomColor: 'var(--accent-color)',
@@ -512,7 +512,7 @@ export default function Theaters() {
 
                     {/* Corridor between Stage and first row */}
                     <div 
-                      className="w-full py-1.5 mb-3 border-y border-dashed border-white/10 text-[8px] text-gray-500 uppercase tracking-widest font-black shrink-0 text-center select-none bg-white/[0.01]"
+                      className="w-full self-stretch py-1.5 mb-3 border-y border-dashed border-white/10 text-[8px] text-gray-500 uppercase tracking-widest font-black shrink-0 text-center select-none bg-white/[0.01]"
                       style={{ minWidth: '200px' }}
                     >
                       <SplitSquareHorizontal size={16} className="inline mr-2" /> Corredor de Acesso ao Palco
@@ -688,7 +688,7 @@ export default function Theaters() {
                   <div className="flex flex-col gap-2.5 mx-auto py-2 px-2 w-fit items-center">
                     {/* PALCO / TELA */}
                     <div 
-                      className="w-full py-2 mb-2 rounded-b-xl border-b-2 text-center text-[10px] font-black uppercase tracking-widest text-white/70 shadow-lg shrink-0"
+                      className="w-full self-stretch py-2 mb-2 rounded-b-xl border-b-2 text-center text-[10px] font-black uppercase tracking-widest text-white/70 shadow-lg shrink-0"
                       style={{ 
                         background: 'linear-gradient(to bottom, rgba(139,92,246,0.1), rgba(139,92,246,0.25))',
                         borderBottomColor: 'var(--accent-color)',
@@ -701,7 +701,7 @@ export default function Theaters() {
 
                     {/* Corridor between Stage and first row */}
                     <div 
-                      className="w-full py-1.5 mb-3 border-y border-dashed border-white/10 text-[8px] text-gray-500 uppercase tracking-widest font-black shrink-0 text-center select-none bg-white/[0.01]"
+                      className="w-full self-stretch py-1.5 mb-3 border-y border-dashed border-white/10 text-[8px] text-gray-500 uppercase tracking-widest font-black shrink-0 text-center select-none bg-white/[0.01]"
                       style={{ minWidth: '200px' }}
                     >
                       <SplitSquareHorizontal size={16} className="inline mr-2" /> Corredor de Acesso ao Palco
