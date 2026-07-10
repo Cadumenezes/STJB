@@ -231,9 +231,9 @@ export default function Theaters() {
                 className="group rounded-3xl border border-white/5 p-6 hover:border-purple-500/50 transition-all duration-300 hover:shadow-2xl hover:scale-[1.02] flex flex-col justify-between cursor-pointer"
                 style={{ backgroundColor: 'var(--bg-card)' }}
               >
-                <div>
+                <div className="w-full overflow-hidden">
                   {/* Card Title & Info */}
-                  <div className="flex items-start justify-between gap-4 mb-4">
+                  <div className="flex items-start justify-between gap-4 mb-4 min-w-0">
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                       <div className="rounded-2xl p-3 bg-purple-500/10 border border-purple-500/20 group-hover:bg-purple-500/20 transition-all shrink-0">
                         <Map size={22} style={{ color: 'var(--accent-color)' }} />
