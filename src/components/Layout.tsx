@@ -256,14 +256,8 @@ export default function Layout() {
   const [helpTab, setHelpTab] = useState<'manual' | 'feedback'>('manual')
   const [activeManualChapter, setActiveManualChapter] = useState(0)
 
-  // Fluid Cursor Global State
-  const [fluidCursorEnabled, setFluidCursorEnabled] = useState(() => {
-    return localStorage.getItem('fluidCursorEnabled') === 'true'
-  })
-
-  useEffect(() => {
-    localStorage.setItem('fluidCursorEnabled', String(fluidCursorEnabled))
-  }, [fluidCursorEnabled])
+  // Fluid Cursor Global State (always starts disabled inside the client dashboard)
+  const [fluidCursorEnabled, setFluidCursorEnabled] = useState(false)
 
   // IA Diagnostics Simulation HUD State
   const [showSimulator, setShowSimulator] = useState(false)
