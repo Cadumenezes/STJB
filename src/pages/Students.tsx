@@ -1429,7 +1429,7 @@ export default function Students() {
       </div>
 
       {/* Search & Filter */}
-      <div className="flex flex-col gap-4 sm:flex-row mb-12">
+      <div className="flex flex-col gap-4 sm:flex-row" style={{ marginBottom: '20px' }}>
         <div className="flex flex-1 items-center gap-3 rounded-xl px-4 py-2.5 border" style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border-color)' }}>
           <Search size={18} className="shrink-0" style={{ color: 'var(--text-muted)' }} />
           <input
