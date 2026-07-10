@@ -736,9 +736,22 @@ export default function Schedule() {
               <>
                 <button
                   onClick={() => setShowHolidayModal(true)}
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-xs font-black uppercase tracking-widest text-purple-300 hover:text-white border border-purple-500/30 hover:bg-purple-600/10 hover:scale-105 active:scale-95 transition-all cursor-pointer bg-black/20"
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-xs font-black uppercase tracking-widest text-white border transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-lg"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(236, 72, 153, 0.2))',
+                    borderColor: 'rgba(139, 92, 246, 0.5)',
+                    boxShadow: '0 4px 15px rgba(139, 92, 246, 0.15)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'linear-gradient(135deg, rgba(139, 92, 246, 0.35), rgba(236, 72, 153, 0.35))';
+                    e.currentTarget.style.boxShadow = '0 6px 20px rgba(139, 92, 246, 0.3)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(236, 72, 153, 0.2))';
+                    e.currentTarget.style.boxShadow = '0 4px 15px rgba(139, 92, 246, 0.15)';
+                  }}
                 >
-                  <CalendarIcon size={16} />
+                  <CalendarIcon size={16} className="text-purple-300" />
                   Gerenciar Feriados
                 </button>
                 <button
