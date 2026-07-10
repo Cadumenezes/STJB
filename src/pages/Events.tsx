@@ -3793,12 +3793,11 @@ export default function Events() {
                       <div className="flex flex-col gap-2.5 mx-auto py-2 px-2 w-fit items-center">
                         {/* Stage */}
                         <div 
-                          className="w-full py-3 mb-2 rounded-b-2xl border-b-2 text-center text-xs font-black uppercase tracking-widest text-white/70 shadow-lg shrink-0 select-none"
+                          className="w-full max-w-[240px] py-3 mb-2 rounded-b-2xl border-b-2 text-center text-xs font-black uppercase tracking-widest text-white/70 shadow-lg shrink-0 select-none"
                           style={{ 
                             background: 'linear-gradient(to bottom, color-mix(in srgb, var(--accent-color) 8%, transparent), color-mix(in srgb, var(--accent-color) 20%, transparent))',
                             borderBottomColor: 'var(--accent-color)',
-                            boxShadow: '0 8px 20px -8px color-mix(in srgb, var(--accent-color) 30%, transparent)',
-                            minWidth: '200px'
+                            boxShadow: '0 8px 20px -8px color-mix(in srgb, var(--accent-color) 30%, transparent)'
                           }}
                         >
                           PALCO / TELA
@@ -3806,7 +3805,7 @@ export default function Events() {
 
                         {/* Access Corridor */}
                         <div 
-                          className="w-full py-2.5 mb-4 border-y border-dashed border-white/10 text-[9px] text-[var(--text-muted)] uppercase tracking-widest font-black shrink-0 text-center select-none bg-white/[0.01]"
+                          className="w-full self-stretch py-2.5 mb-4 border-y border-dashed border-white/10 text-[9px] text-[var(--text-muted)] uppercase tracking-widest font-black shrink-0 text-center select-none bg-white/[0.01]"
                           style={{ minWidth: '200px' }}
                         >
                           🛣️ Corredor de Acesso ao Palco
