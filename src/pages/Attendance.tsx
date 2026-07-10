@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { ClipboardCheck, Check, X, Clock, Users, Calendar } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { DanceClass, Student } from '../types'
+import QuantumLoader from '../components/QuantumLoader'
 
 export default function AttendancePage() {
   const [classes, setClasses] = useState<DanceClass[]>([])
@@ -393,8 +394,8 @@ export default function AttendancePage() {
                 </div>
 
                 {loading ? (
-                  <div className="flex flex-col items-center justify-center py-12">
-                    <div className="h-8 w-8 border-2 border-purple-500/20 border-t-purple-500 rounded-full animate-spin mb-3" />
+                  <div className="flex flex-col items-center justify-center py-12 gap-3">
+                    <QuantumLoader size={30} speed={1.75} color="var(--accent-color)" />
                     <span className="text-xs text-gray-400">Buscando alunos...</span>
                   </div>
                 ) : students.length === 0 ? (

@@ -4,6 +4,7 @@ import { Plus, Edit, Trash2, Printer, Save, FileText, ClipboardCheck, ArrowRight
 import { supabase } from '../lib/supabase'
 import { Student, Exam, ExamGrade, DanceClass } from '../types'
 import Modal from '../components/Modal'
+import QuantumLoader from '../components/QuantumLoader'
 
 export default function Evaluations() {
   const [profile, setProfile] = useState<any>(null)
@@ -443,7 +444,7 @@ export default function Evaluations() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="h-12 w-12 border-4 border-purple-600/20 border-t-purple-600 rounded-full animate-spin" />
+        <QuantumLoader size={45} speed={1.75} color="var(--accent-color)" />
       </div>
     )
   }

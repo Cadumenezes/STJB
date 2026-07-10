@@ -6,6 +6,7 @@ import {
 import { supabase } from '../lib/supabase'
 import { TrialClass, DanceClass } from '../types'
 import Modal from '../components/Modal'
+import QuantumLoader from '../components/QuantumLoader'
 
 export default function TrialClasses() {
   const [trials, setTrials] = useState<TrialClass[]>([])
@@ -96,7 +97,7 @@ export default function TrialClasses() {
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-transparent" style={{ borderTopColor: 'var(--accent-color)' }} />
+        <QuantumLoader size={40} speed={1.75} color="var(--accent-color)" />
       </div>
     )
   }

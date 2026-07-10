@@ -3,6 +3,7 @@ import { Plus, Edit, Trash2, Calendar, MapPin, DollarSign, Users, Download, Plus
 import { supabase } from '../lib/supabase'
 import { Event, EventParticipant, Student, Installment, Profile, EventSession, SeatingMapConfig, Theater, EventExpense } from '../types'
 import Modal from '../components/Modal'
+import QuantumLoader from '../components/QuantumLoader'
 
 export default function Events() {
   const [events, setEvents] = useState<Event[]>([])
@@ -1090,7 +1091,7 @@ export default function Events() {
   if (loading && events.length === 0) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-transparent" style={{ borderTopColor: 'var(--accent-color)' }} />
+        <QuantumLoader size={40} speed={1.75} color="var(--accent-color)" />
       </div>
     )
   }

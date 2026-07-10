@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Users, AlertTriangle, DollarSign, Cake, TrendingUp, TrendingDown, Calendar, Image as ImageIcon, BookOpen } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts'
 import { supabase } from '../lib/supabase'
+import QuantumLoader from '../components/QuantumLoader'
 
 interface DashboardData {
   totalStudents: number
@@ -230,7 +231,7 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-transparent" style={{ borderTopColor: 'var(--accent-color)' }} />
+        <QuantumLoader size={40} speed={1.75} color="var(--accent-color)" />
       </div>
     )
   }

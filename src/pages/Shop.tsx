@@ -3,6 +3,7 @@ import { ShoppingBag, Search, Plus, Minus, Check, AlertCircle } from 'lucide-rea
 import { supabase } from '../lib/supabase'
 import { Product, Profile } from '../types'
 import Modal from '../components/Modal'
+import QuantumLoader from '../components/QuantumLoader'
 
 export default function Shop() {
   const [products, setProducts] = useState<Product[]>([])
@@ -259,7 +260,7 @@ export default function Shop() {
 
       {loading ? (
         <div className="flex items-center justify-center p-20">
-          <div className="h-12 w-12 border-4 border-purple-600/20 border-t-purple-600 rounded-full animate-spin" />
+          <QuantumLoader size={45} speed={1.75} color="var(--accent-color)" />
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

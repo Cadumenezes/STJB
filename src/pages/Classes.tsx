@@ -3,6 +3,7 @@ import { Plus, Edit, Trash2, Users, Music, UserCheck, Clock } from 'lucide-react
 import { supabase } from '../lib/supabase'
 import { DanceClass, TeamMember, Student, Profile } from '../types'
 import Modal from '../components/Modal'
+import QuantumLoader from '../components/QuantumLoader'
 
 export default function Classes() {
   const [classes, setClasses] = useState<DanceClass[]>([])
@@ -201,7 +202,7 @@ export default function Classes() {
   if (loading && classes.length === 0) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-transparent" style={{ borderTopColor: 'var(--accent-color)' }} />
+        <QuantumLoader size={40} speed={1.75} color="var(--accent-color)" />
       </div>
     )
   }

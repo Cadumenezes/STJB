@@ -9,6 +9,7 @@ import {
 import { supabase } from '../lib/supabase'
 import { FinancialEntry, Student, MonthlyPayment } from '../types'
 import Modal from '../components/Modal'
+import QuantumLoader from '../components/QuantumLoader'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts'
 
 interface FixedBill {
@@ -955,7 +956,7 @@ export default function Financial() {
   if (loading && entries.length === 0 && payrollData.length === 0) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-transparent" style={{ borderTopColor: 'var(--accent-color)' }} />
+        <QuantumLoader size={40} speed={1.75} color="var(--accent-color)" />
       </div>
     )
   }

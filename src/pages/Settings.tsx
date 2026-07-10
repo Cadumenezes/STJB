@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useOutletContext } from 'react-router-dom'
 import { Save, Settings, Upload, FileText, Calendar, Code, GraduationCap, Shield, Lock, AlertTriangle, Trash2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import QuantumLoader from '../components/QuantumLoader'
 
 const DEFAULT_TAX_TEMPLATE = `DECLARAÇÃO DE RENDIMENTOS DE INSTRUÇÃO (IRPF)
 
@@ -539,7 +540,7 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-transparent" style={{ borderTopColor: 'var(--accent-color)' }} />
+        <QuantumLoader size={40} speed={1.75} color="var(--accent-color)" />
       </div>
     )
   }

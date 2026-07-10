@@ -3,6 +3,7 @@ import { Plus, Edit, Trash2, UserCog, Calendar, Check, X, Clock, Users, ChevronL
 import { supabase } from '../lib/supabase'
 import { TeamMember } from '../types'
 import Modal from '../components/Modal'
+import QuantumLoader from '../components/QuantumLoader'
 
 export default function Team() {
   // Tabs: 'members' | 'attendance' | 'summary'
@@ -401,7 +402,7 @@ export default function Team() {
 
       {loading ? (
         <div className="flex items-center justify-center p-20">
-          <div className="h-12 w-12 border-4 border-purple-600/20 border-t-purple-600 rounded-full animate-spin" />
+          <QuantumLoader size={45} speed={1.75} color="var(--accent-color)" />
         </div>
       ) : activeTab === 'members' ? (
         /* Team Members List View */
@@ -643,7 +644,7 @@ export default function Team() {
           <div className="rounded-2xl border border-white/5 overflow-hidden" style={{ backgroundColor: 'var(--bg-card)' }}>
             {loadingSummary ? (
               <div className="flex items-center justify-center p-20">
-                <div className="h-12 w-12 border-4 border-purple-600/20 border-t-purple-600 rounded-full animate-spin" />
+                <QuantumLoader size={45} speed={1.75} color="var(--accent-color)" />
               </div>
             ) : (
               <div className="overflow-x-auto">
