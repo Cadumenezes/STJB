@@ -1,140 +1,182 @@
 import React, { useEffect, useRef } from 'react';
-// @ts-ignore
-import WebGLFluid from 'webgl-fluid';
 
 interface FluidCursorProps {
   enabled?: boolean;
-  densityDissipation?: number;
-  velocityDissipation?: number;
-  pressure?: number;
-  curl?: number;
-  splatRadius?: number;
-  splatForce?: number;
-  transparent?: boolean;
+  densityDissipation?: number; // kept for prop compatibility
+  velocityDissipation?: number; // kept for prop compatibility
+  pressure?: number;            // kept for prop compatibility
+  curl?: number;                // kept for prop compatibility
+  splatRadius?: number;         // kept for prop compatibility
+  splatForce?: number;          // kept for prop compatibility
+  transparent?: boolean;        // kept for prop compatibility
 }
+
+interface Particle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  size: number;
+  color: string;
+  alpha: number;
+  decay: number;
+}
+
+const PALETTE = [
+  '139, 92, 246', // Purple (#8b5cf6)
+  '236, 72, 153', // Pink (#ec4899)
+  '6, 182, 212',  // Cyan (#06b6d4)
+];
 
 export const FluidCursor: React.FC<FluidCursorProps> = ({
   enabled = true,
-  densityDissipation = 3.5,
-  velocityDissipation = 2,
-  pressure = 0.8,
-  curl = 30,
-  splatRadius = 0.25,
-  splatForce = 6000,
-  transparent = true,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const particlesRef = useRef<Particle[]>([]);
+  const lastMousePos = useRef({ x: 0, y: 0 });
+  const mousePos = useRef({ x: 0, y: 0 });
+  const isFirstMove = useRef(true);
 
-  // 1. Initialize WebGL Fluid Simulation on canvas once
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    try {
-      WebGLFluid(canvas, {
-        IMMEDIATE: false, // Turn off initial explosion
-        SPLAT_COUNT: 0,   // Set initial splat count to 0
-        TRIGGER: 'hover',
-        SIM_RESOLUTION: 128,
-        DYE_RESOLUTION: 512,
-        CAPTURE_RESOLUTION: 256,
-        DENSITY_DISSIPATION: 1 - (densityDissipation / 100),
-        VELOCITY_DISSIPATION: 1 - (velocityDissipation / 100),
-        PRESSURE: pressure,
-        CURL: curl,
-        SPLAT_RADIUS: splatRadius,
-        SPLAT_FORCE: splatForce,
-        SHADING: true,
-        COLORFUL: true,
-        COLOR_UPDATE_SPEED: 10,
-        PAUSED: !enabled,
-        BACK_COLOR: { r: 10, g: 10, b: 15 },
-        TRANSPARENT: transparent,
-        BLOOM: true,
-        BLOOM_ITERATIONS: 4,
-        BLOOM_RESOLUTION: 128,
-        BLOOM_INTENSITY: 0.6,
-        BLOOM_THRESHOLD: 0.8,
-        SUNRAYS: false,
-      });
-    } catch (err) {
-      console.error('Failed to initialize WebGL Fluid Simulation:', err);
-    }
-  }, []);
-
-  // 2. Captures cursor and touch events on window and forwards them to the pointer-events: none canvas
   useEffect(() => {
     if (!enabled) return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const forwardMouseEvent = (type: string, e: MouseEvent) => {
-      try {
-        const rect = canvas.getBoundingClientRect();
-        const offsetX = e.clientX - rect.left;
-        const offsetY = e.clientY - rect.top;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-        // Dispatch a plain Event instead of MouseEvent to prevent the browser from overriding offsetX/offsetY
-        const event = new Event(type, {
-          bubbles: true,
-          cancelable: true,
-        });
+    let animationId: number;
+    let time = 0;
 
-        // Define properties directly on the event object
-        Object.defineProperties(event, {
-          offsetX: { value: offsetX, writable: true, enumerable: true, configurable: true },
-          offsetY: { value: offsetY, writable: true, enumerable: true, configurable: true },
-          clientX: { value: e.clientX, writable: true, enumerable: true, configurable: true },
-          clientY: { value: e.clientY, writable: true, enumerable: true, configurable: true },
-          buttons: { value: e.buttons, writable: true, enumerable: true, configurable: true },
-        });
-
-        canvas.dispatchEvent(event);
-      } catch (err) {
-        console.error('Error forwarding mouse event to fluid canvas:', err);
-      }
+    // Handle canvas resizing
+    const resizeCanvas = () => {
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = window.innerWidth * dpr;
+      canvas.height = window.innerHeight * dpr;
+      ctx.scale(dpr, dpr);
     };
 
-    const handleMouseMove = (e: MouseEvent) => forwardMouseEvent('mousemove', e);
-    const handleMouseDown = (e: MouseEvent) => forwardMouseEvent('mousedown', e);
-    const handleMouseUp = (e: MouseEvent) => forwardMouseEvent('mouseup', e);
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
 
-    const forwardTouchEvent = (type: string, e: TouchEvent) => {
-      try {
-        const event = new TouchEvent(type, {
-          touches: Array.from(e.touches),
-          targetTouches: Array.from(e.targetTouches),
-          changedTouches: Array.from(e.changedTouches),
-          bubbles: true,
-          cancelable: true,
-        });
-        canvas.dispatchEvent(event);
-      } catch (err) {
-        console.error('Error forwarding touch event to fluid canvas:', err);
+    // Mouse events
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isFirstMove.current) {
+        lastMousePos.current = { x: e.clientX, y: e.clientY };
+        mousePos.current = { x: e.clientX, y: e.clientY };
+        isFirstMove.current = false;
+        return;
       }
+      mousePos.current = { x: e.clientX, y: e.clientY };
     };
 
-    const handleTouchStart = (e: TouchEvent) => forwardTouchEvent('touchstart', e);
-    const handleTouchMove = (e: TouchEvent) => forwardTouchEvent('touchmove', e);
-    const handleTouchEnd = (e: TouchEvent) => forwardTouchEvent('touchend', e);
+    // Touch events for mobile support
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length === 0) return;
+      const touch = e.touches[0];
+      if (isFirstMove.current) {
+        lastMousePos.current = { x: touch.clientX, y: touch.clientY };
+        mousePos.current = { x: touch.clientX, y: touch.clientY };
+        isFirstMove.current = false;
+        return;
+      }
+      mousePos.current = { x: touch.clientX, y: touch.clientY };
+    };
 
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
-    window.addEventListener('mousedown', handleMouseDown, { passive: true });
-    window.addEventListener('mouseup', handleMouseUp, { passive: true });
-
-    window.addEventListener('touchstart', handleTouchStart, { passive: true });
     window.addEventListener('touchmove', handleTouchMove, { passive: true });
-    window.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+    // Main animation loop
+    const render = () => {
+      time += 0.05;
+      
+      // Calculate mouse speed
+      const dx = mousePos.current.x - lastMousePos.current.x;
+      const dy = mousePos.current.y - lastMousePos.current.y;
+      const speed = Math.sqrt(dx * dx + dy * dy);
+
+      // Inject new particles if mouse is moving
+      if (speed > 0.5) {
+        // Number of particles is proportional to mouse speed
+        const count = Math.min(6, Math.floor(speed / 2) + 1);
+        for (let i = 0; i < count; i++) {
+          const color = PALETTE[Math.floor(Math.random() * PALETTE.length)];
+          const size = Math.random() * 25 + 15; // Soft fluid blobs size
+          particlesRef.current.push({
+            x: mousePos.current.x + (Math.random() - 0.5) * 10,
+            y: mousePos.current.y + (Math.random() - 0.5) * 10,
+            vx: dx * 0.15 + (Math.random() - 0.5) * 1.5,
+            vy: dy * 0.15 + (Math.random() - 0.5) * 1.5,
+            size,
+            color,
+            alpha: 0.65,
+            decay: Math.random() * 0.012 + 0.008, // fade out speed
+          });
+        }
+      }
+
+      // Update last mouse position
+      lastMousePos.current = { ...mousePos.current };
+
+      // Clear screen
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+
+      // Enable additive blending for glowing neon effects
+      ctx.globalCompositeOperation = 'screen';
+
+      // Update and draw particles
+      particlesRef.current = particlesRef.current.filter((p) => {
+        // 1. Friction / Viscosity
+        p.vx *= 0.94;
+        p.vy *= 0.94;
+
+        // 2. Swirling / Turbulence simulation (Fluid curl/vortices)
+        const curlX = Math.sin(p.y * 0.015 + time) * 0.25;
+        const curlY = Math.cos(p.x * 0.015 + time) * 0.25;
+        p.vx += curlX;
+        p.vy += curlY;
+
+        // 3. Move position
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // 4. Shrink/diffuse size
+        p.size *= 0.975;
+        
+        // 5. Fade out
+        p.alpha -= p.decay;
+
+        if (p.alpha <= 0 || p.size <= 2) return false;
+
+        // 6. Draw radial glow gradient
+        try {
+          const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size);
+          grad.addColorStop(0, `rgba(${p.color}, ${p.alpha})`);
+          grad.addColorStop(0.3, `rgba(${p.color}, ${p.alpha * 0.4})`);
+          grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
+        } catch (e) {
+          // ignore gradient errors
+        }
+
+        return true;
+      });
+
+      animationId = requestAnimationFrame(render);
+    };
+
+    render();
 
     return () => {
+      window.removeEventListener('resize', resizeCanvas);
       window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mousedown', handleMouseDown);
-      window.removeEventListener('mouseup', handleMouseUp);
-
-      window.removeEventListener('touchstart', handleTouchStart);
       window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchend', handleTouchEnd);
+      cancelAnimationFrame(animationId);
     };
   }, [enabled]);
 
