@@ -38,6 +38,7 @@ export default function Events() {
   const [selectedParticipantId, setSelectedParticipantId] = useState<string | null>(null)
   const [seatingSearchQuery, setSeatingSearchQuery] = useState('')
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
+  const [showSeatingModal, setShowSeatingModal] = useState(false)
 
   // Estados para Despesas do Evento
   const [eventExpenses, setEventExpenses] = useState<EventExpense[]>([])
@@ -214,6 +215,18 @@ export default function Events() {
       return p.seats_by_session?.[sessionId] || []
     }
     return p.seats || []
+  }
+
+  // Helper: get all participant seats as a comma-separated string
+  function getAllParticipantSeatsStr(p: EventParticipant): string {
+    if (p.seats && p.seats.length > 0) {
+      return p.seats.join(', ')
+    }
+    if (p.seats_by_session) {
+      const allSeats = Object.values(p.seats_by_session).flat()
+      if (allSeats.length > 0) return allSeats.join(', ')
+    }
+    return 'Nenhuma'
   }
 
   // Helper: get total seats across all sessions for a participant
@@ -705,12 +718,16 @@ export default function Events() {
 
     setSaving(true)
     try {
-      const { error } = await supabase.from('event_participants').insert([payload])
+      const { data, error } = await supabase.from('event_participants').insert([payload]).select()
       if (error) {
         throw error
       } else {
         setShowAddParticipantModal(false)
-        loadData()
+        await loadData()
+        if (ticketQty > 0 && data && data[0]) {
+          setSelectedParticipantId(data[0].id)
+          setShowSeatingModal(true)
+        }
       }
     } catch (error: any) {
       alert('Erro ao adicionar participante: ' + error.message)
@@ -1108,15 +1125,14 @@ export default function Events() {
           style={{ backgroundColor: 'var(--accent-color)' }}
         />
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
-          <div className="space-y-4">
+          <div className="flex flex-col gap-[5px] items-start">
             <h1 
               className="font-black tracking-tighter leading-tight inline-block py-4 sm:py-8 rounded-2xl shadow-2xl shadow-purple-500/30" 
               style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--title-size, 32px)', paddingLeft: 'clamp(16px, 4vw, 40px)', paddingRight: 'clamp(16px, 4vw, 40px)' }}
             >
               Eventos
             </h1>
-            <br />
-            <p className="font-bold inline-block py-3 sm:py-6 mt-2 rounded-2xl shadow-xl border border-white/10" style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', paddingLeft: 'clamp(12px, 3vw, 32px)', paddingRight: 'clamp(12px, 3vw, 32px)' }}>
+            <p className="font-bold inline-block py-3 sm:py-6 rounded-2xl shadow-xl border border-white/10" style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', paddingLeft: 'clamp(12px, 3vw, 32px)', paddingRight: 'clamp(12px, 3vw, 32px)' }}>
               Gerencie espetáculos, festivais e participantes
             </p>
           </div>
@@ -1193,7 +1209,7 @@ export default function Events() {
                 />
 
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-8 relative z-10">
-                  <div className="space-y-4">
+                  <div className="flex flex-col gap-[5px] items-start">
                     <h2 
                       className="font-black tracking-tighter leading-tight inline-block py-4 sm:py-8 rounded-none shadow-2xl shadow-purple-500/30" 
                       style={{ 
@@ -1206,9 +1222,8 @@ export default function Events() {
                     >
                       {activeEvent.name}
                     </h2>
-                    <br />
                     <p 
-                      className="font-bold inline-block py-3 sm:py-6 mt-2 rounded-none shadow-xl border border-white/10" 
+                      className="font-bold inline-block py-3 sm:py-6 rounded-none shadow-xl border border-white/10" 
                        style={{ backgroundColor: 'var(--accent-color)', color: '#fff', fontSize: 'var(--subtitle-size, 16px)', paddingLeft: 'clamp(12px, 3vw, 32px)', paddingRight: 'clamp(12px, 3vw, 32px)' }}
                     >
                       {activeEvent.description || 'Sem descrição'} {activeEvent.location ? `• Local: ${activeEvent.location}` : ''}
@@ -1341,17 +1356,24 @@ export default function Events() {
               )}
 
               {/* Sub-tabs Selection */}
-              <div className="flex flex-wrap gap-4 p-2 rounded-2xl border w-fit" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', marginBottom: '30px' }}>
+              <div 
+                className="flex flex-wrap gap-2.5 p-1.5 rounded-2xl border w-fit" 
+                style={{ 
+                  backgroundColor: 'rgba(0, 0, 0, 0.25)', 
+                  borderColor: 'var(--border-color)', 
+                  marginTop: '15px',
+                  marginBottom: '15px' 
+                }}
+              >
                 <button
                   type="button"
                   onClick={() => setActiveSubTab('spreadsheet')}
-                  className="px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer"
+                  className="px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer select-none"
                   style={{
-                    backgroundColor: 'var(--bg-card)',
-                    color: 'var(--text-primary)',
-                    border: activeSubTab === 'spreadsheet' ? '2px solid var(--accent-color)' : '1px solid var(--border-color)',
-                    boxShadow: activeSubTab === 'spreadsheet' ? '0 0 10px var(--accent-color)' : 'none',
-                    opacity: activeSubTab === 'spreadsheet' ? 1 : 0.6
+                    backgroundColor: activeSubTab === 'spreadsheet' ? 'var(--accent-color)' : 'transparent',
+                    color: activeSubTab === 'spreadsheet' ? '#ffffff' : 'var(--text-secondary)',
+                    boxShadow: activeSubTab === 'spreadsheet' ? '0 4px 12px -2px color-mix(in srgb, var(--accent-color) 40%, transparent)' : 'none',
+                    opacity: activeSubTab === 'spreadsheet' ? 1 : 0.65
                   }}
                 >
                   Planilha de Vendas
@@ -1359,13 +1381,12 @@ export default function Events() {
                 <button
                   type="button"
                   onClick={() => setActiveSubTab('seating_map')}
-                  className="px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer"
+                  className="px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer select-none"
                   style={{
-                    backgroundColor: 'var(--bg-card)',
-                    color: 'var(--text-primary)',
-                    border: activeSubTab === 'seating_map' ? '2px solid var(--accent-color)' : '1px solid var(--border-color)',
-                    boxShadow: activeSubTab === 'seating_map' ? '0 0 10px var(--accent-color)' : 'none',
-                    opacity: activeSubTab === 'seating_map' ? 1 : 0.6
+                    backgroundColor: activeSubTab === 'seating_map' ? 'var(--accent-color)' : 'transparent',
+                    color: activeSubTab === 'seating_map' ? '#ffffff' : 'var(--text-secondary)',
+                    boxShadow: activeSubTab === 'seating_map' ? '0 4px 12px -2px color-mix(in srgb, var(--accent-color) 40%, transparent)' : 'none',
+                    opacity: activeSubTab === 'seating_map' ? 1 : 0.65
                   }}
                 >
                   Mapa de Assentos
@@ -1373,13 +1394,12 @@ export default function Events() {
                 <button
                   type="button"
                   onClick={() => setActiveSubTab('expenses')}
-                  className="px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer"
+                  className="px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all cursor-pointer select-none"
                   style={{
-                    backgroundColor: 'var(--bg-card)',
-                    color: 'var(--text-primary)',
-                    border: activeSubTab === 'expenses' ? '2px solid var(--accent-color)' : '1px solid var(--border-color)',
-                    boxShadow: activeSubTab === 'expenses' ? '0 0 10px var(--accent-color)' : 'none',
-                    opacity: activeSubTab === 'expenses' ? 1 : 0.6
+                    backgroundColor: activeSubTab === 'expenses' ? 'var(--accent-color)' : 'transparent',
+                    color: activeSubTab === 'expenses' ? '#ffffff' : 'var(--text-secondary)',
+                    boxShadow: activeSubTab === 'expenses' ? '0 4px 12px -2px color-mix(in srgb, var(--accent-color) 40%, transparent)' : 'none',
+                    opacity: activeSubTab === 'expenses' ? 1 : 0.65
                   }}
                 >
                   Despesas do Evento
@@ -1391,28 +1411,26 @@ export default function Events() {
                   {/* Event Actions & Add Participant */}
                   <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-4 bg-black/20 p-4 rounded-3xl border border-white/5">
                     <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 w-full lg:w-auto">
-                      {profile?.role !== 'secretary' && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setParticipantFormData({
-                              student_id: '',
-                              payment_method: '',
-                              choreography_count: 1,
-                              choreography_price: activeEvent?.base_choreography_price || 0,
-                              clothes_count: 1,
-                              clothes_cost: activeEvent?.base_clothes_cost || 0,
-                              ticket_quantity: 0,
-                              kit: false,
-                              installments_count: 1
-                            })
-                            setShowAddParticipantModal(true)
-                          }}
-                          className="px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-purple-600/20 hover:scale-[1.03] active:scale-95 cursor-pointer w-full sm:w-auto shrink-0"
-                        >
-                          <Plus size={16} /> Adicionar Aluno
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setParticipantFormData({
+                            student_id: '',
+                            payment_method: '',
+                            choreography_count: 1,
+                            choreography_price: activeEvent?.base_choreography_price || 0,
+                            clothes_count: 1,
+                            clothes_cost: activeEvent?.base_clothes_cost || 0,
+                            ticket_quantity: 0,
+                            kit: false,
+                            installments_count: 1
+                          })
+                          setShowAddParticipantModal(true)
+                        }}
+                        className="px-6 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg shadow-purple-600/20 hover:scale-[1.03] active:scale-95 cursor-pointer w-full sm:w-auto shrink-0"
+                      >
+                        <Plus size={16} /> Adicionar Aluno
+                      </button>
                       <div className="flex items-center gap-3 rounded-xl px-4 py-3 border w-full sm:w-64 shrink-0" style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border-color)' }}>
                         <Search className="text-white/30 shrink-0" size={18} />
                         <input 
@@ -1802,12 +1820,31 @@ export default function Events() {
                                       min="0"
                                       value={p.ticket_quantity} 
                                       onChange={(e) => handleUpdateParticipant(p.id, 'ticket_quantity', parseInt(e.target.value) || 0)}
+                                      onBlur={() => {
+                                        if (p.ticket_quantity > 0) {
+                                          setSelectedParticipantId(p.id)
+                                          setShowSeatingModal(true)
+                                        }
+                                      }}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          (e.target as HTMLInputElement).blur()
+                                        }
+                                      }}
                                       className={`w-12 text-center bg-transparent border border-white/10 rounded-lg px-1 py-0.5 text-xs font-black transition-all ${p.ticket_quantity > 0 ? 'text-purple-400' : 'text-white/30'}`}
                                     />
-                                    {Array.isArray(p.seats) && p.seats.length > 0 && (
-                                      <span className="text-[9px] font-bold max-w-[80px] truncate" style={{ color: 'var(--accent-color)' }} title={p.seats.join(', ')}>
-                                        {p.seats.join(', ')}
-                                      </span>
+                                    {p.ticket_quantity > 0 && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setSelectedParticipantId(p.id)
+                                          setShowSeatingModal(true)
+                                        }}
+                                        className="text-[9px] font-bold max-w-[120px] truncate uppercase hover:scale-105 transition-all text-purple-400 hover:text-purple-300 mt-1 cursor-pointer"
+                                        title="Escolher Poltronas"
+                                      >
+                                        💺 {getAllParticipantSeatsStr(p)}
+                                      </button>
                                     )}
                                   </div>
                                 </td>
@@ -1831,18 +1868,14 @@ export default function Events() {
 
                                 {/* Actions */}
                                 <td className="px-3 py-2.5 text-center text-xs">
-                                  {profile?.role !== 'secretary' ? (
-                                    <button 
-                                      type="button"
-                                      onClick={() => handleRemoveParticipant(p.id)}
-                                      className="p-1 text-rose-400/50 hover:text-rose-400 hover:bg-rose-400/10 rounded-lg transition-all"
-                                      title="Remover Aluno"
-                                    >
-                                      <Trash2 size={16} />
-                                    </button>
-                                  ) : (
-                                    <span className="text-white/20 text-xs font-bold">-</span>
-                                  )}
+                                  <button 
+                                    type="button"
+                                    onClick={() => handleRemoveParticipant(p.id)}
+                                    className="p-1 text-rose-400/50 hover:text-rose-400 hover:bg-rose-400/10 rounded-lg transition-all cursor-pointer"
+                                    title="Remover Aluno"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
                                 </td>
                               </tr>
                             )
@@ -2201,41 +2234,44 @@ export default function Events() {
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="w-3.5 h-3.5 rounded border" style={{ 
-                                backgroundColor: 'color-mix(in srgb, var(--accent-color) 20%, transparent)',
+                                backgroundColor: 'rgba(255,255,255,0.05)',
                                 borderColor: '#ef4444'
                               }} />
                               <span>Reservado</span>
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="w-3.5 h-3.5 rounded border" style={{ 
-                                backgroundColor: 'var(--accent-color)',
+                                backgroundColor: 'rgba(255,255,255,0.05)',
                                 borderColor: '#ef4444',
-                                boxShadow: '0 0 8px var(--accent-color)'
+                                boxShadow: '0 0 8px #ef4444'
                               }} />
                               <span>Do Aluno Selecionado</span>
                             </div>
                           </div>
 
-                          {/* Stage */}
-                          <div 
-                            className="w-full max-w-md py-3 mb-4 rounded-b-2xl border-b-2 text-center text-xs font-black uppercase tracking-widest text-white/70 shadow-lg shrink-0 select-none"
-                            style={{ 
-                              background: 'linear-gradient(to bottom, color-mix(in srgb, var(--accent-color) 8%, transparent), color-mix(in srgb, var(--accent-color) 20%, transparent))',
-                              borderBottomColor: 'var(--accent-color)',
-                              boxShadow: '0 8px 20px -8px color-mix(in srgb, var(--accent-color) 30%, transparent)'
-                            }}
-                          >
-                            PALCO / TELA
-                          </div>
-
-                          {/* Corridor between Stage and first row */}
-                          <div className="w-full max-w-md py-2.5 mb-6 border-y border-dashed border-white/10 text-[9px] text-[var(--text-muted)] uppercase tracking-widest font-black shrink-0 text-center select-none bg-white/[0.01]">
-                            🛣️ Corredor de Acesso ao Palco
-                          </div>
-
                           {/* Seating Grid */}
                           <div className="w-full overflow-auto max-h-[450px] py-2 custom-scrollbar flex flex-col">
-                            <div className="flex flex-col gap-2.5 mx-auto py-2 px-2 w-fit">
+                            <div className="flex flex-col gap-2.5 mx-auto py-2 px-2 w-fit items-center">
+                              {/* Stage */}
+                              <div 
+                                className="w-full py-3 mb-2 rounded-b-2xl border-b-2 text-center text-xs font-black uppercase tracking-widest text-white/70 shadow-lg shrink-0 select-none"
+                                style={{ 
+                                  background: 'linear-gradient(to bottom, color-mix(in srgb, var(--accent-color) 8%, transparent), color-mix(in srgb, var(--accent-color) 20%, transparent))',
+                                  borderBottomColor: 'var(--accent-color)',
+                                  boxShadow: '0 8px 20px -8px color-mix(in srgb, var(--accent-color) 30%, transparent)',
+                                  minWidth: '250px'
+                                }}
+                              >
+                                PALCO / TELA
+                              </div>
+
+                              {/* Corridor between Stage and first row */}
+                              <div 
+                                className="w-full py-2.5 mb-4 border-y border-dashed border-white/10 text-[9px] text-[var(--text-muted)] uppercase tracking-widest font-black shrink-0 text-center select-none bg-white/[0.01]"
+                                style={{ minWidth: '250px' }}
+                              >
+                                🛣️ Corredor de Acesso ao Palco
+                              </div>
                               {(() => {
                               const config = displaySeatingMap
                               const rows = config.rows_count || 10
@@ -2333,16 +2369,14 @@ export default function Events() {
                                             } else if (occupiedBy) {
                                               const occStudent = students.find(s => s.id === occupiedBy.student_id)
                                               tooltipText += ` - Reservado para: ${occStudent?.name || 'Desconhecido'}`
+                                              
+                                              // Fundo escuro padrão com número visível e borda vermelha
+                                              seatClass += "bg-zinc-800/80 text-zinc-200 hover:bg-zinc-700 hover:text-white hover:scale-105"
+                                              style.borderColor = '#ef4444'
+                                              
                                               if (isSelectedSeat) {
-                                                seatClass += "text-white hover:scale-110"
-                                                style.backgroundColor = 'var(--accent-color)'
-                                                style.boxShadow = '0 0 12px var(--accent-color)'
-                                                style.borderColor = '#ef4444'
-                                              } else {
-                                                seatClass += "hover:opacity-90"
-                                                style.backgroundColor = 'color-mix(in srgb, var(--accent-color) 20%, transparent)'
-                                                style.borderColor = '#ef4444'
-                                                style.color = 'var(--accent-color)'
+                                                style.boxShadow = '0 0 8px #ef4444'
+                                                seatClass = seatClass.replace("text-zinc-200", "text-white font-black scale-105")
                                               }
                                             } else {
                                               tooltipText += " - Livre"
@@ -3475,26 +3509,29 @@ export default function Events() {
               
               {/* Palco glow layout */}
               <div className="flex-1 flex flex-col items-center justify-center p-6 rounded-3xl border border-white/5 relative overflow-hidden" style={{ backgroundColor: 'var(--bg-secondary)' }}>
-                {/* Stage */}
-                <div 
-                  className="w-full max-w-xs py-2 mb-3 rounded-b-xl border-b-2 text-center text-[10px] font-black uppercase tracking-widest text-white/70 shadow-lg"
-                  style={{ 
-                    background: 'linear-gradient(to bottom, rgba(139,92,246,0.1), rgba(139,92,246,0.25))',
-                    borderBottomColor: 'var(--accent-color)',
-                    boxShadow: '0 5px 15px -5px rgba(139,92,246,0.3)'
-                  }}
-                >
-                  PALCO / TELA
-                </div>
-
-                {/* Corridor between Stage and first row */}
-                <div className="w-full max-w-xs py-1.5 mb-4 border-y border-dashed border-white/10 text-[8px] text-gray-500 uppercase tracking-widest font-black shrink-0 text-center select-none bg-white/[0.01]">
-                  🛣️ Corredor de Acesso ao Palco
-                </div>
-
                 {/* Seating Grid Wrapper */}
                 <div className="w-full overflow-auto max-h-80 py-1 custom-scrollbar flex flex-col">
-                  <div className="flex flex-col gap-2 mx-auto py-1 px-1 w-fit">
+                  <div className="flex flex-col gap-2 mx-auto py-1 px-1 w-fit items-center">
+                    {/* Stage */}
+                    <div 
+                      className="w-full py-2 mb-2 rounded-b-xl border-b-2 text-center text-[10px] font-black uppercase tracking-widest text-white/70 shadow-lg shrink-0"
+                      style={{ 
+                        background: 'linear-gradient(to bottom, rgba(139,92,246,0.1), rgba(139,92,246,0.25))',
+                        borderBottomColor: 'var(--accent-color)',
+                        boxShadow: '0 5px 15px -5px rgba(139,92,246,0.3)',
+                        minWidth: '200px'
+                      }}
+                    >
+                      PALCO / TELA
+                    </div>
+
+                    {/* Corridor between Stage and first row */}
+                    <div 
+                      className="w-full py-1.5 mb-3 border-y border-dashed border-white/10 text-[8px] text-gray-500 uppercase tracking-widest font-black shrink-0 text-center select-none bg-white/[0.01]"
+                      style={{ minWidth: '200px' }}
+                    >
+                      🛣️ Corredor de Acesso ao Palco
+                    </div>
                     {(() => {
                       let previewSeatCounter = 1;
                       const previewStartNumbers = Array.from({ length: rowsCount }).map((_, rIdx) => {
@@ -3614,6 +3651,334 @@ export default function Events() {
             <button type="submit" disabled={saving} className="rounded-2xl px-8 py-3 text-sm font-bold text-white transition-all hover:scale-105 shadow-lg shadow-purple-500/20 disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}>{saving ? 'Salvando...' : (editExpense ? 'Salvar' : 'Cadastrar')}</button>
           </div>
         </form>
+      </Modal>
+
+      {/* Modal Escolha de Poltronas */}
+      <Modal 
+        isOpen={showSeatingModal} 
+        onClose={() => {
+          setShowSeatingModal(false)
+          setSelectedParticipantId(null)
+        }} 
+        title="Escolha de Poltronas"
+        size="2xl"
+      >
+        {(() => {
+          const p = participants.find(part => part.id === selectedParticipantId)
+          const student = p ? students.find(s => s.id === p.student_id) : null
+          if (!p || !student) return null
+
+          const hasSessions = activeEvent?.sessions && activeEvent.sessions.length > 0
+          const activeSession = hasSessions ? activeEvent.sessions!.find(s => s.id === selectedSessionId) : null
+          const displaySeatingMap = activeEvent?.seating_map
+          const totalSeatsGlobal = getTotalSeatsCount(p)
+          const limit = p.ticket_quantity || 0
+          const currentSessionSeats = getParticipantSeats(p, selectedSessionId)
+
+          // Badge based on limit
+          let badgeBg = 'bg-black/30 text-white/50 border border-white/5'
+          let badgeText = 'Sem convite'
+          if (limit > 0) {
+            if (totalSeatsGlobal === 0) {
+              badgeBg = 'bg-black/35 text-rose-300 border border-white/10'
+              badgeText = `0 de ${limit} reservadas`
+            } else if (totalSeatsGlobal < limit) {
+              badgeBg = 'bg-black/35 text-amber-300 border border-white/10'
+              badgeText = `${totalSeatsGlobal} de ${limit} reservadas`
+            } else if (totalSeatsGlobal === limit) {
+              badgeBg = 'bg-black/35 text-emerald-200 border border-white/10'
+              badgeText = `Completo (${limit}/${limit})`
+            } else {
+              badgeBg = 'bg-black/35 text-rose-200 border border-white/10 animate-pulse'
+              badgeText = `Excedido (${totalSeatsGlobal}/${limit})`
+            }
+          }
+
+          return (
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+              {/* LADO ESQUERDO: DETALHES DO ALUNO E LEGENDA */}
+              <div className="md:col-span-4 flex flex-col gap-4">
+                <div className="p-4 rounded-2xl border" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+                  <h4 className="text-[10px] font-black uppercase text-purple-400 tracking-wider mb-1">Aluno Selecionado</h4>
+                  <p className="text-sm font-bold text-white">{student.name}</p>
+                  <div className="mt-2.5 flex items-center justify-between">
+                    <span className="text-xs text-[var(--text-muted)]">Ingressos comprados:</span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-black uppercase shrink-0 ${badgeBg}`}>
+                      {badgeText}
+                    </span>
+                  </div>
+                  {currentSessionSeats.length > 0 && (
+                    <div className="mt-3 pt-3 border-t border-white/5">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 block mb-1">Poltronas nesta sessão:</span>
+                      <div className="flex flex-wrap gap-1">
+                        {currentSessionSeats.map(seat => (
+                          <span key={seat} className="text-[10px] font-black px-1.5 py-0.5 rounded border bg-black/40 text-purple-400 border-purple-400/30">
+                            {seat}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Seletor de Sessões no Modal */}
+                {hasSessions && (
+                  <div className="flex flex-col gap-2 p-3 rounded-2xl border" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white/50 block mb-2 px-1">Sessões do Evento</span>
+                    <div className="flex flex-col gap-2">
+                      {activeEvent.sessions!.map(session => {
+                        const isActive = selectedSessionId === session.id
+                        const sessionSeatsCount = currentParticipants.reduce((acc, part) => acc + (part.seats_by_session?.[session.id]?.length || 0), 0)
+                        const totalSeatsInSession = (() => {
+                          const map = activeEvent.seating_map
+                          if (!map) return 0
+                          let total = 0
+                          for (let i = 0; i < map.rows_count; i++) {
+                            const rowName = getRowLabel(i)
+                            total += map.exceptions?.[rowName] !== undefined ? map.exceptions[rowName] : map.seats_per_row
+                          }
+                          return total
+                        })()
+                        return (
+                          <button
+                            key={session.id}
+                            type="button"
+                            onClick={() => setSelectedSessionId(session.id)}
+                            className="w-full text-left px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex justify-between items-center"
+                            style={{
+                              backgroundColor: isActive ? 'color-mix(in srgb, var(--accent-color) 10%, var(--bg-card))' : 'transparent',
+                              color: isActive ? '#fff' : 'var(--text-muted)',
+                              border: isActive ? '1px solid var(--accent-color)' : '1px solid transparent',
+                            }}
+                          >
+                            <span>{session.name}</span>
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-black/40">
+                              {sessionSeatsCount}/{totalSeatsInSession}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Legenda no Modal */}
+                <div className="p-4 rounded-2xl border flex flex-col gap-3" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+                  <span className="text-[10px] font-black uppercase text-white/40 tracking-wider">Legenda</span>
+                  <div className="flex flex-col gap-2 text-xs text-white/70">
+                    <div className="flex items-center gap-2">
+                      <span className="w-3.5 h-3.5 rounded border bg-zinc-800/80 border-[#10b981]" />
+                      <span>Livre</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3.5 h-3.5 rounded border bg-zinc-800/80 border-[#ef4444]" />
+                      <span>Reservado por outro aluno</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3.5 h-3.5 rounded border bg-zinc-800/80 border-[#ef4444]" style={{ boxShadow: '0 0 8px #ef4444' }} />
+                      <span className="font-bold text-white">Selecionado para {student.name}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* LADO DIREITO: MAPA INTERATIVO */}
+              <div className="md:col-span-8 flex flex-col items-center justify-center p-4 rounded-3xl border border-white/5 relative overflow-hidden" style={{ backgroundColor: 'var(--bg-card)' }}>
+                {!displaySeatingMap ? (
+                  <div className="text-center py-10">
+                    <h4 className="text-base font-bold text-white mb-1">Nenhum mapa configurado</h4>
+                  </div>
+                ) : (
+                  <>
+                    {/* Seating Grid */}
+                    <div className="w-full overflow-auto max-h-[380px] py-2 custom-scrollbar flex flex-col">
+                      <div className="flex flex-col gap-2.5 mx-auto py-2 px-2 w-fit items-center">
+                        {/* Stage */}
+                        <div 
+                          className="w-full py-3 mb-2 rounded-b-2xl border-b-2 text-center text-xs font-black uppercase tracking-widest text-white/70 shadow-lg shrink-0 select-none"
+                          style={{ 
+                            background: 'linear-gradient(to bottom, color-mix(in srgb, var(--accent-color) 8%, transparent), color-mix(in srgb, var(--accent-color) 20%, transparent))',
+                            borderBottomColor: 'var(--accent-color)',
+                            boxShadow: '0 8px 20px -8px color-mix(in srgb, var(--accent-color) 30%, transparent)',
+                            minWidth: '200px'
+                          }}
+                        >
+                          PALCO / TELA
+                        </div>
+
+                        {/* Access Corridor */}
+                        <div 
+                          className="w-full py-2.5 mb-4 border-y border-dashed border-white/10 text-[9px] text-[var(--text-muted)] uppercase tracking-widest font-black shrink-0 text-center select-none bg-white/[0.01]"
+                          style={{ minWidth: '200px' }}
+                        >
+                          🛣️ Corredor de Acesso ao Palco
+                        </div>
+                        {(() => {
+                          const config = displaySeatingMap
+                          const rows = config.rows_count || 10
+                          const stdSeats = config.seats_per_row || 12
+                          const excs = config.exceptions || {}
+                          
+                          const rowExceptions = Object.entries(excs)
+                            .filter(([key]) => !key.startsWith('_'))
+                            .map(([, val]) => val as number)
+                          const mapCorridors = (excs._corridors || []) as number[]
+                          const maxSeatsInRow = Math.max(stdSeats, ...rowExceptions, 1) + (mapCorridors.length * 0.6)
+                          const displaySeatSize = Math.max(26, Math.min(36, Math.floor((550 - (maxSeatsInRow - 1) * 4) / maxSeatsInRow)))
+
+                          let currentSeatCounter = 1;
+                          const rowStartNumbers = Array.from({ length: rows }).map((_, rIdx) => {
+                            const rowName = getRowLabel(rIdx)
+                            const count = excs[rowName] !== undefined ? excs[rowName] : stdSeats
+                            const startNum = currentSeatCounter
+                            currentSeatCounter += count
+                            return startNum
+                          })
+
+                          const hCorridors = (excs._horizontal_corridors || []) as string[]
+
+                          return Array.from({ length: rows }).map((_, rIdx) => {
+                            const rowName = getRowLabel(rIdx)
+                            const count = excs[rowName] !== undefined ? excs[rowName] : stdSeats
+                            const rowStartNum = rowStartNumbers[rIdx]
+                            const hasHorizontalCorridorAfter = hCorridors.includes(rowName)
+
+                            return (
+                              <React.Fragment key={rowName}>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <span className="text-[10px] font-black text-white/30 w-4 text-center shrink-0">{rowName}</span>
+                                  <div className="flex gap-1.5 items-center">
+                                    {count === 0 ? (
+                                      <span className="text-[9px] text-rose-400 italic font-semibold">Sem cadeiras nesta fileira</span>
+                                    ) : (
+                                      Array.from({ length: count }).map((_, sIdx) => {
+                                        const seatNum = rowStartNum + sIdx
+                                        const seatLabel = `${rowName}${seatNum}`
+                                        
+                                        const occupiedBy = participants.find(part => {
+                                          if (part.event_id !== activeEventId) return false
+                                          if (hasSessions && selectedSessionId) {
+                                            return part.seats_by_session?.[selectedSessionId]?.includes(seatLabel)
+                                          }
+                                          return part.seats?.includes(seatLabel)
+                                        })
+                                        const isSelectedSeat = occupiedBy?.id === selectedParticipantId
+                                        
+                                        const isCourtesy = (() => {
+                                          const map = activeEvent?.seating_map
+                                          if (!map) return false
+                                          if (hasSessions && selectedSessionId) {
+                                            return map.courtesies_by_session?.[selectedSessionId]?.includes(seatLabel) || false
+                                          }
+                                          return map.courtesies?.includes(seatLabel) || false
+                                        })()
+
+                                        const isThreeDigits = seatNum > 99
+                                        const seatFontSize = isThreeDigits ? Math.max(8, displaySeatSize * 0.35) : Math.max(9, displaySeatSize * 0.45)
+
+                                        let style: React.CSSProperties = {
+                                          width: `${displaySeatSize}px`,
+                                          height: `${displaySeatSize}px`,
+                                          fontSize: `${seatFontSize}px`
+                                        }
+
+                                        let seatClass = "rounded-lg flex items-center justify-center font-bold border shrink-0 transition-all select-none cursor-pointer "
+                                        let tooltipText = `Poltrona ${seatLabel}`
+
+                                        if (isCourtesy) {
+                                          tooltipText += " - Cortesia"
+                                          seatClass += "hover:opacity-90"
+                                          style.backgroundColor = 'rgba(56, 189, 248, 0.15)'
+                                          style.borderColor = '#38bdf8'
+                                          style.color = '#38bdf8'
+                                        } else if (occupiedBy) {
+                                          const occStudent = students.find(s => s.id === occupiedBy.student_id)
+                                          tooltipText += ` - Reservado para: ${occStudent?.name || 'Desconhecido'}`
+                                          
+                                          seatClass += "bg-zinc-800/80 text-zinc-200 hover:bg-zinc-700 hover:text-white hover:scale-105"
+                                          style.borderColor = '#ef4444'
+                                          
+                                          if (isSelectedSeat) {
+                                            style.boxShadow = '0 0 8px #ef4444'
+                                            seatClass = seatClass.replace("text-zinc-200", "text-white font-black scale-105")
+                                          }
+                                        } else {
+                                          tooltipText += " - Livre"
+                                          seatClass += "bg-zinc-800/80 text-zinc-400 hover:bg-zinc-700 hover:text-white hover:border-[#10b981] hover:scale-105"
+                                          style.borderColor = '#10b981'
+                                        }
+
+                                        return (
+                                          <React.Fragment key={seatLabel}>
+                                            <div 
+                                              className={seatClass}
+                                              style={style}
+                                              title={tooltipText}
+                                              onClick={async () => {
+                                                const mapConfig = displaySeatingMap || { courtesies: [], courtesies_by_session: {} }
+                                                if (isCourtesy) {
+                                                  if (confirm(`O assento ${seatLabel} é uma cortesia. Deseja liberar e reservar para ${student.name}?`)) {
+                                                    let updatedCourtesies = [...(mapConfig.courtesies || [])]
+                                                    let updatedCourtesiesBySession = { ...(mapConfig.courtesies_by_session || {}) }
+                                                    if (hasSessions && selectedSessionId) {
+                                                      updatedCourtesiesBySession[selectedSessionId] = (updatedCourtesiesBySession[selectedSessionId] || []).filter((s: string) => s !== seatLabel)
+                                                    } else {
+                                                      updatedCourtesies = updatedCourtesies.filter(s => s !== seatLabel)
+                                                    }
+                                                    const newSeatingMap = { ...mapConfig, courtesies: updatedCourtesies, courtesies_by_session: updatedCourtesiesBySession }
+                                                    await supabase.from('events').update({ seating_map: newSeatingMap }).eq('id', activeEventId)
+                                                    const newSeats = [...currentSessionSeats, seatLabel]
+                                                    await handleUpdateSeats(p.id, newSeats, selectedSessionId)
+                                                  }
+                                                  return
+                                                }
+                                                if (occupiedBy) {
+                                                  if (occupiedBy.id === p.id) {
+                                                    const newSeats = currentSessionSeats.filter(s => s !== seatLabel)
+                                                    await handleUpdateSeats(p.id, newSeats, selectedSessionId)
+                                                  } else {
+                                                    const otherStud = students.find(s => s.id === occupiedBy.student_id)
+                                                    if (confirm(`O assento ${seatLabel} já está reservado para ${otherStud?.name || 'outro aluno'}. Deseja desmarcar e liberar este assento?`)) {
+                                                      const otherSeats = getParticipantSeats(occupiedBy, selectedSessionId)
+                                                      await handleUpdateSeats(occupiedBy.id, otherSeats.filter(s => s !== seatLabel), selectedSessionId)
+                                                    }
+                                                  }
+                                                } else {
+                                                  if (limit > 0 && totalSeatsGlobal >= limit) {
+                                                    alert(`Limite de ingressos atingido! ${student.name} comprou apenas ${limit} ingresso(s) no total.`)
+                                                  } else {
+                                                    const newSeats = [...currentSessionSeats, seatLabel]
+                                                    await handleUpdateSeats(p.id, newSeats, selectedSessionId)
+                                                  }
+                                                }
+                                              }}
+                                            >
+                                              {displaySeatSize >= 15 ? seatNum : ''}
+                                            </div>
+                                            {mapCorridors.includes(sIdx + 1) && sIdx < count - 1 && (
+                                              <div className="shrink-0 select-none pointer-events-none" style={{ width: `${displaySeatSize * 0.6}px` }} />
+                                            )}
+                                          </React.Fragment>
+                                        )
+                                      })
+                                    )}
+                                  </div>
+                                </div>
+                                {hasHorizontalCorridorAfter && (
+                                  <div className="w-full border-b border-dashed border-white/5 my-1.5 shrink-0" />
+                                )}
+                              </React.Fragment>
+                            )
+                          })
+                        })()}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )
+        })()}
       </Modal>
 
     </div>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Sparkles, Send, Bot, User, BookOpen, DollarSign, Target, HelpCircle, Loader2 } from 'lucide-react'
+import { supabase } from '../lib/supabase'
 
 interface Message {
   role: 'user' | 'ai'
@@ -21,6 +22,22 @@ export default function AiConsultant() {
   const [activeResponse, setActiveResponse] = useState('')
   const [displayedText, setDisplayedText] = useState('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [logoUrl, setLogoUrl] = useState<string | null>(null)
+
+  // Fetch school logo on mount
+  useEffect(() => {
+    async function loadSchoolLogo() {
+      try {
+        const { data } = await supabase.from('school_settings').select('logo_url').limit(1).maybeSingle()
+        if (data && data.logo_url) {
+          setLogoUrl(data.logo_url)
+        }
+      } catch (e) {
+        console.warn('Erro ao carregar logotipo da escola:', e)
+      }
+    }
+    loadSchoolLogo()
+  }, [])
 
   // Auto-scroll to bottom of chat
   useEffect(() => {
@@ -198,15 +215,11 @@ O show de encerramento é o maior evento de marca da sua escola e uma grande fon
    - Calcule o ponto de equilíbrio: defina o preço de venda dos ingressos e o valor do kit figurino por aluno de modo a cobrir 100% dos custos e gerar lucro na bilheteria.
 
 2. **Cronograma de Ensaios e Lançamento na Agenda (3 meses antes)**:
-   - Cadastre todos os ensaios gerais e de palco no módulo **Agenda** do DanceFlow.
-   - Organize os horários e vincule os professores de forma que não ocorram choques de salas ou cansaço excessivo para os alunos infantis.
-
-3. **Planilha de Ingressos e Roupas no Módulo Eventos (2 meses antes)**:
-   - Cadastre o espetáculo no painel de **Eventos** e adicione todos os alunos.
-   - Use a baixa automatizada para controlar quem já efetuou o pagamento das parcelas do figurino, quem já comprou os convites e quem já recebeu o kit oficial do evento.`
+   - Cadastre todos os ensaios gerais e de palco no módulo **Agenda** do DanceFlow-Escola.
+   - Organize os horários e vincule os professores de forma que não ocorram choques de salas ou cansaço excessivo para os alunos infantis.`
   }
 
-  const handleSend = (textToSend?: string) => {
+  const handleSend = async (textToSend?: string) => {
     const promptText = textToSend || input
     if (!promptText.trim()) return
 
@@ -221,8 +234,156 @@ O show de encerramento é o maior evento de marca da sua escola e uma grande fon
     setInput('')
     setLoading(true)
 
+    // Advanced dynamic context lookup
+    let dbContextStats = ""
+    try {
+      // Real API calls querying Supabase
+      const [
+        { count: activeStudentsCount },
+        { count: eventsCount },
+        { data: partsData }
+      ] = await Promise.all([
+        supabase.from('students').select('*', { count: 'exact', head: true }).in('status', ['active', 'scholarship', 'partial_scholarship']),
+        supabase.from('events').select('*', { count: 'exact', head: true }),
+        supabase.from('event_participants').select('ticket_quantity')
+      ])
+
+      const totalTicketsSold = partsData?.reduce((sum, p) => sum + (p.ticket_quantity || 0), 0) || 0
+
+      dbContextStats = `\n\n*(Informações de Diagnóstico DanceFlow-Escola: Atualmente existem ${activeStudentsCount || 0} alunos ativos matriculados, ${eventsCount || 0} eventos cadastrados no sistema e estimamos cerca de ${totalTicketsSold} convites vendidos. Use estes dados para otimizar os planos.)*`
+    } catch (e) {
+      console.warn('Erro ao obter estatísticas reais para contexto da IA:', e)
+    }
+
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || ''
+    if (apiKey) {
+      try {
+        const thinkingSteps = [
+          "Estabelecendo conexão segura com Gemini...",
+          "Analisando histórico da conversa...",
+          "Estruturando consulta especializada...",
+          "Sintetizando resposta inteligente..."
+        ]
+        let currentStepIdx = 0
+        const loadingMessageElement = document.getElementById("ai-loading-text")
+        const thinkingTimer = setInterval(() => {
+          if (loadingMessageElement && currentStepIdx < thinkingSteps.length) {
+            loadingMessageElement.innerText = thinkingSteps[currentStepIdx]
+            currentStepIdx++
+          }
+        }, 450)
+
+        // Map messages for Gemini Chat Format
+        const historyContents = messages.map(msg => ({
+          role: msg.role === 'user' ? 'user' : 'model',
+          parts: [{ text: msg.content }]
+        }))
+        // Add current prompt
+        historyContents.push({
+          role: 'user',
+          parts: [{ text: `${promptText}${dbContextStats ? `\n\nContexto operacional do estúdio: ${dbContextStats}` : ''}` }]
+        })
+
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            contents: historyContents,
+            systemInstruction: {
+              parts: [{
+                text: "Você é a Pirueta, a assessora de Inteligência Artificial da escola de dança DanceFlow-Escola. Seu dever é atuar como uma consultora altamente profissional, experiente e acolhedora em gestão de escolas de dança, marketing, captação, fidelização e pedagogia. Forneça respostas robustas, completas, ricas em detalhes táticos e evite repetições. Escreva sempre em Português do Brasil de forma elegante e clara."
+              }]
+            }
+          })
+        })
+
+        clearInterval(thinkingTimer)
+        setLoading(false)
+
+        if (response.ok) {
+          const data = await response.json()
+          const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Desculpe, não consegui obter uma resposta do Gemini.'
+          setIsTyping(true)
+          setActiveResponse(responseText)
+          return
+        } else {
+          console.warn('Erro ao chamar API do Gemini (status não ok), usando motor local fallbacks...')
+        }
+      } catch (err) {
+        console.warn('Erro ao chamar API do Gemini, usando motor local fallbacks...', err)
+      }
+    } else {
+      // Use Free Pollinations AI as a standard keyless AI connection via GET to avoid any local CORS issue
+      try {
+        const thinkingSteps = [
+          "Estabelecendo conexão segura com servidor de IA...",
+          "Sincronizando histórico da conversa...",
+          "Estruturando consulta inteligente...",
+          "Redigindo resposta dinâmica..."
+        ]
+        let currentStepIdx = 0
+        const loadingMessageElement = document.getElementById("ai-loading-text")
+        const thinkingTimer = setInterval(() => {
+          if (loadingMessageElement && currentStepIdx < thinkingSteps.length) {
+            loadingMessageElement.innerText = thinkingSteps[currentStepIdx]
+            currentStepIdx++
+          }
+        }, 450)
+
+        // Compile history & instruction into one request context
+        const systemText = "Você é a Pirueta, a assessora de Inteligência Artificial da escola de dança DanceFlow-Escola. Seu dever é atuar como uma consultora altamente profissional, experiente e acolhedora em gestão de escolas de dança, marketing, captação, fidelização e pedagogia. Forneça respostas robustas, completas, ricas em detalhes táticos e evite repetições. Escreva sempre em Português do Brasil de forma elegante e clara. Integre os dados de estatística fornecidos se houver."
+        
+        let conversationContext = ""
+        messages.forEach(msg => {
+          conversationContext += `${msg.role === 'user' ? 'Diretor' : 'Pirueta IA'}: ${msg.content}\n\n`
+        })
+        conversationContext += `Diretor: ${promptText}\n\n`
+        if (dbContextStats) {
+          conversationContext += `Dados Operacionais da Escola: ${dbContextStats}\n\n`
+        }
+
+        const url = `https://text.pollinations.ai/${encodeURIComponent(conversationContext)}?system=${encodeURIComponent(systemText)}&model=openai`
+        
+        const response = await fetch(url)
+
+        clearInterval(thinkingTimer)
+        setLoading(false)
+
+        if (response.ok) {
+          const responseText = await response.text()
+          setIsTyping(true)
+          setActiveResponse(responseText)
+          return
+        } else {
+          console.warn('Erro ao chamar Pollinations AI via GET (status não ok), usando motor local fallbacks...')
+        }
+      } catch (err) {
+        console.warn('Erro ao chamar Pollinations AI via GET, usando motor local fallbacks...', err)
+      }
+    }
+
+    // Simulate multi-step thinking like Gemini for local fallback
+    const thinkingSteps = [
+      "Analisando semântica da pergunta...",
+      "Buscando base de conhecimentos de gestão de estúdios...",
+      "Consultando métricas reais de alunos e eventos...",
+      "Formulando plano estratégico personalizado..."
+    ]
+
+    let currentStepIdx = 0
+    const loadingMessageElement = document.getElementById("ai-loading-text")
+    const thinkingTimer = setInterval(() => {
+      if (loadingMessageElement && currentStepIdx < thinkingSteps.length) {
+        loadingMessageElement.innerText = thinkingSteps[currentStepIdx]
+        currentStepIdx++
+      }
+    }, 450)
+
     // Simulate AI thinking and typing response
     setTimeout(() => {
+      clearInterval(thinkingTimer)
       setLoading(false)
       
       // Determine the matched response from the knowledge base
@@ -249,25 +410,68 @@ O show de encerramento é o maior evento de marca da sua escola e uma grande fon
         matchedKey = 'espetaculo'
       }
 
+      // Generate dynamic local response
+      const intros = [
+        "Identifiquei caminhos estratégicos importantes com base na sua pergunta.",
+        "Com base em práticas de alto rendimento de grandes estúdios, elaborei este plano estratégico.",
+        "Vamos estruturar sua resposta! Preparei um diagnóstico focado em conversão e controle financeiro.",
+        "A análise do seu estúdio indica oportunidades muito produtivas para implementar esta semana."
+      ]
+      const randomIntro = intros[Math.floor(Math.random() * intros.length)]
+
       let responseText = ''
       if (matchedKey && kb[matchedKey]) {
-        responseText = kb[matchedKey]
+        responseText = `### 🤖 ${randomIntro}\n\n${kb[matchedKey]}${dbContextStats ? `\n\n---\n${dbContextStats}` : ''}`
       } else {
-        responseText = `### 🤖 Olá! Que excelente pergunta estratégica.
+        const observations = [
+          "**Engajamento comercial ágil**: O tempo de contato com novos interessados deve ser menor que 15 minutos. Rapidez gera taxas de matrícula 70% maiores.",
+          "**Marketing de Experiência**: Foque a comunicação nas redes sociais no alívio de estresse e bem-estar que a dança proporciona para adultos.",
+          "**Cobranças Recorrentes**: Padronize as cobranças via Pix e configure lembretes automáticos com chave copia e cola.",
+          "**Turmas de Otimização**: Avalie se turmas pequenas não estão gerando prejuízo operacional em relação à hora/aula paga ao professor."
+        ]
+        
+        const strategies = [
+          "**Ofertas de Escassez**: Crie isenção de matrícula com limite de 24 horas para alunos que acabam de fazer aula experimental.",
+          "**Parcerias de Indicação**: Crie a semana do 'Traga um Amigo' oferecendo desconto cruzado tanto para quem indica quanto para o indicado.",
+          "**Aviso Pré-vencimento**: Envie lembretes 3 dias antes do vencimento com a chave Pix pronta, reduzindo esquecimentos.",
+          "**Fusão de turmas**: Una horários com baixa frequência de alunos para liberar espaço e economizar custos de professores."
+        ]
 
-Como sua assessora de inteligência artificial em gestão de dança, preparei algumas recomendações personalizadas baseadas no seu prompt: **"${promptText}"**.
+        const metrics = [
+          "**Churn Rate (Evasão)**: Monitore a taxa de alunos que saem e faça entrevistas de desligamento para corrigir problemas.",
+          "**CAC (Custo de Aquisição)**: Avalie o custo real de marketing para atrair cada aluno matriculado.",
+          "**LTV (Valor do Ciclo de Vida)**: Incentive matrículas em planos semestrais ou anuais para estender a permanência média do aluno."
+        ]
 
-No mercado das escolas de dança, o sucesso operacional reside em três pilares fundamentais:
-1. **A Escuta Ativa do Cliente**: Entenda se o seu aluno busca hobby, profissionalização ou comunidade e direcione a abordagem pedagógica para essa dor.
-2. **Ergonomia e Processo Claro**: Facilite o agendamento da aula experimental e a conversão através de gatilhos mentais de exclusividade e urgência na recepção.
-3. **Organização do Fluxo de Caixa**: Monitore todas as despesas diárias em categorias claras e ofereça vantagens financeiras para que os pagamentos ocorram por métodos rápidos e automáticos (como o Pix Copia e Cola pré-agendado).
+        // Shuffle arrays to select random items
+        const selectedObs = [...observations].sort(() => 0.5 - Math.random()).slice(0, 2)
+        const selectedStr = [...strategies].sort(() => 0.5 - Math.random()).slice(0, 2)
+        const selectedMet = [...metrics].sort(() => 0.5 - Math.random()).slice(0, 2)
 
-**Dica de Ação Imediata**: Escolha uma das sugestões rápidas acima no topo da tela para ver guias práticos completos passo a passo sobre captação de alunos, controle de custos e dinâmicas criativas de aula!`
+        responseText = `### 🤖 Plano de Ação Estratégico & Diagnóstico DanceFlow-Escola
+        
+${randomIntro}
+
+1. **Observações Clínicas de Negócio**:
+   - ${selectedObs[0]}
+   - ${selectedObs[1]}
+
+2. **Ações Práticas Sugeridas**:
+   - ${selectedStr[0]}
+   - ${selectedStr[1]}
+
+3. **Indicadores de Sucesso (KPIs)**:
+   - ${selectedMet[0]}
+   - ${selectedMet[1]}
+
+${dbContextStats ? `\n\n---\n${dbContextStats}` : ''}
+
+*Para planos específicos, você também pode usar os botões rápidos de consultoria ao lado para ver roteiros de marketing, controle de custos e dinâmicas de aulas!*`
       }
 
       setIsTyping(true)
       setActiveResponse(responseText)
-    }, 1200)
+    }, 2000)
   }
 
   // Helper to parse markdown-like bold and titles for render
@@ -398,6 +602,18 @@ No mercado das escolas de dança, o sucesso operacional reside em três pilares 
                 >
                   Fidelização & Rematrícula 🔄
                 </button>
+                <button 
+                  onClick={() => handleSend('Como criar campanhas e parcerias estratégicas com escolas e colégios locais do bairro?')}
+                  className="w-full text-left p-3 rounded-xl bg-[#0a0a0f] border border-white/5 hover:border-purple-500/30 text-xs text-gray-300 hover:text-white transition-all cursor-pointer"
+                >
+                  Parcerias Escolares 🏫
+                </button>
+                <button 
+                  onClick={() => handleSend('Dicas práticas de anúncios pagos de tráfego local no Instagram para atrair alunos no meu bairro')}
+                  className="w-full text-left p-3 rounded-xl bg-[#0a0a0f] border border-white/5 hover:border-purple-500/30 text-xs text-gray-300 hover:text-white transition-all cursor-pointer"
+                >
+                  Anúncios Locais Pago 🌐
+                </button>
               </div>
 
               {/* Financeiro */}
@@ -417,6 +633,18 @@ No mercado das escolas de dança, o sucesso operacional reside em três pilares 
                 >
                   Inadimplência Zero no Pix 💳
                 </button>
+                <button 
+                  onClick={() => handleSend('Como calcular e precificar corretamente os planos e mensalidades das turmas de dança?')}
+                  className="w-full text-left p-3 rounded-xl bg-[#0a0a0f] border border-white/5 hover:border-emerald-500/30 text-xs text-gray-300 hover:text-white transition-all cursor-pointer"
+                >
+                  Precificação Inteligente 📊
+                </button>
+                <button 
+                  onClick={() => handleSend('Como montar e gerenciar uma lojinha de uniformes e acessórios para faturar mais no estúdio?')}
+                  className="w-full text-left p-3 rounded-xl bg-[#0a0a0f] border border-white/5 hover:border-emerald-500/30 text-xs text-gray-300 hover:text-white transition-all cursor-pointer"
+                >
+                  Venda de Produtos & Roupas 👕
+                </button>
               </div>
 
               {/* Eventos e Shows */}
@@ -429,6 +657,18 @@ No mercado das escolas de dança, o sucesso operacional reside em três pilares 
                   className="w-full text-left p-3 rounded-xl bg-[#0a0a0f] border border-white/5 hover:border-blue-500/30 text-xs text-gray-300 hover:text-white transition-all cursor-pointer"
                 >
                   Show de Encerramento 🎪
+                </button>
+                <button 
+                  onClick={() => handleSend('Como buscar e captar patrocinadores para ajudar nos custos do festival de dança da escola?')}
+                  className="w-full text-left p-3 rounded-xl bg-[#0a0a0f] border border-white/5 hover:border-blue-500/30 text-xs text-gray-300 hover:text-white transition-all cursor-pointer"
+                >
+                  Patrocínio para Shows 🎟️
+                </button>
+                <button 
+                  onClick={() => handleSend('Como obter lucro vendendo fotos e gravações profissionais do espetáculo de dança?')}
+                  className="w-full text-left p-3 rounded-xl bg-[#0a0a0f] border border-white/5 hover:border-blue-500/30 text-xs text-gray-300 hover:text-white transition-all cursor-pointer"
+                >
+                  Venda de Fotos & Vídeos 📸
                 </button>
               </div>
 
@@ -448,6 +688,18 @@ No mercado das escolas de dança, o sucesso operacional reside em três pilares 
                   className="w-full text-left p-3 rounded-xl bg-[#0a0a0f] border border-white/5 hover:border-pink-500/30 text-xs text-gray-300 hover:text-white transition-all cursor-pointer"
                 >
                   Conexão & Amizades em Adultos 👥
+                </button>
+                <button 
+                  onClick={() => handleSend('Como acelerar e organizar a montagem de coreografias com os alunos de forma eficiente?')}
+                  className="w-full text-left p-3 rounded-xl bg-[#0a0a0f] border border-white/5 hover:border-pink-500/30 text-xs text-gray-300 hover:text-white transition-all cursor-pointer"
+                >
+                  Montagem de Coreografias ⚡
+                </button>
+                <button 
+                  onClick={() => handleSend('Como treinar e capacitar minha equipe da escola de dança (Professores, Secretários, Estagiários e Coordenadores) para manter a excelência técnica, de vendas, administrativa e de atendimento?')}
+                  className="w-full text-left p-3 rounded-xl bg-[#0a0a0f] border border-white/5 hover:border-pink-500/30 text-xs text-gray-300 hover:text-white transition-all cursor-pointer"
+                >
+                  Treinamento de Equipe 👥
                 </button>
               </div>
             </div>
@@ -479,12 +731,20 @@ No mercado das escolas de dança, o sucesso operacional reside em três pilares 
                 className={`flex gap-3 max-w-[85%] sm:max-w-[80%] ${msg.role === 'user' ? 'ml-auto flex-row-reverse' : 'mr-auto'}`}
               >
                 {/* Avatar Icon */}
-                <div className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 font-bold text-sm ${
+                <div className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 font-bold text-sm overflow-hidden ${
                   msg.role === 'user' 
                     ? 'bg-purple-600/20 border border-purple-500/30 text-purple-300' 
                     : 'bg-purple-500/20 border border-purple-500/30 text-purple-300'
                 }`}>
-                  {msg.role === 'user' ? <User size={14} /> : <Bot size={14} />}
+                  {msg.role === 'user' ? (
+                    logoUrl ? (
+                      <img src={logoUrl} alt="Logo" className="h-full w-full object-contain" />
+                    ) : (
+                      <User size={14} />
+                    )
+                  ) : (
+                    <Bot size={14} />
+                  )}
                 </div>
 
                 {/* Message Bubble Container */}
@@ -524,18 +784,18 @@ No mercado das escolas de dança, o sucesso operacional reside em três pilares 
               </div>
             )}
 
-            {/* Loading Indicator */}
-            {loading && (
-              <div className="flex gap-3 mr-auto items-center">
-                <div className="h-8 w-8 rounded-lg bg-purple-500/20 border border-purple-500/30 flex items-center justify-center shrink-0 text-purple-300 font-bold animate-pulse">
-                  <Bot size={14} />
-                </div>
-                <div className="flex items-center gap-2 p-4 rounded-2xl rounded-tl-none shadow-md border" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
-                  <Loader2 className="h-4 w-4 text-purple-500 animate-spin" />
-                  <span className="text-xs text-gray-400">Pirueta está formulando sua estratégia...</span>
-                </div>
-              </div>
-            )}
+             {/* Loading Indicator */}
+             {loading && (
+               <div className="flex gap-3 mr-auto items-center">
+                 <div className="h-8 w-8 rounded-lg bg-purple-500/20 border border-purple-500/30 flex items-center justify-center shrink-0 text-purple-300 font-bold animate-pulse">
+                   <Bot size={14} />
+                 </div>
+                 <div className="flex items-center gap-2 p-4 rounded-2xl rounded-tl-none shadow-md border" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+                   <Loader2 className="h-4 w-4 text-purple-500 animate-spin" />
+                   <span id="ai-loading-text" className="text-xs text-gray-400">Pirueta está formulando sua estratégia...</span>
+                 </div>
+               </div>
+             )}
             
             <div ref={messagesEndRef} />
           </div>
