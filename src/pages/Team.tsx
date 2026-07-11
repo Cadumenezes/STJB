@@ -258,9 +258,21 @@ export default function Team() {
     }
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm('Excluir membro da equipe?')) return
-    await supabase.from('team_members').delete().eq('id', id)
+  async function handleDelete(m: TeamMember) {
+    if (!confirm(`Deseja excluir ${m.name} da equipe? Esta ação também irá suspender o acesso deste funcionário à plataforma.`)) return
+    
+    // 1. Excluir da tabela team_members
+    await supabase.from('team_members').delete().eq('id', m.id)
+    
+    // 2. Suspender perfil correspondente no banco para cortar o acesso (login)
+    if (m.email) {
+      try {
+        await supabase.from('profiles').update({ status: 'suspended' }).eq('email', m.email)
+      } catch (err) {
+        console.error('Erro ao suspender acesso do ex-membro:', err)
+      }
+    }
+    
     loadMembers()
   }
 
@@ -475,7 +487,7 @@ export default function Team() {
                     <Edit size={14} />
                     EDITAR
                   </button>
-                  <button onClick={() => handleDelete(m.id)} className="flex items-center gap-2 px-3 py-2 rounded-2xl text-xs font-bold transition-all hover:bg-rose-500/10" style={{ color: '#f43f5e', border: '1px solid rgba(244, 63, 94, 0.2)' }}>
+                  <button onClick={() => handleDelete(m)} className="flex items-center gap-2 px-3 py-2 rounded-2xl text-xs font-bold transition-all hover:bg-rose-500/10" style={{ color: '#f43f5e', border: '1px solid rgba(244, 63, 94, 0.2)' }}>
                     <Trash2 size={14} />
                     EXCLUIR
                   </button>
