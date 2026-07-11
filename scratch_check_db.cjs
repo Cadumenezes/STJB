@@ -5,31 +5,28 @@ const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-const tables = ['students', 'dance_classes', 'attendance', 'team_members', 'school_settings', 'profiles'];
-
-async function checkTable(table) {
-  const url = `${supabaseUrl}/rest/v1/${table}?select=user_id&limit=1`;
-  const res = await fetch(url, {
-    headers: {
-      apikey: supabaseAnonKey
-    }
-  });
-  const data = await res.json();
-  return {
-    table,
-    status: res.status,
-    message: data.message || 'OK'
-  };
-}
-
 async function main() {
-  console.log('Checking user_id existence across tables...');
-  const results = [];
-  for (const table of tables) {
-    const result = await checkTable(table);
-    results.push(result);
+  console.log('--- DIAGNOSTIC DATA ---');
+  
+  const { data: members, error: err1 } = await supabase.from('team_members').select('*');
+  if (err1) {
+    console.error('Error fetching team_members:', err1);
+  } else {
+    console.log('TEAM MEMBERS (in database):');
+    members.forEach(m => {
+      console.log(`- Name: ${m.name}, Email: ${m.email}, Role: ${m.role}, Status: ${m.status}`);
+    });
   }
-  console.table(results);
+
+  const { data: profiles, error: err2 } = await supabase.from('profiles').select('*');
+  if (err2) {
+    console.error('Error fetching profiles:', err2);
+  } else {
+    console.log('\nPROFILES (in database):');
+    profiles.forEach(p => {
+      console.log(`- Email: ${p.email}, Role: ${p.role}, Status: ${p.status}, ExpiresAt: ${p.expires_at}`);
+    });
+  }
 }
 
 main();

@@ -6,15 +6,26 @@ const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 async function main() {
-  const { data, error } = await supabase.from('team_members').select('*').limit(1);
-  if (error) {
-    console.error('Error fetching team_members:', error);
+  console.log('--- DIAGNOSTIC DATA ---');
+  
+  const { data: members, error: err1 } = await supabase.from('team_members').select('*');
+  if (err1) {
+    console.error('Error fetching team_members:', err1);
   } else {
-    console.log('Success! team_members sample:', data);
-    
-    // Let's try to fetch school_settings to see its columns
-    const { data: settings, error: err2 } = await supabase.from('school_settings').select('*').limit(1);
-    console.log('school_settings sample:', settings);
+    console.log('TEAM MEMBERS (in database):');
+    members.forEach(m => {
+      console.log(`- Name: ${m.name}, Email: ${m.email}, Role: ${m.role}, Status: ${m.status}`);
+    });
+  }
+
+  const { data: profiles, error: err2 } = await supabase.from('profiles').select('*');
+  if (err2) {
+    console.error('Error fetching profiles:', err2);
+  } else {
+    console.log('\nPROFILES (in database):');
+    profiles.forEach(p => {
+      console.log(`- Email: ${p.email}, Role: ${p.role}, Status: ${p.status}, ExpiresAt: ${p.expires_at}`);
+    });
   }
 }
 
