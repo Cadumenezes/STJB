@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Mail, Lock, Phone, ArrowRight, Sparkles, Eye, EyeOff } from 'lucide-react'
 import loginBgImage from '../assets/dance_auth_login.png'
@@ -8,6 +9,7 @@ import PrivacyPolicyModal from '../components/PrivacyPolicyModal'
 import { FluidCursor } from '../components/FluidCursor'
 
 export default function Auth() {
+  const navigate = useNavigate()
   const [isLogin, setIsLogin] = useState(true)
   const [loading, setLoading] = useState(false)
   const [email, setEmail] = useState('')
@@ -182,11 +184,24 @@ export default function Auth() {
         <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full bg-purple-600/5 blur-[100px] pointer-events-none -z-10" />
 
         {/* Top Header Logo */}
-        <div className="flex items-center gap-2">
-          <div className="h-7 w-7 rounded-lg flex items-center justify-center bg-gradient-to-br from-purple-600 to-pink-500 shadow-lg shadow-purple-500/20">
-            <span className="text-white text-xs font-black">D</span>
+        <div className="flex items-center justify-between w-full">
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider text-purple-400 border border-purple-500/20 hover:bg-purple-500/10 transition-all cursor-pointer shadow-sm active:scale-95"
+          >
+            🏠 Ir para o Site
+          </button>
+
+          <div 
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2 cursor-pointer select-none active:opacity-80 transition-opacity"
+            title="Voltar ao Início"
+          >
+            <div className="h-7 w-7 rounded-lg flex items-center justify-center bg-gradient-to-br from-purple-600 to-pink-500 shadow-lg shadow-purple-500/20">
+              <span className="text-white text-xs font-black">D</span>
+            </div>
+            <span className="text-base font-black tracking-tight text-white">Dance<span className="text-purple-500">Flow-Escola</span></span>
           </div>
-          <span className="text-base font-black tracking-tight text-white">Dance<span className="text-purple-500">Flow-Escola</span></span>
         </div>
 
         {/* Brand Quote (Completely separate, on top of where login is made!) */}

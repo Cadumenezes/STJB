@@ -1446,7 +1446,10 @@ export default function Layout() {
             </button>
 
             <button
-              onClick={() => supabase.auth.signOut()}
+              onClick={async () => {
+                await supabase.auth.signOut()
+                navigate('/auth')
+              }}
               onMouseEnter={handleIconHover}
               onMouseLeave={handleIconLeave}
               className="flex w-full items-center gap-3 rounded-2xl text-sm font-semibold text-rose-400 hover:bg-rose-500/10 transition-all duration-200"
