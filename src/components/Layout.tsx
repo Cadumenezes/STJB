@@ -1356,6 +1356,9 @@ export default function Layout() {
                 if (profile?.role === 'coordinator') {
                   return item.path !== '/financial' && item.path !== '/inventory' && item.path !== '/team' && item.path !== '/settings'
                 }
+                if (profile?.role === 'financial_director') {
+                  return item.path !== '/settings'
+                }
                 return true
               })
               .map((item) => (

@@ -220,7 +220,7 @@ export default function App() {
             <Route path="inventory" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : (['secretary', 'coordinator'].includes(profile?.role || '') ? <Navigate to="/" /> : <Inventory />)} />
             <Route path="team" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : (['secretary', 'coordinator'].includes(profile?.role || '') ? <Navigate to="/" /> : <Team />)} />
             <Route path="ai-consultant" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <AiConsultant />} />
-            <Route path="settings" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : (['secretary', 'coordinator'].includes(profile?.role || '') ? <Navigate to="/" /> : <SettingsPage />)} />
+            <Route path="settings" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : (['secretary', 'coordinator', 'financial_director'].includes(profile?.role || '') ? <Navigate to="/" /> : <SettingsPage />)} />
             <Route path="shop" element={profile?.role === 'teacher' ? <Navigate to="/attendance" /> : <Shop />} />
             <Route path="admin" element={(profile?.role === 'admin' || profile?.email === 'teste@flow.com.br') ? <Admin /> : <Navigate to="/" />} />
           </Route>
