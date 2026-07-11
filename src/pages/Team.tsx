@@ -251,6 +251,25 @@ export default function Team() {
       console.error(error)
       alert('Erro ao salvar funcionário: ' + error.message)
     } else {
+      // Sincronizar cargo de 'team_members' com 'profiles' para atualizar as permissões de login do funcionário
+      if (payload.email) {
+        const teamToProfileRoles: Record<string, string> = {
+          'Professor': 'teacher',
+          'Secretário': 'secretary',
+          'Coordenador': 'coordinator',
+          'Diretor Financeiro': 'financial_director',
+          'Diretor': 'admin'
+        }
+        const profileRole = teamToProfileRoles[payload.role]
+        if (profileRole) {
+          try {
+            await supabase.from('profiles').update({ role: profileRole }).eq('email', payload.email)
+          } catch (err) {
+            console.error('Erro ao sincronizar cargo com o perfil de login:', err)
+          }
+        }
+      }
+
       setShowModal(false)
       setEditMember(null)
       resetForm()
