@@ -1982,14 +1982,14 @@ export default function Events() {
                             <span className="text-[8px] text-[var(--text-muted)] mt-0.5">Alunos + Cortesias alocadas</span>
                           </div>
 
-                          {/* Stat 2: Assentos Livres */}
+                          {/* Stat 2: Disponíveis para Venda */}
                           <div className="flex flex-col p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
-                            <span className="text-[9px] font-black uppercase tracking-wider text-emerald-400">Assentos Livres</span>
+                            <span className="text-[9px] font-black uppercase tracking-wider text-emerald-400">Disponíveis para Venda</span>
                             <div className="flex items-baseline gap-1 mt-1">
                               <span className="text-xl font-black text-white">
                                 {(() => {
                                   const sid = selectedSessionId || 'default'
-                                  const studentSeats = currentParticipants.reduce((acc, p) => acc + (p.seats_by_session?.[sid]?.length || 0), 0)
+                                  const studentTickets = currentParticipants.reduce((acc, p) => acc + (p.ticket_quantity || 0), 0)
                                   const courtesySeats = hasSessions
                                     ? displaySeatingMap.courtesies_by_session?.[sid]?.length || 0
                                     : displaySeatingMap.courtesies?.length || 0
@@ -1999,12 +1999,27 @@ export default function Events() {
                                     const rowName = getRowLabel(i)
                                     capacity += displaySeatingMap.exceptions?.[rowName] !== undefined ? displaySeatingMap.exceptions[rowName] : displaySeatingMap.seats_per_row
                                   }
-                                  return Math.max(0, capacity - (studentSeats + courtesySeats))
+                                  return Math.max(0, capacity - studentTickets - courtesySeats)
                                 })()}
                               </span>
-                              <span className="text-xs text-[var(--text-muted)]">disponíveis</span>
+                              <span className="text-xs text-[var(--text-muted)]">assentos</span>
                             </div>
-                            <span className="text-[8px] text-[var(--text-muted)] mt-0.5">Livres para seleção</span>
+                            <span className="text-[8px] text-[var(--text-muted)] mt-0.5">
+                              Livres no mapa: {(() => {
+                                const sid = selectedSessionId || 'default'
+                                const studentSeats = currentParticipants.reduce((acc, p) => acc + (p.seats_by_session?.[sid]?.length || 0), 0)
+                                const courtesySeats = hasSessions
+                                  ? displaySeatingMap.courtesies_by_session?.[sid]?.length || 0
+                                  : displaySeatingMap.courtesies?.length || 0
+                                
+                                let capacity = 0
+                                for (let i = 0; i < displaySeatingMap.rows_count; i++) {
+                                  const rowName = getRowLabel(i)
+                                  capacity += displaySeatingMap.exceptions?.[rowName] !== undefined ? displaySeatingMap.exceptions[rowName] : displaySeatingMap.seats_per_row
+                                }
+                                return Math.max(0, capacity - (studentSeats + courtesySeats))
+                              })()}
+                            </span>
                           </div>
 
                           {/* Stat 3: Alunos Alocados */}
