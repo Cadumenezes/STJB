@@ -1929,7 +1929,7 @@ export default function Events() {
                             <span>{session.name}</span>
                             {activeEvent.seating_map && (
                               <span className="text-[9px] px-1.5 py-0.5 rounded-full" style={{ backgroundColor: 'var(--bg-input)', color: 'var(--text-primary)', opacity: 0.8 }}>
-                                {sessionSeatsCount}/{totalSeatsInSession}
+                                {sessionSeatsCount + (activeEvent.seating_map.courtesies_by_session?.[session.id]?.length || 0)}/{totalSeatsInSession}
                               </span>
                             )}
                             {session.datetime && (
@@ -1952,9 +1952,98 @@ export default function Events() {
                   )}
 
                   {(!hasSessions || selectedSessionId) && (
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    {/* LADO ESQUERDO: LISTA DE ALUNOS E ASSENTOS */}
-                    <div className="lg:col-span-4 flex flex-col h-[350px] lg:h-[600px]" style={{ gap: '14px' }}>
+                    <div className="flex flex-col gap-6 w-full">
+                      {/* Painel de Indicadores de Assentos (Dashboard) */}
+                      {displaySeatingMap && (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 rounded-2xl border" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}>
+                          {/* Stat 1: Ocupação Geral */}
+                          <div className="flex flex-col p-3 rounded-xl bg-purple-500/5 border border-purple-500/10">
+                            <span className="text-[9px] font-black uppercase tracking-wider text-purple-400">Total Ocupado</span>
+                            <div className="flex items-baseline gap-1 mt-1">
+                              <span className="text-xl font-black text-white">
+                                {(() => {
+                                  const sid = selectedSessionId || 'default'
+                                  const studentSeats = currentParticipants.reduce((acc, p) => acc + (p.seats_by_session?.[sid]?.length || 0), 0)
+                                  const courtesySeats = hasSessions
+                                    ? displaySeatingMap.courtesies_by_session?.[sid]?.length || 0
+                                    : displaySeatingMap.courtesies?.length || 0
+                                  return studentSeats + courtesySeats
+                                })()}
+                              </span>
+                              <span className="text-xs text-[var(--text-muted)]">/ {(() => {
+                                let total = 0
+                                for (let i = 0; i < displaySeatingMap.rows_count; i++) {
+                                  const rowName = getRowLabel(i)
+                                  total += displaySeatingMap.exceptions?.[rowName] !== undefined ? displaySeatingMap.exceptions[rowName] : displaySeatingMap.seats_per_row
+                                }
+                                return total
+                              })()} assentos</span>
+                            </div>
+                            <span className="text-[8px] text-[var(--text-muted)] mt-0.5">Alunos + Cortesias alocadas</span>
+                          </div>
+
+                          {/* Stat 2: Assentos Livres */}
+                          <div className="flex flex-col p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
+                            <span className="text-[9px] font-black uppercase tracking-wider text-emerald-400">Assentos Livres</span>
+                            <div className="flex items-baseline gap-1 mt-1">
+                              <span className="text-xl font-black text-white">
+                                {(() => {
+                                  const sid = selectedSessionId || 'default'
+                                  const studentSeats = currentParticipants.reduce((acc, p) => acc + (p.seats_by_session?.[sid]?.length || 0), 0)
+                                  const courtesySeats = hasSessions
+                                    ? displaySeatingMap.courtesies_by_session?.[sid]?.length || 0
+                                    : displaySeatingMap.courtesies?.length || 0
+                                  
+                                  let capacity = 0
+                                  for (let i = 0; i < displaySeatingMap.rows_count; i++) {
+                                    const rowName = getRowLabel(i)
+                                    capacity += displaySeatingMap.exceptions?.[rowName] !== undefined ? displaySeatingMap.exceptions[rowName] : displaySeatingMap.seats_per_row
+                                  }
+                                  return Math.max(0, capacity - (studentSeats + courtesySeats))
+                                })()}
+                              </span>
+                              <span className="text-xs text-[var(--text-muted)]">disponíveis</span>
+                            </div>
+                            <span className="text-[8px] text-[var(--text-muted)] mt-0.5">Livres para seleção</span>
+                          </div>
+
+                          {/* Stat 3: Alunos Alocados */}
+                          <div className="flex flex-col p-3 rounded-xl bg-blue-500/5 border border-blue-500/10">
+                            <span className="text-[9px] font-black uppercase tracking-wider text-blue-400">Alunos Alocados</span>
+                            <div className="flex items-baseline gap-1 mt-1">
+                              <span className="text-xl font-black text-white">
+                                {(() => {
+                                  const sid = selectedSessionId || 'default'
+                                  return currentParticipants.reduce((acc, p) => acc + (p.seats_by_session?.[sid]?.length || 0), 0)
+                                })()}
+                              </span>
+                              <span className="text-xs text-[var(--text-muted)]">/ {currentParticipants.reduce((acc, p) => acc + (p.ticket_quantity || 0), 0)} comprados</span>
+                            </div>
+                            <span className="text-[8px] text-[var(--text-muted)] mt-0.5">Assentos de alunos nesta sessão</span>
+                          </div>
+
+                          {/* Stat 4: Cortesias Alocadas */}
+                          <div className="flex flex-col p-3 rounded-xl bg-sky-500/5 border border-sky-500/10">
+                            <span className="text-[9px] font-black uppercase tracking-wider text-sky-400">Cortesias Alocadas</span>
+                            <div className="flex items-baseline gap-1 mt-1">
+                              <span className="text-xl font-black text-white">
+                                {(() => {
+                                  const sid = selectedSessionId || 'default'
+                                  return hasSessions
+                                    ? displaySeatingMap.courtesies_by_session?.[sid]?.length || 0
+                                    : displaySeatingMap.courtesies?.length || 0
+                                })()}
+                              </span>
+                              <span className="text-xs text-[var(--text-muted)]">assentos</span>
+                            </div>
+                            <span className="text-[8px] text-[var(--text-muted)] mt-0.5">Cortesias nesta sessão</span>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                        {/* LADO ESQUERDO: LISTA DE ALUNOS E ASSENTOS */}
+                        <div className="lg:col-span-4 flex flex-col h-[350px] lg:h-[600px]" style={{ gap: '14px' }}>
                       <div className="w-full py-4 px-6 rounded-2xl shadow-xl text-center text-xs font-black uppercase tracking-widest text-white relative overflow-hidden" style={{ backgroundColor: 'var(--accent-color)', backgroundImage: 'linear-gradient(135deg, var(--accent-color), #000)' }}>
                         Alunos & Reservas {hasSessions && activeSession ? `• ${activeSession.name}` : ''}
                       </div>
@@ -2538,6 +2627,7 @@ export default function Events() {
                         </div>
                       )}
                     </div>
+                  </div>
                   </div>
                   )}
                 </div>
