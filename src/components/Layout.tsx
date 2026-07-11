@@ -25,6 +25,9 @@ import {
   Volume2,
   Map,
   GraduationCap,
+  KeyRound,
+  Eye,
+  EyeOff,
 } from 'lucide-react'
 import { useState, useEffect, lazy, Suspense } from 'react'
 import { gsap } from 'gsap'
@@ -282,6 +285,18 @@ export default function Layout() {
   const [helpTab, setHelpTab] = useState<'manual' | 'feedback'>('manual')
   const [activeManualChapter, setActiveManualChapter] = useState(0)
 
+  // Change Password State
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmNewPassword, setConfirmNewPassword] = useState('')
+  const [passwordChanging, setPasswordChanging] = useState(false)
+  const [passwordError, setPasswordError] = useState<string | null>(null)
+  const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null)
+  const [showCurrentPassText, setShowCurrentPassText] = useState(false)
+  const [showNewPassText, setShowNewPassText] = useState(false)
+  const [showConfirmPassText, setShowConfirmPassText] = useState(false)
+
   // Fluid Cursor Global State (always starts disabled inside the client dashboard)
   const [fluidCursorEnabled, setFluidCursorEnabled] = useState(false)
 
@@ -361,6 +376,72 @@ export default function Layout() {
       alert(`Erro ao enviar solicitação: ${err.message}`)
     } finally {
       setIsSubmittingHelp(false)
+    }
+  }
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setPasswordError(null)
+    setPasswordSuccess(null)
+
+    if (!currentPassword || !newPassword || !confirmNewPassword) {
+      setPasswordError('Todos os campos são obrigatórios.')
+      return
+    }
+
+    if (newPassword.length < 6) {
+      setPasswordError('A nova senha deve ter pelo menos 6 caracteres.')
+      return
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      setPasswordError('A nova senha e a confirmação não coincidem.')
+      return
+    }
+
+    setPasswordChanging(true)
+
+    try {
+      // 1. Obter e-mail do usuário atual
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      if (userError || !user || !user.email) {
+        throw new Error('Não foi possível identificar o usuário autenticado.')
+      }
+
+      // 2. Re-autenticar o usuário com a senha atual para validação de segurança
+      const { error: reauthError } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: currentPassword,
+      })
+
+      if (reauthError) {
+        throw new Error('A senha atual inserida está incorreta.')
+      }
+
+      // 3. Atualizar a senha
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword,
+      })
+
+      if (updateError) {
+        throw updateError
+      }
+
+      setPasswordSuccess('Senha alterada com sucesso!')
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmNewPassword('')
+      
+      // Fechar modal após 2 segundos
+      setTimeout(() => {
+        setShowChangePasswordModal(false)
+        setPasswordSuccess(null)
+      }, 2000)
+
+    } catch (err: any) {
+      setPasswordError(err.message || 'Ocorreu um erro ao alterar a senha.')
+    } finally {
+      setPasswordChanging(false)
     }
   }
 
@@ -1349,6 +1430,22 @@ export default function Layout() {
           {/* Footer */}
           <div className="p-3 space-y-2" style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
             <button
+              onClick={() => setShowChangePasswordModal(true)}
+              onMouseEnter={handleIconHover}
+              onMouseLeave={handleIconLeave}
+              className="flex w-full items-center gap-3 rounded-2xl text-sm font-semibold text-[var(--text-secondary)] hover:bg-white/5 hover:text-white transition-all duration-200 cursor-pointer"
+              style={{
+                paddingLeft: '28px',
+                paddingRight: '16px',
+                paddingTop: '5px',
+                paddingBottom: '5px'
+              }}
+            >
+              <KeyRound size={20} className="menu-icon-animate" />
+              Alterar Senha
+            </button>
+
+            <button
               onClick={() => supabase.auth.signOut()}
               onMouseEnter={handleIconHover}
               onMouseLeave={handleIconLeave}
@@ -2181,6 +2278,156 @@ export default function Layout() {
           </div>
         </div>
       )}
+      {/* Change Password Modal */}
+      {showChangePasswordModal && (
+        <Modal
+          isOpen={showChangePasswordModal}
+          onClose={() => {
+            if (!passwordChanging) {
+              setShowChangePasswordModal(false)
+              setPasswordError(null)
+              setPasswordSuccess(null)
+              setCurrentPassword('')
+              setNewPassword('')
+              setConfirmNewPassword('')
+            }
+          }}
+          title="Alterar Minha Senha"
+          size="sm"
+        >
+          <form onSubmit={handleChangePassword} className="space-y-4">
+            {passwordError && (
+              <div className="p-3 rounded-xl text-xs font-semibold bg-rose-500/10 border border-rose-500/30 text-rose-400">
+                ⚠️ {passwordError}
+              </div>
+            )}
+            {passwordSuccess && (
+              <div className="p-3 rounded-xl text-xs font-semibold bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+                ✨ {passwordSuccess}
+              </div>
+            )}
+
+            {/* Current Password */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold block" style={{ color: 'var(--text-primary)' }}>
+                Senha Atual
+              </label>
+              <div className="relative">
+                <input
+                  type={showCurrentPassText ? "text" : "password"}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Digite sua senha atual"
+                  className="w-full rounded-xl px-4 py-2.5 text-sm border focus:outline-none focus:ring-2 transition-all pr-10"
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                    borderColor: 'var(--border-color)',
+                    color: 'var(--text-primary)',
+                  }}
+                  disabled={passwordChanging}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrentPassText(!showCurrentPassText)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 hover:opacity-75 text-gray-400 cursor-pointer"
+                >
+                  {showCurrentPassText ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            {/* New Password */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold block" style={{ color: 'var(--text-primary)' }}>
+                Nova Senha
+              </label>
+              <div className="relative">
+                <input
+                  type={showNewPassText ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Mínimo 6 caracteres"
+                  className="w-full rounded-xl px-4 py-2.5 text-sm border focus:outline-none focus:ring-2 transition-all pr-10"
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                    borderColor: 'var(--border-color)',
+                    color: 'var(--text-primary)',
+                  }}
+                  disabled={passwordChanging}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassText(!showNewPassText)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 hover:opacity-75 text-gray-400 cursor-pointer"
+                >
+                  {showNewPassText ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Confirm New Password */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold block" style={{ color: 'var(--text-primary)' }}>
+                Confirmar Nova Senha
+              </label>
+              <div className="relative">
+                <input
+                  type={showConfirmPassText ? "text" : "password"}
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  placeholder="Confirme a nova senha"
+                  className="w-full rounded-xl px-4 py-2.5 text-sm border focus:outline-none focus:ring-2 transition-all pr-10"
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                    borderColor: 'var(--border-color)',
+                    color: 'var(--text-primary)',
+                  }}
+                  disabled={passwordChanging}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassText(!showConfirmPassText)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 hover:opacity-75 text-gray-400 cursor-pointer"
+                >
+                  {showConfirmPassText ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowChangePasswordModal(false)
+                  setPasswordError(null)
+                  setPasswordSuccess(null)
+                  setCurrentPassword('')
+                  setNewPassword('')
+                  setConfirmNewPassword('')
+                }}
+                disabled={passwordChanging}
+                className="px-4 py-2 text-xs font-semibold rounded-xl border hover:opacity-70 transition-opacity disabled:opacity-50 cursor-pointer"
+                style={{ borderColor: 'var(--border-color)', color: 'var(--text-secondary)' }}
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={passwordChanging}
+                className="px-4 py-2 text-xs font-semibold rounded-xl text-white transition-all hover:opacity-90 active:scale-95 disabled:opacity-50 cursor-pointer flex items-center gap-2"
+                style={{ background: 'linear-gradient(135deg, var(--accent-color), #000)' }}
+              >
+                {passwordChanging ? 'Alterando...' : 'Confirmar Alteração'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
       <FluidCursor enabled={fluidCursorEnabled} />
     </div>
   )
