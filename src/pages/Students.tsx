@@ -333,10 +333,72 @@ export default function Students() {
     return status === paymentFilter
   })
 
+  const currentMonthStr = new Date().toISOString().slice(0, 7)
+  const todayStr = new Date().toISOString().split('T')[0]
+
+  let totalAmount = 0
+  let paidAmount = 0
+  let pendingAmount = 0
+  let overdueAmount = 0
+  let scholarshipAmount = 0
+  let lockedAmount = 0
+
+  students.forEach(s => {
+    if (s.status === 'locked') {
+      lockedAmount += s.monthly_fee || 0
+      return
+    }
+    if (s.status === 'inactive') {
+      return
+    }
+
+    if (s.status === 'scholarship') {
+      scholarshipAmount += 0
+      return
+    }
+
+    const payStatus = getStudentPaymentStatus(s.id)
+    if (payStatus === 'paid') {
+      const p = payments.find(p => p.student_id === s.id && p.status === 'paid' && p.reference_month === currentMonthStr)
+      const paidVal = p ? (Number(p.amount) || 0) : (s.monthly_fee || 0)
+      paidAmount += paidVal
+      totalAmount += paidVal
+    } else if (payStatus === 'pending' || payStatus === 'none') {
+      // Check if eligible for discount
+      const hasDiscount = s.discount_monthly_fee && s.discount_monthly_fee > 0
+      let expectedVal = s.monthly_fee || 0
+      if (hasDiscount) {
+        const [yr, mn] = currentMonthStr.split('-')
+        const year = parseInt(yr)
+        const month = parseInt(mn)
+        const limitDate = new Date(year, month - 1, discountDueDay, 23, 59, 59, 999)
+        const todayDate = new Date()
+        if (todayDate <= limitDate) {
+          expectedVal = s.discount_monthly_fee || 0
+        }
+      }
+      pendingAmount += expectedVal
+      totalAmount += expectedVal
+    } else if (payStatus === 'overdue') {
+      const studentPayments = payments.filter((pay) => pay.student_id === s.id)
+      const overduePayments = studentPayments.filter(
+        (pay) => pay.status === 'overdue' || (pay.status === 'pending' && pay.due_date < todayStr)
+      )
+      let overdueVal = 0
+      if (overduePayments.length > 0) {
+        overdueVal = overduePayments.reduce((sum, pay) => sum + (Number(pay.amount) || 0), 0)
+      } else {
+        overdueVal = s.monthly_fee || 0
+      }
+      overdueAmount += overdueVal
+      totalAmount += overdueVal
+    }
+  })
+
   const stats = {
     total: students.filter(s => s.status !== 'locked' && s.status !== 'inactive').length,
     paid: payments.filter((p) => {
-      if (p.status !== 'paid' || p.reference_month !== new Date().toISOString().slice(0, 7)) return false
+      if (p.status !== 'paid' || p.reference_month !== currentMonthStr) return false
       const student = students.find(s => s.id === p.student_id)
       return student?.status === 'active' || student?.status === 'partial_scholarship'
     }).length,
@@ -353,6 +415,12 @@ export default function Students() {
     scholarship: students.filter(s => s.status === 'scholarship').length,
     partial_scholarship: students.filter(s => s.status === 'partial_scholarship').length,
     locked: students.filter(s => s.status === 'locked').length,
+    totalAmount,
+    paidAmount,
+    pendingAmount,
+    overdueAmount,
+    scholarshipAmount,
+    lockedAmount,
   }
 
   async function handleAddStudent(e: React.FormEvent) {
@@ -906,12 +974,12 @@ export default function Students() {
   }
 
   const statCards = [
-    { label: 'Total de Alunos', value: stats.total, icon: Users, color: '#8b5cf6', bg: 'rgba(139,92,246,0.15)', filter: 'all' as PaymentFilter },
-    { label: 'Pagos este Mês', value: stats.paid, icon: CheckCircle, color: '#10b981', bg: 'rgba(16,185,129,0.15)', filter: 'paid' as PaymentFilter },
-    { label: 'Pendentes', value: stats.pending, icon: Clock, color: '#f59e0b', bg: 'rgba(245,158,11,0.15)', filter: 'pending' as PaymentFilter },
-    { label: 'Atrasados', value: stats.overdue, icon: AlertTriangle, color: '#f43f5e', bg: 'rgba(244,63,94,0.15)', filter: 'overdue' as PaymentFilter },
-    { label: 'Bolsistas', value: stats.scholarship, icon: GraduationCap, color: '#3b82f6', bg: 'rgba(59,130,246,0.15)', filter: 'scholarship' as PaymentFilter },
-    { label: 'Trancados', value: stats.locked, icon: Lock, color: '#6b7280', bg: 'rgba(107,114,128,0.15)', filter: 'locked' as PaymentFilter },
+    { label: 'Total de Alunos', value: stats.total, amount: stats.totalAmount, icon: Users, color: '#8b5cf6', bg: 'rgba(139,92,246,0.15)', filter: 'all' as PaymentFilter },
+    { label: 'Pagos este Mês', value: stats.paid, amount: stats.paidAmount, icon: CheckCircle, color: '#10b981', bg: 'rgba(16,185,129,0.15)', filter: 'paid' as PaymentFilter },
+    { label: 'Pendentes', value: stats.pending, amount: stats.pendingAmount, icon: Clock, color: '#f59e0b', bg: 'rgba(245,158,11,0.15)', filter: 'pending' as PaymentFilter },
+    { label: 'Atrasados', value: stats.overdue, amount: stats.overdueAmount, icon: AlertTriangle, color: '#f43f5e', bg: 'rgba(244,63,94,0.15)', filter: 'overdue' as PaymentFilter },
+    { label: 'Bolsistas', value: stats.scholarship, amount: stats.scholarshipAmount, icon: GraduationCap, color: '#3b82f6', bg: 'rgba(59,130,246,0.15)', filter: 'scholarship' as PaymentFilter },
+    { label: 'Trancados', value: stats.locked, amount: stats.lockedAmount, icon: Lock, color: '#6b7280', bg: 'rgba(107,114,128,0.15)', filter: 'locked' as PaymentFilter },
   ]
 
   const inputStyle: React.CSSProperties = {
@@ -1404,7 +1472,7 @@ export default function Students() {
           <div
             key={card.label}
             onClick={() => setPaymentFilter(card.filter)}
-            className={`group relative overflow-hidden rounded-2xl p-8 sm:p-10 transition-all duration-300 hover:scale-[1.05] hover:shadow-2xl cursor-pointer ${
+            className={`group relative overflow-hidden rounded-2xl p-6 sm:p-8 transition-all duration-300 hover:scale-[1.05] hover:shadow-2xl cursor-pointer ${
               paymentFilter === card.filter 
                 ? 'scale-[1.03] shadow-lg' 
                 : 'opacity-85 hover:opacity-100'
@@ -1421,7 +1489,10 @@ export default function Students() {
               </div>
               <div className="w-full">
                 <p className="text-2xl sm:text-3xl font-black leading-none" style={{ color: 'var(--text-primary)' }}>{card.value}</p>
-                <p className="mt-2 text-xs font-bold uppercase tracking-wider text-wrap" style={{ color: 'var(--text-muted)' }}>{card.label}</p>
+                <p className="mt-2 text-sm font-extrabold tracking-tight" style={{ color: card.color }}>
+                  R$ {card.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </p>
+                <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-wrap" style={{ color: 'var(--text-muted)' }}>{card.label}</p>
               </div>
             </div>
             <div className="absolute left-0 top-0 h-full w-1" style={{ backgroundColor: card.color }} />

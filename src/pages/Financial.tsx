@@ -1561,7 +1561,8 @@ export default function Financial() {
       dias,
       horas,
       salario,
-      passagem
+      passagem,
+      total: salario + passagem
     }
   })
 
@@ -2421,20 +2422,21 @@ export default function Financial() {
 
                 {/* Tabela de 12 Meses */}
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left">
+                  <table className="w-full min-w-[700px] text-left">
                     <thead>
                       <tr className="bg-black/40 text-[10px] uppercase tracking-wider text-[var(--text-secondary)] border-b border-white/10">
-                        <th className="py-3 px-6">Mês</th>
+                        <th className="py-3 pr-6" style={{ paddingLeft: '48px', minWidth: '160px' }}>Mês</th>
                         <th className="py-3 px-6 text-center">Dias</th>
                         <th className="py-3 px-6 text-center">Horas</th>
                         <th className="py-3 px-6 text-right">Salário</th>
                         <th className="py-3 px-6 text-right">Passagem</th>
+                        <th className="py-3 pl-6 text-right" style={{ paddingRight: '40px', minWidth: '140px' }}>Total</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5 text-sm font-semibold">
                       {annualTableData.map((row) => (
                         <tr key={row.name} className="transition-colors hover:bg-white/[0.02]">
-                          <td className="py-4 px-6 text-white font-black">{row.name}</td>
+                          <td className="py-4 pr-6 text-white font-black" style={{ paddingLeft: '48px', minWidth: '160px' }}>{row.name}</td>
                           <td className="py-4 px-6 text-center text-[var(--text-secondary)]">{row.dias}</td>
                           <td className="py-4 px-6 text-center text-[var(--text-secondary)]">{row.horas}</td>
                           <td className="py-4 px-6 text-right text-emerald-400 font-bold">
@@ -2443,18 +2445,24 @@ export default function Financial() {
                           <td className="py-4 px-6 text-right text-blue-400 font-bold">
                             R$ {row.passagem.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </td>
+                          <td className="py-4 pl-6 text-right text-purple-400 font-extrabold" style={{ paddingRight: '40px', minWidth: '140px' }}>
+                            R$ {row.total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                          </td>
                         </tr>
                       ))}
                       {/* Totais do Rodapé */}
                       <tr className="bg-white/5 text-sm font-black border-t border-white/20">
-                        <td className="py-4 px-6 text-purple-400 uppercase tracking-widest text-xs">Total Geral</td>
-                        <td className="py-4 px-6 text-center text-white">{totalAnnualDays}</td>
-                        <td className="py-4 px-6 text-center text-white">{totalAnnualHours}</td>
-                        <td className="py-4 px-6 text-right text-emerald-400">
+                        <td className="pt-4 pb-8 pr-6 text-purple-400 uppercase tracking-widest text-xs" style={{ paddingLeft: '48px', minWidth: '160px' }}>Total Geral</td>
+                        <td className="pt-4 pb-8 px-6 text-center text-white">{totalAnnualDays}</td>
+                        <td className="pt-4 pb-8 px-6 text-center text-white">{totalAnnualHours}</td>
+                        <td className="pt-4 pb-8 px-6 text-right text-emerald-400">
                           R$ {totalAnnualSalary.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </td>
-                        <td className="py-4 px-6 text-right text-blue-400">
+                        <td className="pt-4 pb-8 px-6 text-right text-blue-400">
                           R$ {totalAnnualTransport.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </td>
+                        <td className="pt-4 pb-8 pl-6 text-right text-purple-400" style={{ paddingRight: '40px', minWidth: '140px' }}>
+                          R$ {(totalAnnualSalary + totalAnnualTransport).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </td>
                       </tr>
                     </tbody>
