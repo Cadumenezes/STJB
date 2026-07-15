@@ -31,7 +31,7 @@ Direção Geral`;
 import {
   Users, UserPlus, Search, Filter, CheckCircle, Clock, AlertTriangle,
   Edit, Trash2, CreditCard, X, ChevronDown, Music, FileText, Calendar, MessageCircle, Printer, Lock, GraduationCap,
-  Copy, ExternalLink, QrCode, RefreshCw, RotateCcw
+  Copy, ExternalLink, QrCode, RefreshCw, RotateCcw, Download
 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { Student, MonthlyPayment, DanceClass, Attendance } from '../types'
@@ -332,6 +332,120 @@ export default function Students() {
     const status = getStudentPaymentStatus(s.id)
     return status === paymentFilter
   })
+
+  function getStudentDebtMonths(studentId: string): string {
+    const studentPayments = payments.filter((pay) => pay.student_id === studentId)
+    const todayStr = new Date().toISOString().split('T')[0]
+    const overduePayments = studentPayments.filter(pay => 
+      pay.status === 'overdue' || 
+      (pay.status === 'pending' && pay.due_date && pay.due_date < todayStr)
+    )
+    if (overduePayments.length === 0) return '-'
+    const months = overduePayments
+      .map(pay => {
+        if (!pay.reference_month) return ''
+        const [year, month] = pay.reference_month.split('-')
+        return `${month}/${year}`
+      })
+      .filter(Boolean)
+    return months.join(', ')
+  }
+
+  function handleExportCSV() {
+    if (filteredStudents.length === 0) {
+      alert('Nenhum aluno na listagem para exportar.')
+      return
+    }
+    const headers = ['Aluno', 'Responsavel', 'Mes(es) em Debito']
+    const rows = filteredStudents.map(student => {
+      const debtMonths = getStudentDebtMonths(student.id)
+      return [
+        student.name,
+        student.guardian_name || '-',
+        debtMonths
+      ]
+    })
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(value => {
+        const escaped = ('' + value).replace(/"/g, '""')
+        return `"${escaped}"`
+      }).join(','))
+    ].join('\n')
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    const filterLabel = statCards.find(c => c.filter === paymentFilter)?.label || 'Alunos'
+    const fileName = `relatorio_${filterLabel.toLowerCase().replace(/\s+/g, '_')}.csv`
+    link.setAttribute('href', url)
+    link.setAttribute('download', fileName)
+    link.style.visibility = 'hidden'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  function handlePrintList() {
+    if (filteredStudents.length === 0) {
+      alert('Nenhum aluno na listagem para imprimir.')
+      return
+    }
+    const filterLabel = statCards.find(c => c.filter === paymentFilter)?.label || 'Alunos'
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) return
+    const htmlRows = filteredStudents.map(student => {
+      const debtMonths = getStudentDebtMonths(student.id)
+      return `
+        <tr>
+          <td>${student.name}</td>
+          <td>${student.guardian_name || '-'}</td>
+          <td>${debtMonths}</td>
+        </tr>
+      `
+    }).join('')
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Relatório - ${filterLabel}</title>
+          <style>
+            body { font-family: sans-serif; padding: 20px; color: #333; }
+            h1 { font-size: 20px; margin-bottom: 5px; }
+            p { font-size: 12px; color: #666; margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+            th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 12px; }
+            th { background-color: #f2f2f2; font-weight: bold; }
+            @media print {
+              body { padding: 0; }
+              @page { margin: 1.5cm; }
+            }
+          </style>
+        </head>
+        <body>
+          <h1>Relatório de Alunos: ${filterLabel}</h1>
+          <p>Gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Nome do Aluno</th>
+                <th>Nome do Responsável</th>
+                <th>Mês(es) em Débito</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${htmlRows}
+            </tbody>
+          </table>
+          <script>
+            window.onload = function() {
+              window.print();
+              window.close();
+            }
+          </script>
+        </body>
+      </html>
+    `)
+    printWindow.document.close()
+  }
 
   const currentMonthStr = new Date().toISOString().slice(0, 7)
   const todayStr = new Date().toISOString().split('T')[0]
@@ -1501,7 +1615,7 @@ export default function Students() {
       </div>
 
       {/* Search & Filter */}
-      <div className="flex flex-col gap-4 sm:flex-row" style={{ marginBottom: '20px' }}>
+      <div className="flex flex-col gap-4 lg:flex-row" style={{ marginBottom: '20px' }}>
         <div className="flex flex-1 items-center gap-3 rounded-xl px-4 py-3.5 border" style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border-color)' }}>
           <Search size={18} className="shrink-0" style={{ color: 'var(--text-muted)' }} />
           <input
@@ -1512,23 +1626,50 @@ export default function Students() {
             style={{ color: 'var(--text-primary)' }}
           />
         </div>
-        <div className="flex items-center gap-3 rounded-xl px-4 py-3.5 border" style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border-color)' }}>
-          <Filter size={18} className="shrink-0" style={{ color: 'var(--text-muted)' }} />
-          <select
-            value={paymentFilter}
-            onChange={(e) => setPaymentFilter(e.target.value as PaymentFilter)}
-            className="bg-transparent text-sm text-white focus:outline-none pr-8 appearance-none cursor-pointer"
-            style={{ color: 'var(--text-primary)' }}
+
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-3 rounded-xl px-4 py-3.5 border" style={{ backgroundColor: 'var(--bg-input)', borderColor: 'var(--border-color)' }}>
+            <Filter size={18} className="shrink-0" style={{ color: 'var(--text-muted)' }} />
+            <select
+              value={paymentFilter}
+              onChange={(e) => setPaymentFilter(e.target.value as PaymentFilter)}
+              className="bg-transparent text-sm text-white focus:outline-none pr-8 appearance-none cursor-pointer"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              <option value="all" className="bg-[#12121a]">Todos</option>
+              <option value="paid" className="bg-[#12121a]">Pagos</option>
+              <option value="pending" className="bg-[#12121a]">Pendentes</option>
+              <option value="overdue" className="bg-[#12121a]">Atrasados</option>
+              <option value="scholarship" className="bg-[#12121a]">Bolsistas Total ({stats.scholarship})</option>
+              <option value="partial_scholarship" className="bg-[#12121a]">Bolsistas Parcial ({stats.partial_scholarship})</option>
+              <option value="locked" className="bg-[#12121a]">Trancados ({stats.locked})</option>
+            </select>
+            <ChevronDown size={16} className="shrink-0 ml-1" style={{ color: 'var(--text-muted)' }} />
+          </div>
+
+          <button
+            type="button"
+            onClick={handleExportCSV}
+            className="flex items-center gap-2 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-wider text-white hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer border"
+            style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+            onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--accent-color)')}
+            onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border-color)')}
           >
-            <option value="all" className="bg-[#12121a]">Todos</option>
-            <option value="paid" className="bg-[#12121a]">Pagos</option>
-            <option value="pending" className="bg-[#12121a]">Pendentes</option>
-            <option value="overdue" className="bg-[#12121a]">Atrasados</option>
-            <option value="scholarship" className="bg-[#12121a]">Bolsistas Total ({stats.scholarship})</option>
-            <option value="partial_scholarship" className="bg-[#12121a]">Bolsistas Parcial ({stats.partial_scholarship})</option>
-            <option value="locked" className="bg-[#12121a]">Trancados ({stats.locked})</option>
-          </select>
-          <ChevronDown size={16} className="shrink-0 ml-1" style={{ color: 'var(--text-muted)' }} />
+            <Download size={15} className="text-purple-400 shrink-0" />
+            <span>Exportar CSV</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handlePrintList}
+            className="flex items-center gap-2 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-wider text-white hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer border"
+            style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
+            onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--accent-color)')}
+            onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border-color)')}
+          >
+            <Printer size={15} className="text-purple-400 shrink-0" />
+            <span>Imprimir</span>
+          </button>
         </div>
       </div>
 
