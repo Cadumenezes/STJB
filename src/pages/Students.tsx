@@ -351,39 +351,7 @@ export default function Students() {
     return months.join(', ')
   }
 
-  function handleExportCSV() {
-    if (filteredStudents.length === 0) {
-      alert('Nenhum aluno na listagem para exportar.')
-      return
-    }
-    const headers = ['Aluno', 'Responsavel', 'Mes(es) em Debito']
-    const rows = filteredStudents.map(student => {
-      const debtMonths = getStudentDebtMonths(student.id)
-      return [
-        student.name,
-        student.guardian_name || '-',
-        debtMonths
-      ]
-    })
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(value => {
-        const escaped = ('' + value).replace(/"/g, '""')
-        return `"${escaped}"`
-      }).join(','))
-    ].join('\n')
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    const filterLabel = statCards.find(c => c.filter === paymentFilter)?.label || 'Alunos'
-    const fileName = `relatorio_${filterLabel.toLowerCase().replace(/\s+/g, '_')}.csv`
-    link.setAttribute('href', url)
-    link.setAttribute('download', fileName)
-    link.style.visibility = 'hidden'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
+
 
   async function handlePrintList() {
     if (filteredStudents.length === 0) {
@@ -1741,17 +1709,7 @@ export default function Students() {
             <ChevronDown size={16} className="shrink-0 ml-1" style={{ color: 'var(--text-muted)' }} />
           </div>
 
-          <button
-            type="button"
-            onClick={handleExportCSV}
-            className="flex items-center gap-2 px-4 py-3 rounded-xl text-xs font-black uppercase tracking-wider text-white hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer border"
-            style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)' }}
-            onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--accent-color)')}
-            onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border-color)')}
-          >
-            <Download size={15} className="text-purple-400 shrink-0" />
-            <span>Exportar CSV</span>
-          </button>
+
 
           <button
             type="button"
