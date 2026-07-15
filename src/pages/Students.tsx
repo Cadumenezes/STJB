@@ -385,44 +385,136 @@ export default function Students() {
     document.body.removeChild(link)
   }
 
-  function handlePrintList() {
+  async function handlePrintList() {
     if (filteredStudents.length === 0) {
       alert('Nenhum aluno na listagem para imprimir.')
       return
     }
+
+    let schoolLogo = ''
+    let schoolName = 'Danceflow'
+    try {
+      const { data: school } = await supabase.from('school_settings').select('name, logo_url').limit(1).single()
+      if (school) {
+        schoolLogo = school.logo_url || ''
+        schoolName = school.name || 'Danceflow'
+      }
+    } catch (e) {
+      console.error('Erro ao buscar dados da escola:', e)
+    }
+
     const filterLabel = statCards.find(c => c.filter === paymentFilter)?.label || 'Alunos'
     const printWindow = window.open('', '_blank')
     if (!printWindow) return
+
     const htmlRows = filteredStudents.map(student => {
       const debtMonths = getStudentDebtMonths(student.id)
+      const hasDebt = debtMonths !== '-'
       return `
         <tr>
-          <td>${student.name}</td>
+          <td style="font-weight: 500;">${student.name}</td>
           <td>${student.guardian_name || '-'}</td>
-          <td>${debtMonths}</td>
+          <td style="${hasDebt ? 'color: #e11d48; font-weight: 700;' : 'color: #71717a;'}">${debtMonths}</td>
         </tr>
       `
     }).join('')
+
     printWindow.document.write(`
       <html>
         <head>
           <title>Relatório - ${filterLabel}</title>
           <style>
-            body { font-family: sans-serif; padding: 20px; color: #333; }
-            h1 { font-size: 20px; margin-bottom: 5px; }
-            p { font-size: 12px; color: #666; margin-bottom: 20px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-            th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 12px; }
-            th { background-color: #f2f2f2; font-weight: bold; }
+            body { 
+              font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; 
+              padding: 40px; 
+              color: #27272a; 
+              background-color: #ffffff;
+            }
+            .header-container {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              border-bottom: 2px solid #e4e4e7;
+              padding-bottom: 20px;
+              margin-bottom: 30px;
+            }
+            .logo-placeholder {
+              height: 60px;
+              max-width: 200px;
+              object-fit: contain;
+            }
+            .logo-text-placeholder {
+              font-size: 32px;
+              margin: 0;
+            }
+            .school-info {
+              text-align: right;
+            }
+            .school-name {
+              font-size: 20px;
+              font-weight: 800;
+              color: #7c3aed;
+              margin: 0;
+            }
+            .report-title-container {
+              margin-bottom: 25px;
+            }
+            h1 { 
+              font-size: 22px; 
+              font-weight: 800; 
+              color: #18181b;
+              margin: 0 0 5px 0; 
+            }
+            .meta-date { 
+              font-size: 12px; 
+              color: #71717a; 
+              margin: 0;
+            }
+            table { 
+              width: 100%; 
+              border-collapse: collapse; 
+              margin-top: 10px; 
+            }
+            th, td { 
+              border: 1px solid #e4e4e7; 
+              padding: 12px 14px; 
+              text-align: left; 
+              font-size: 13px; 
+            }
+            th { 
+              background-color: #f4f4f5; 
+              color: #3f3f46;
+              font-weight: 700; 
+              text-transform: uppercase;
+              font-size: 11px;
+              letter-spacing: 0.05em;
+            }
+            tr:nth-child(even) {
+              background-color: #fafafa;
+            }
             @media print {
               body { padding: 0; }
+              .header-container { border-color: #a1a1aa; }
+              th { background-color: #f4f4f5 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+              tr:nth-child(even) { background-color: #fafafa !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
               @page { margin: 1.5cm; }
             }
           </style>
         </head>
         <body>
-          <h1>Relatório de Alunos: ${filterLabel}</h1>
-          <p>Gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}</p>
+          <div class="header-container">
+            ${schoolLogo ? `<img src="${schoolLogo}" alt="Logo" class="logo-placeholder" />` : '<div class="logo-text-placeholder">🏫</div>'}
+            <div class="school-info">
+              <p class="school-name">${schoolName}</p>
+              <p style="font-size: 11px; color: #71717a; margin: 4px 0 0 0;">Sistema de Gestão Danceflow</p>
+            </div>
+          </div>
+          
+          <div class="report-title-container">
+            <h1>Relatório de Alunos: ${filterLabel}</h1>
+            <p class="meta-date">Gerado em ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}</p>
+          </div>
+
           <table>
             <thead>
               <tr>
@@ -437,8 +529,10 @@ export default function Students() {
           </table>
           <script>
             window.onload = function() {
-              window.print();
-              window.close();
+              setTimeout(function() {
+                window.print();
+                window.close();
+              }, 300);
             }
           </script>
         </body>
