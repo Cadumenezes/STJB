@@ -394,10 +394,10 @@ export default function Students() {
     let schoolLogo = ''
     let schoolName = 'Danceflow'
     try {
-      const { data: school } = await supabase.from('school_settings').select('name, logo_url').limit(1).single()
+      const { data: school } = await supabase.from('school_settings').select('school_name, logo_url').limit(1).single()
       if (school) {
         schoolLogo = school.logo_url || ''
-        schoolName = school.name || 'Danceflow'
+        schoolName = school.school_name || 'Danceflow'
       }
     } catch (e) {
       console.error('Erro ao buscar dados da escola:', e)
