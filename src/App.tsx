@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate, Link, useLocation, useNavigate } from 'react-router-dom'
-import { useEffect, useState, lazy, Suspense } from 'react'
+import { useEffect, useState, lazy, Suspense, useRef } from 'react'
 import { supabase } from './lib/supabase'
 import { Profile } from './types'
 import Layout from './components/Layout'
@@ -75,6 +75,7 @@ export default function App() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const [mfaRequired, setMfaRequired] = useState(false)
+  const currentUserIdRef = useRef<string | null>(null)
   
   // Estados para conformidade LGPD / Políticas
   const [policyModalOpen, setPolicyModalOpen] = useState(false)
@@ -143,6 +144,7 @@ export default function App() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       if (session?.user) {
+        currentUserIdRef.current = session.user.id
         checkMfa()
         fetchProfile(session.user.id)
       } else {
@@ -158,10 +160,22 @@ export default function App() {
       }
       setSession(session)
       if (session?.user) {
-        setLoading(true)
-        checkMfa()
-        fetchProfile(session.user.id)
+        // Se for o mesmo usuário, não ativamos o loading de tela cheia (QuantumLoader)
+        // para evitar desmontar e perder o estado dos componentes quando o token é atualizado (ex: mudança de aba)
+        if (currentUserIdRef.current !== session.user.id) {
+          currentUserIdRef.current = session.user.id
+          setLoading(true)
+          checkMfa()
+          fetchProfile(session.user.id)
+        } else {
+          // Apenas atualiza informações em segundo plano
+          checkMfa()
+          supabase.from('profiles').select('*').eq('id', session.user.id).single().then(({ data }) => {
+            if (data) setProfile(data)
+          })
+        }
       } else {
+        currentUserIdRef.current = null
         setProfile(null)
         setMfaRequired(false)
         setLoading(false)
