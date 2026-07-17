@@ -66,7 +66,7 @@ export default function Dashboard() {
       const [
         { data: { user } },
         { count: studentCount },
-        { count: overdueCount },
+        { data: unpaidPaymentsData },
         { data: incomeData },
         { data: expenseData },
         { data: students },
@@ -76,7 +76,7 @@ export default function Dashboard() {
       ] = await Promise.all([
         supabase.auth.getUser(),
         supabase.from('students').select('*', { count: 'exact', head: true }).in('status', ['active', 'scholarship', 'partial_scholarship']),
-        supabase.from('monthly_payments').select('*', { count: 'exact', head: true }).eq('status', 'overdue'),
+        supabase.from('monthly_payments').select('id, status, due_date').neq('status', 'paid'),
         supabase.from('financial_entries').select('amount').eq('type', 'income').eq('date', today),
         supabase.from('financial_entries').select('amount').eq('type', 'expense').eq('date', today),
         supabase.from('students').select('name, birth_date').in('status', ['active', 'scholarship', 'partial_scholarship']),
@@ -94,6 +94,11 @@ export default function Dashboard() {
 
       const todayIncome  = incomeData?.reduce((sum, e) => sum + Number(e.amount), 0) || 0
       const todayExpense = expenseData?.reduce((sum, e) => sum + Number(e.amount), 0) || 0
+
+      // Calcular mensalidades em atraso reais
+      const calculatedOverdueCount = (unpaidPaymentsData || []).filter(
+        (pay) => pay.status === 'overdue' || (pay.status === 'pending' && pay.due_date < today)
+      ).length
 
       // Aniversários da semana
       const now = new Date()
@@ -135,7 +140,7 @@ export default function Dashboard() {
 
       setData({
         totalStudents:   studentCount || 0,
-        overduePayments: overdueCount || 0,
+        overduePayments: calculatedOverdueCount,
         cashFlowToday:   todayIncome - todayExpense,
         todayIncome,
         todayExpense,
