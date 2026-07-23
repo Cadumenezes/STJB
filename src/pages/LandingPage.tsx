@@ -164,6 +164,7 @@ export default function LandingPage() {
             <img 
               src={heroImage} 
               alt="Bailarina DanceFlow" 
+              decoding="async"
               className="w-full h-auto rounded-2xl object-cover object-center shadow-lg"
             />
             {/* Elegant Neon overlay */}
@@ -255,6 +256,8 @@ export default function LandingPage() {
               <img 
                 src={feature2Image} 
                 alt="Gestão de Turmas DanceFlow" 
+                loading="lazy"
+                decoding="async"
                 className="w-full h-auto rounded-2xl object-cover object-center shadow-lg"
               />
             </div>
@@ -289,6 +292,8 @@ export default function LandingPage() {
               <img 
                 src={feature1Image} 
                 alt="Perfil Completo do Aluno DanceFlow" 
+                loading="lazy"
+                decoding="async"
                 className="w-full h-auto rounded-2xl object-cover object-center shadow-lg"
               />
             </div>
@@ -323,6 +328,8 @@ export default function LandingPage() {
               <img 
                 src={hybridForecastImg} 
                 alt="Previsão de Gastos Inteligente DanceFlow" 
+                loading="lazy"
+                decoding="async"
                 className="w-full h-auto rounded-2xl object-cover object-center shadow-lg"
               />
             </div>
@@ -357,6 +364,8 @@ export default function LandingPage() {
               <img 
                 src={financialMockupImg} 
                 alt="Financeiro Avançado DanceFlow" 
+                loading="lazy"
+                decoding="async"
                 className="w-full h-auto rounded-2xl object-cover object-center shadow-lg"
               />
             </div>
@@ -391,6 +400,8 @@ export default function LandingPage() {
               <img 
                 src={theaterMapImg} 
                 alt="Mapa de Assentos de Teatros DanceFlow" 
+                loading="lazy"
+                decoding="async"
                 className="w-full h-auto rounded-2xl object-cover object-center shadow-lg"
               />
             </div>
